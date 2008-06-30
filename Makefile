@@ -7,7 +7,8 @@ all:
 
 clean:
 	-rm *.tar.gz python-ethtool/*.pyc
-	-rm -r dist MANIFEST
+	-rm rpm/SOURCES/${PKGNAME}-$(VERSION).tar.bz2
+	-rm -rf rpm/{BUILD,RPMS/*,SRPMS}/*
 	python setup.py -q clean --all
 
 install: all
