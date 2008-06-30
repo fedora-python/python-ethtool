@@ -405,25 +405,20 @@ static PyObject *get_businfo(PyObject *self __unused, PyObject *args)
 	return PyString_FromString(((struct ethtool_drvinfo *)buf)->bus_info);
 }
 
-static int get_dev_value(int cmd, PyObject *args, void *value, size_t len)
+static int send_command(int cmd, char *devname, struct ethtool_value *eval)
 {
-	struct ethtool_value eval;
-	struct ifreq ifr;
-	int fd, err;
-	char *devname;
-
-	if (!PyArg_ParseTuple(args, "s", &devname))
-		return -1;
-
 	/* Setup our control structures. */
+	int fd, err;
+	struct ifreq ifr;
+
 	memset(&ifr, 0, sizeof(ifr));
 	strncpy(&ifr.ifr_name[0], devname, IFNAMSIZ);
 	ifr.ifr_name[IFNAMSIZ - 1] = 0;
-	ifr.ifr_data = (caddr_t)&eval;
-	eval.cmd = cmd;
+	ifr.ifr_data = (caddr_t)eval;
+	eval->cmd = cmd;
 
 	/* Open control socket. */
-	fd = socket(AF_INET, SOCK_DGRAM, 0);
+	fd = socket(AF_INET, SOCK_DGRAM, 0), err;
 	if (fd < 0) {
 		PyErr_SetString(PyExc_OSError, strerror(errno));
 		return -1;
@@ -438,7 +433,20 @@ static int get_dev_value(int cmd, PyObject *args, void *value, size_t len)
 	}
 
 	close(fd);
-	memcpy(value, eval.data, len);
+	return err;
+}
+
+static int get_dev_value(int cmd, PyObject *args, void *value, size_t len)
+{
+	char *devname;
+	int err = -1;
+
+	if (PyArg_ParseTuple(args, "s", &devname)) {
+		struct ethtool_value eval;
+		/* Setup our control structures. */
+		err = send_command(cmd, devname, &eval);
+		memcpy(value, &eval.data, len);
+	}
 
 	return err;
 }
@@ -446,6 +454,17 @@ static int get_dev_value(int cmd, PyObject *args, void *value, size_t len)
 static int get_dev_int_value(int cmd, PyObject *args, int *value)
 {
 	return get_dev_value(cmd, args, value, sizeof(*value));
+}
+
+static int dev_set_int_value(int cmd, PyObject *args)
+{
+	struct ethtool_value eval;
+	char *devname;
+
+	if (!PyArg_ParseTuple(args, "si", &devname, &eval.data))
+		return -1;
+
+	return send_command(cmd, devname, &eval);
 }
 
 static PyObject *get_tso(PyObject *self __unused, PyObject *args)
@@ -456,6 +475,18 @@ static PyObject *get_tso(PyObject *self __unused, PyObject *args)
 		return NULL;
 
 	return Py_BuildValue("b", value);
+}
+
+static PyObject *set_tso(PyObject *self __unused, PyObject *args)
+{
+	int pid, policy, priority;
+	struct ethtool_value param;
+
+	if (dev_set_int_value(ETHTOOL_STSO, args) < 0)
+		return NULL;
+
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
 static PyObject *get_ufo(PyObject *self __unused, PyObject *args)
@@ -532,6 +563,11 @@ static struct PyMethodDef PyEthModuleMethods[] = {
 	{
 		.ml_name = "get_tso",
 		.ml_meth = (PyCFunction)get_tso,
+		.ml_flags = METH_VARARGS,
+	},
+	{
+		.ml_name = "set_tso",
+		.ml_meth = (PyCFunction)set_tso,
 		.ml_flags = METH_VARARGS,
 	},
 	{
