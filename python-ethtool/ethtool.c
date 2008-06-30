@@ -405,7 +405,7 @@ static PyObject *get_businfo(PyObject *self __unused, PyObject *args)
 	return PyString_FromString(((struct ethtool_drvinfo *)buf)->bus_info);
 }
 
-static int get_dev_int_value(int cmd, PyObject *args, int *value)
+static int get_dev_value(int cmd, PyObject *args, void *value, size_t len)
 {
 	struct ethtool_value eval;
 	struct ifreq ifr;
@@ -438,9 +438,14 @@ static int get_dev_int_value(int cmd, PyObject *args, int *value)
 	}
 
 	close(fd);
-	*value = eval.data;
+	memcpy(value, eval.data, len);
 
 	return err;
+}
+
+static int get_dev_int_value(int cmd, PyObject *args, int *value)
+{
+	return get_dev_value(cmd, args, value, sizeof(*value));
 }
 
 static PyObject *get_tso(PyObject *self __unused, PyObject *args)
