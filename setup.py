@@ -7,7 +7,7 @@ ethtool = Extension('ethtool',
 
 # don't reformat this line, Makefile parses it
 setup(name='ethtool',
-      version='0.1',
+      version='0.2',
       description='Python module to interface with ethtool',
       author='Harald Hoyer & Arnaldo Carvalho de Melo',
       author_email='acme@redhat.com',
