@@ -39,3 +39,9 @@ local:
 	@cp /tmp/${PKGNAME}-$(VERSION)/dist/${PKGNAME}-$(VERSION).tar.gz .
 	@rm -rf /tmp/${PKGNAME}-$(VERSION)	
 	@echo "The archive is in ${PKGNAME}-$(VERSION).tar.gz"
+
+bz2:
+	git archive --format=tar --prefix=${PKGNAME}-$(VERSION)/ HEAD | bzip2 -9 > rpm/SOURCES/${PKGNAME}-$(VERSION).tar.bz2
+
+rpm: bz2
+	rpmbuild -ba --define "_topdir $(PWD)/rpm" rpm/SPECS/${PKGNAME}.spec
