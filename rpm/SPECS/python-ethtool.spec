@@ -19,6 +19,8 @@ ethtool python bindings
 %install
 rm -rf %{buildroot}
 make DESTDIR=%{buildroot} install
+mkdir -p %{buildroot}%{_sbindir}
+cp -f ethtool-cmd.py %{buildroot}%{_sbindir}/pethtool
 
 %clean
 rm -rf %{buildroot}
@@ -26,6 +28,7 @@ rm -rf %{buildroot}
 %files
 %defattr(-,root,root)
 %doc COPYING
+%{_sbindir}/pethtool
 %{python_sitearch}/ethtool.so
 
 %changelog
