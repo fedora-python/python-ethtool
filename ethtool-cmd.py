@@ -79,10 +79,15 @@ def show_driver(interface, args = None):
 
 def run_cmd(cmd, interface, args):
 	global tab
+
+	active_devices = ethtool.get_active_devices()
 	if not interface:
 		tab = "  "
 		for interface in ethtool.get_devices():
-			print "%s:" % interface
+			inactive = " (not active)"
+			if interface in active_devices:
+				inactive = ""
+			print "%s%s:" % (interface, inactive)
 			cmd(interface, args)
 	else:
 		cmd(interface, args)
