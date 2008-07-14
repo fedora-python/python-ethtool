@@ -1,6 +1,8 @@
 #include <Python.h>
 
 #include <errno.h>
+#include <stddef.h>
+#include <stdint.h>
 #include <unistd.h>
 #include <sys/socket.h>
 #include <net/if.h>
@@ -15,6 +17,8 @@ typedef __uint8_t u8;
 
 #include "ethtool-copy.h"
 #include <linux/sockios.h> /* for SIOCETHTOOL */
+
+#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 
 #define _PATH_PROCNET_DEV "/proc/net/dev"
 
@@ -405,11 +409,12 @@ static PyObject *get_businfo(PyObject *self __unused, PyObject *args)
 	return PyString_FromString(((struct ethtool_drvinfo *)buf)->bus_info);
 }
 
-static int send_command(int cmd, char *devname, struct ethtool_value *eval)
+static int send_command(int cmd, char *devname, void *value)
 {
 	/* Setup our control structures. */
 	int fd, err;
 	struct ifreq ifr;
+	struct ethtool_value *eval = value;
 
 	memset(&ifr, 0, sizeof(ifr));
 	strncpy(&ifr.ifr_name[0], devname, IFNAMSIZ);
@@ -436,24 +441,27 @@ static int send_command(int cmd, char *devname, struct ethtool_value *eval)
 	return err;
 }
 
-static int get_dev_value(int cmd, PyObject *args, void *value, size_t len)
+static int get_dev_value(int cmd, PyObject *args, void *value)
 {
 	char *devname;
 	int err = -1;
 
-	if (PyArg_ParseTuple(args, "s", &devname)) {
-		struct ethtool_value eval;
+	if (PyArg_ParseTuple(args, "s", &devname))
 		/* Setup our control structures. */
-		err = send_command(cmd, devname, &eval);
-		memcpy(value, &eval.data, len);
-	}
+		err = send_command(cmd, devname, value);
 
 	return err;
 }
 
 static int get_dev_int_value(int cmd, PyObject *args, int *value)
 {
-	return get_dev_value(cmd, args, value, sizeof(*value));
+	struct ethtool_value eval;
+	int rc = get_dev_value(cmd, args, &eval);
+
+	if (rc == 0)
+		*value = *(int *)&eval.data;
+
+	return rc;
 }
 
 static int dev_set_int_value(int cmd, PyObject *args)
@@ -519,6 +527,92 @@ static PyObject *get_sg(PyObject *self __unused, PyObject *args)
 	return Py_BuildValue("b", value);
 }
 
+struct struct_desc {
+	char	       *name;
+	unsigned short offset;
+	unsigned short size;
+};
+
+#define member_desc(type, member_name) { \
+	.name = #member_name, \
+	.offset = offsetof(type, member_name), \
+	.size = sizeof(((type *)0)->member_name), }
+
+struct struct_desc ethtool_coalesce_desc[] = {
+	member_desc(struct ethtool_coalesce, rx_coalesce_usecs),
+	member_desc(struct ethtool_coalesce, rx_max_coalesced_frames),
+	member_desc(struct ethtool_coalesce, rx_coalesce_usecs_irq),
+	member_desc(struct ethtool_coalesce, rx_max_coalesced_frames_irq),
+	member_desc(struct ethtool_coalesce, tx_coalesce_usecs),
+	member_desc(struct ethtool_coalesce, tx_max_coalesced_frames),
+	member_desc(struct ethtool_coalesce, tx_coalesce_usecs_irq),
+	member_desc(struct ethtool_coalesce, tx_max_coalesced_frames_irq),
+	member_desc(struct ethtool_coalesce, stats_block_coalesce_usecs),
+	member_desc(struct ethtool_coalesce, use_adaptive_rx_coalesce),
+	member_desc(struct ethtool_coalesce, use_adaptive_tx_coalesce),
+	member_desc(struct ethtool_coalesce, pkt_rate_low),
+	member_desc(struct ethtool_coalesce, rx_coalesce_usecs_low),
+	member_desc(struct ethtool_coalesce, rx_max_coalesced_frames_low),
+	member_desc(struct ethtool_coalesce, tx_coalesce_usecs_low),
+	member_desc(struct ethtool_coalesce, tx_max_coalesced_frames_low),
+	member_desc(struct ethtool_coalesce, pkt_rate_high),
+	member_desc(struct ethtool_coalesce, rx_coalesce_usecs_high),
+	member_desc(struct ethtool_coalesce, rx_max_coalesced_frames_high),
+	member_desc(struct ethtool_coalesce, tx_coalesce_usecs_high),
+	member_desc(struct ethtool_coalesce, tx_max_coalesced_frames_high),
+	member_desc(struct ethtool_coalesce, rate_sample_interval),
+};
+
+static PyObject *__struct_desc_create_dict(struct struct_desc *table,
+					   int nr_entries, void *values)
+{
+	int i;
+	PyObject *dict = PyDict_New();
+
+	if (dict == NULL)
+		goto out;
+
+	for (i = 0; i < nr_entries; ++i) {
+		struct struct_desc *d = &table[i];
+		PyObject *objval = NULL;
+		void *val = values + d->offset;
+
+		switch (d->size) {
+		case sizeof(uint32_t):
+			objval = PyInt_FromLong(*(uint32_t *)val);
+			break;
+		}
+
+		if (objval == NULL)
+			goto free_dict;
+
+		if (PyDict_SetItemString(dict, d->name, objval) != 0) {
+			Py_DECREF(objval);
+			goto free_dict;
+		}
+			
+		Py_DECREF(objval);
+	}
+out:
+	return dict;
+free_dict:
+	goto out;
+	dict = NULL;
+}
+
+#define struct_desc_create_dict(table, values) \
+	__struct_desc_create_dict(table, ARRAY_SIZE(table), values)
+
+static PyObject *get_coalesce(PyObject *self __unused, PyObject *args)
+{
+	struct ethtool_coalesce coal;
+
+	if (get_dev_value(ETHTOOL_GCOALESCE, args, &coal) < 0)
+		return NULL;
+
+	return struct_desc_create_dict(ethtool_coalesce_desc, &coal);
+}
+
 static struct PyMethodDef PyEthModuleMethods[] = {
 	{
 		.ml_name = "get_module",
@@ -548,6 +642,11 @@ static struct PyMethodDef PyEthModuleMethods[] = {
 	{
 		.ml_name = "get_broadcast",
 		.ml_meth = (PyCFunction)get_broadcast,
+		.ml_flags = METH_VARARGS,
+	},
+	{
+		.ml_name = "get_coalesce",
+		.ml_meth = (PyCFunction)get_coalesce,
 		.ml_flags = METH_VARARGS,
 	},
 	{

@@ -17,6 +17,7 @@ import getopt, ethtool, sys
 def usage():
 	print '''Usage: ethtool [OPTIONS] [<interface>]
 	-h|--help               Give this help list
+	-c|--show-coalesce      Show coalesce options
 	-i|--driver             Show driver information
 	-k|--show-offload       Get protocol offload information
 	-K|--offload            Set protocol offload
@@ -26,6 +27,81 @@ tab = ""
 
 def printtab(msg):
 	print tab + msg
+
+ethtool_coalesce_msgs = (
+	( "stats-block-usecs",
+	  "stats_block_coalesce_usecs" ),
+	( "sample-interval",
+	  "rate_sample_interval" ),
+	( "pkt-rate-low",
+	  "pkt_rate_low"),
+	( "pkt-rate-high",
+	  "pkt_rate_high"),
+	( "\n" ),
+	( "rx-usecs",
+	  "rx_coalesce_usecs"),
+	( "rx-frames",
+	  "rx_max_coalesced_frames"),
+	( "rx-usecs-irq",
+	  "rx_coalesce_usecs_irq"),
+	( "rx-frames-irq",
+	  "rx_max_coalesced_frames_irq"),
+	( "\n" ),
+	( "tx-usecs",
+	  "tx_coalesce_usecs"),
+	( "tx-frames",
+	  "tx_max_coalesced_frames"),
+	( "tx-usecs-irq",
+	  "tx_coalesce_usecs_irq"),
+	( "tx-frames-irq",
+	  "tx_max_coalesced_frames_irq"),
+	( "\n" ),
+	( "rx-usecs-low",
+	  "rx_coalesce_usecs_low"),
+	( "rx-frame-low",
+	  "rx_max_coalesced_frames_low"),
+	( "tx-usecs-low",
+	  "tx_coalesce_usecs_low"),
+	( "tx-frame-low",
+	  "tx_max_coalesced_frames_low"),
+	( "\n" ),
+	( "rx-usecs-high",
+	  "rx_coalesce_usecs_high"),
+	( "rx-frame-high",
+	  "rx_max_coalesced_frames_high"),
+	( "tx-usecs-high",
+	  "tx_coalesce_usecs_high"),
+	( "tx-frame-high",
+	  "tx_max_coalesced_frames_high"),
+)
+
+def show_coalesce(interface, args = None):
+	printtab("Coalesce parameters for %s:" % interface)
+	try:
+		coal = ethtool.get_coalesce(interface)
+	except IOError:
+		printtab("  NOT supported!")
+		return
+
+	printtab("Adaptive RX: %s  TX: %s" % (coal["use_adaptive_rx_coalesce"] and "on" or "off",
+					      coal["use_adaptive_tx_coalesce"] and "on" or "off"))
+
+	printed = [ "use_adaptive_rx_coalesce",
+		    "use_adaptive_tx_coalesce" ]
+	for tunable in ethtool_coalesce_msgs:
+		if tunable[0] == '\n':
+			print
+		else:
+			printtab("%s: %s" % (tunable[0], coal[tunable[1]]))
+			printed.append(tunable[1])
+
+	coalkeys = coal.keys()
+	if len(coalkeys) != len(printed):
+		print
+		for tunable in coalkeys:
+			if tunable not in printed:
+				printtab("%s %s" % (tunable, coal[tunable]))
+				
 
 def show_offload(interface, args = None):
 	try:
@@ -101,8 +177,9 @@ def run_cmd_noargs(cmd, args):
 def main():
 	try:
 		opts, args = getopt.getopt(sys.argv[1:],
-					   "hikK",
+					   "hcikK",
 					   ("help",
+					    "show-coalesce",
 					    "driver",
 					    "show-offload",
 					    "offload"))
@@ -119,6 +196,9 @@ def main():
 		if o in ("-h", "--help"):
 			usage()
 			return
+		elif o in ("-c", "--show-coalesce"):
+			run_cmd_noargs(show_coalesce, args)
+			break
 		elif o in ("-i", "--driver"):
 			run_cmd_noargs(show_driver, args)
 			break
