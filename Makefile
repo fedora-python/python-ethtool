@@ -46,3 +46,11 @@ bz2:
 
 rpm: bz2
 	rpmbuild -ba --define "_topdir $(PWD)/rpm" rpm/SPECS/${PKGNAME}.spec
+
+bz2dev:
+	@mkdir -p /tmp/${PKGNAME}-$(VERSION)
+	@tar cf - `cat MANIFEST` | (cd /tmp/${PKGNAME}-$(VERSION) ; tar xf -)
+	@(cd /tmp; tar cf - ${PKGNAME}-$(VERSION)) | bzip2 -9 > rpm/SOURCES/${PKGNAME}-$(VERSION).tar.bz2
+
+rpmdev: bz2dev
+	rpmbuild -ba --define "_topdir $(PWD)/rpm" rpm/SPECS/${PKGNAME}.spec
