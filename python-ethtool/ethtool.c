@@ -487,9 +487,6 @@ static PyObject *get_tso(PyObject *self __unused, PyObject *args)
 
 static PyObject *set_tso(PyObject *self __unused, PyObject *args)
 {
-	int pid, policy, priority;
-	struct ethtool_value param;
-
 	if (dev_set_int_value(ETHTOOL_STSO, args) < 0)
 		return NULL;
 
