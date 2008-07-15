@@ -603,6 +603,44 @@ free_dict:
 #define struct_desc_create_dict(table, values) \
 	__struct_desc_create_dict(table, ARRAY_SIZE(table), values)
 
+static int __struct_desc_from_dict(struct struct_desc *table,
+				   int nr_entries, void *to, PyObject *dict)
+{
+	char buf[2048];
+	int i;
+
+	for (i = 0; i < nr_entries; ++i) {
+		struct struct_desc *d = &table[i];
+		void *val = to + d->offset;
+		PyObject *obj;
+
+		switch (d->size) {
+		case sizeof(uint32_t):
+			obj = PyDict_GetItemString(dict, d->name);
+			if (obj == NULL) {
+				snprintf(buf, sizeof(buf),
+					"Missing dict entry for field %s",
+					d->name);
+				PyErr_SetString(PyExc_IOError, buf);
+				return -1;
+			}
+			*(uint32_t *)val = PyInt_AsLong(obj);
+			break;
+		default:
+			snprintf(buf, sizeof(buf),
+				 "Invalid type size %d for field %s",
+				 d->size, d->name);
+			PyErr_SetString(PyExc_IOError, buf);
+			return -1;
+		}
+	}
+
+	return 0;
+}
+
+#define struct_desc_from_dict(table, to, dict) \
+	__struct_desc_from_dict(table, ARRAY_SIZE(table), to, dict)
+
 static PyObject *get_coalesce(PyObject *self __unused, PyObject *args)
 {
 	struct ethtool_coalesce coal;
@@ -611,6 +649,25 @@ static PyObject *get_coalesce(PyObject *self __unused, PyObject *args)
 		return NULL;
 
 	return struct_desc_create_dict(ethtool_coalesce_desc, &coal);
+}
+
+static PyObject *set_coalesce(PyObject *self __unused, PyObject *args)
+{
+	struct ethtool_coalesce coal;
+	char *devname;
+	PyObject *dict;
+
+	if (!PyArg_ParseTuple(args, "sO", &devname, &dict))
+		return NULL;
+
+	if (struct_desc_from_dict(ethtool_coalesce_desc, &coal, dict) != 0)
+		return NULL;
+
+	if (send_command(ETHTOOL_SCOALESCE, devname, &coal))
+		return NULL;
+
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
 static struct PyMethodDef PyEthModuleMethods[] = {
@@ -647,6 +704,11 @@ static struct PyMethodDef PyEthModuleMethods[] = {
 	{
 		.ml_name = "get_coalesce",
 		.ml_meth = (PyCFunction)get_coalesce,
+		.ml_flags = METH_VARARGS,
+	},
+	{
+		.ml_name = "set_coalesce",
+		.ml_meth = (PyCFunction)set_coalesce,
 		.ml_flags = METH_VARARGS,
 	},
 	{

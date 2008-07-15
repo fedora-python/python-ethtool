@@ -18,6 +18,29 @@ def usage():
 	print '''Usage: ethtool [OPTIONS] [<interface>]
 	-h|--help               Give this help list
 	-c|--show-coalesce      Show coalesce options
+	-C|--coalesce		Set coalesce options
+		[adaptive-rx on|off]
+                [adaptive-tx on|off]
+                [rx-usecs N]
+                [rx-frames N]
+                [rx-usecs-irq N]
+                [rx-frames-irq N]
+                [tx-usecs N]
+                [tx-frames N]
+                [tx-usecs-irq N]
+                [tx-frames-irq N]
+                [stats-block-usecs N]
+                [pkt-rate-low N]
+                [rx-usecs-low N]
+                [rx-frames-low N]
+                [tx-usecs-low N]
+                [tx-frames-low N]
+                [pkt-rate-high N]
+                [rx-usecs-high N]
+                [rx-frames-high N]
+                [tx-usecs-high N]
+                [tx-frames-high N]
+                [sample-interval N]	
 	-i|--driver             Show driver information
 	-k|--show-offload       Get protocol offload information
 	-K|--offload            Set protocol offload
@@ -27,6 +50,8 @@ tab = ""
 
 def printtab(msg):
 	print tab + msg
+
+all_devices = []
 
 ethtool_coalesce_msgs = (
 	( "stats-block-usecs",
@@ -75,6 +100,19 @@ ethtool_coalesce_msgs = (
 	  "tx_max_coalesced_frames_high"),
 )
 
+def get_coalesce_dict_entry(ethtool_name):
+	if ethtool_name == "adaptive-rx":
+		return "use_adaptive_rx_coalesce"
+
+	if ethtool_name == "adaptive-tx":
+		return "use_adaptive_tx_coalesce"
+
+	for name in ethtool_coalesce_msgs:
+		if name[0] == ethtool_name:
+			return name[1]
+
+	return None
+
 def show_coalesce(interface, args = None):
 	printtab("Coalesce parameters for %s:" % interface)
 	try:
@@ -102,6 +140,36 @@ def show_coalesce(interface, args = None):
 			if tunable not in printed:
 				printtab("%s %s" % (tunable, coal[tunable]))
 				
+def set_coalesce(interface, args):
+	try:
+		coal = ethtool.get_coalesce(interface)
+	except IOError:
+		printtab("Interrupt coalescing NOT supported on %s!" % interface)
+		return
+
+	changed = False
+	args = [a.lower() for a in args]
+	for arg, value in [ ( args[i], args[i + 1] ) for i in range(0, len(args), 2) ]:
+		real_arg = get_coalesce_dict_entry(arg)
+		if not real_arg:
+			continue
+		if value == "on":
+			value = 1
+		elif value == "off":
+			value = 0
+		else:
+			try:
+				value = int(value)
+			except:
+				continue
+		if coal[real_arg] != value:
+			coal[real_arg] = value
+			changed = True
+
+	if not changed:
+		return
+
+	ethtool.set_coalesce(interface, coal)
 
 def show_offload(interface, args = None):
 	try:
@@ -154,12 +222,12 @@ def show_driver(interface, args = None):
 	printtab("bus-info: %s" % bus)
 
 def run_cmd(cmd, interface, args):
-	global tab
+	global tab, all_devices
 
 	active_devices = ethtool.get_active_devices()
 	if not interface:
 		tab = "  "
-		for interface in ethtool.get_devices():
+		for interface in all_devices:
 			inactive = " (not active)"
 			if interface in active_devices:
 				inactive = ""
@@ -172,14 +240,19 @@ def run_cmd_noargs(cmd, args):
 	if args:
 		run_cmd(cmd, args[0], None)
 	else:
+		global all_devices
+		all_devices = ethtool.get_devices()
 		run_cmd(cmd, None, None)
 
 def main():
+	global all_devices
+
 	try:
 		opts, args = getopt.getopt(sys.argv[1:],
-					   "hcikK",
+					   "hcCikK",
 					   ("help",
 					    "show-coalesce",
+					    "coalesce",
 					    "driver",
 					    "show-offload",
 					    "offload"))
@@ -205,16 +278,25 @@ def main():
 		elif o in ("-k", "--show-offload"):
 			run_cmd_noargs(show_offload, args)
 			break
-		elif o in ("-K", "--offload"):
-			if len(args) == 2:
-				interface = None
-			elif len(args) == 3:
-				interface = args[0]
-				args = args[1:]
-			else:
+		elif o in ("-K", "--offload",
+			   "-C", "--coalesce"):
+			all_devices = ethtool.get_devices()
+			if len(args) < 2:
 				usage()
 				sys.exit(1)
-			run_cmd(set_offload, interface, args)
+
+			if args[0] not in all_devices:
+				interface = None
+			else:
+				interface = args[0]
+				args = args[1:]
+
+			if o in ("-K", "--offload"):
+				cmd = set_offload
+			elif o in ("-C", "--coalesce"):
+				cmd = set_coalesce
+
+			run_cmd(cmd, interface, args)
 			break
 
 if __name__ == '__main__':
