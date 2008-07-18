@@ -207,6 +207,75 @@ def set_offload(interface, args):
 		except:
 			pass
 
+ethtool_ringparam_msgs = (
+	( "Pre-set maximums", ),
+	( "RX:\t\t", "rx_max_pending" ),
+	( "RX Mini:\t", "rx_mini_max_pending" ),
+	( "RX Jumbo:\t", "rx_jumbo_max_pending" ),
+	( "TX:\t\t", "tx_max_pending" ),
+	( "Current hardware settings", ),
+	( "RX:\t\t", "rx_pending" ),
+	( "RX Mini:\t", "rx_mini_pending" ),
+	( "RX Jumbo:\t", "rx_jumbo_pending" ),
+	( "TX:\t\t", "tx_pending" ),
+)
+
+def show_ring(interface, args = None):
+	printtab("Ring parameters for %s:" % interface)
+	try:
+		ring = ethtool.get_ringparam(interface)
+	except IOError:
+		printtab("  NOT supported!")
+		return
+
+	printed = []
+	for tunable in ethtool_ringparam_msgs:
+		if len(tunable) == 1:
+			printtab("%s:" % tunable[0])
+		else:
+			printtab("%s %s" % (tunable[0], ring[tunable[1]]))
+			printed.append(tunable[1])
+
+	ringkeys = ring.keys()
+	if len(ringkeys) != len(printed):
+		print
+		for tunable in ringkeys:
+			if tunable not in printed:
+				printtab("%s %s" % (tunable, ring[tunable]))
+
+ethtool_ringparam_map = {
+	"rx":	    "rx_pending",
+	"rx-mini":  "rx_mini_pending",
+	"rx-jumbo": "rx_jumbo_pending",
+	"tx":	    "tx_pending",
+}
+
+def set_ringparam(interface, args):
+	try:
+		ring = ethtool.get_ringparam(interface)
+	except IOError:
+		printtab("ring parameters NOT supported on %s!" % interface)
+		return
+
+	changed = False
+	args = [a.lower() for a in args]
+	for arg, value in [ ( args[i], args[i + 1] ) for i in range(0, len(args), 2) ]:
+		if not ethtool_ringparam_map.has_key(arg):
+			continue
+		try:
+			value = int(value)
+		except:
+			continue
+		real_arg = ethtool_ringparam_map[arg]
+		if ring[real_arg] != value:
+			ring[real_arg] = value
+			changed = True
+
+	if not changed:
+		return
+
+	ethtool.set_ringparam(interface, ring)
+
 def show_driver(interface, args = None):
 	try:
 		driver = ethtool.get_module(interface)
@@ -249,10 +318,12 @@ def main():
 
 	try:
 		opts, args = getopt.getopt(sys.argv[1:],
-					   "hcCikK",
+					   "hcCgGikK",
 					   ("help",
 					    "show-coalesce",
 					    "coalesce",
+					    "show-ring",
+					    "set-ring",
 					    "driver",
 					    "show-offload",
 					    "offload"))
@@ -278,8 +349,12 @@ def main():
 		elif o in ("-k", "--show-offload"):
 			run_cmd_noargs(show_offload, args)
 			break
+		elif o in ("-g", "--show-ring"):
+			run_cmd_noargs(show_ring, args)
+			break
 		elif o in ("-K", "--offload",
-			   "-C", "--coalesce"):
+			   "-C", "--coalesce",
+			   "-G", "--set-ring"):
 			all_devices = ethtool.get_devices()
 			if len(args) < 2:
 				usage()
@@ -295,6 +370,8 @@ def main():
 				cmd = set_offload
 			elif o in ("-C", "--coalesce"):
 				cmd = set_coalesce
+			elif o in ("-G", "--set-ring"):
+				cmd = set_ringparam
 
 			run_cmd(cmd, interface, args)
 			break

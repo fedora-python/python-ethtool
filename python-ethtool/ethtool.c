@@ -667,6 +667,46 @@ static PyObject *set_coalesce(PyObject *self __unused, PyObject *args)
 	return Py_None;
 }
 
+struct struct_desc ethtool_ringparam_desc[] = {
+	member_desc(struct ethtool_ringparam, rx_max_pending),
+	member_desc(struct ethtool_ringparam, rx_mini_max_pending),
+	member_desc(struct ethtool_ringparam, rx_jumbo_max_pending),
+	member_desc(struct ethtool_ringparam, tx_max_pending),
+	member_desc(struct ethtool_ringparam, rx_pending),
+	member_desc(struct ethtool_ringparam, rx_mini_pending),
+	member_desc(struct ethtool_ringparam, rx_jumbo_pending),
+	member_desc(struct ethtool_ringparam, tx_pending),
+};
+
+static PyObject *get_ringparam(PyObject *self __unused, PyObject *args)
+{
+	struct ethtool_ringparam ring;
+
+	if (get_dev_value(ETHTOOL_GRINGPARAM, args, &ring) < 0)
+		return NULL;
+
+	return struct_desc_create_dict(ethtool_ringparam_desc, &ring);
+}
+
+static PyObject *set_ringparam(PyObject *self __unused, PyObject *args)
+{
+	struct ethtool_ringparam ring;
+	char *devname;
+	PyObject *dict;
+
+	if (!PyArg_ParseTuple(args, "sO", &devname, &dict))
+		return NULL;
+
+	if (struct_desc_from_dict(ethtool_ringparam_desc, &ring, dict) != 0)
+		return NULL;
+
+	if (send_command(ETHTOOL_SRINGPARAM, devname, &ring))
+		return NULL;
+
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
 static struct PyMethodDef PyEthModuleMethods[] = {
 	{
 		.ml_name = "get_module",
@@ -716,6 +756,16 @@ static struct PyMethodDef PyEthModuleMethods[] = {
 	{
 		.ml_name = "get_active_devices",
 		.ml_meth = (PyCFunction)get_active_devices,
+		.ml_flags = METH_VARARGS,
+	},
+	{
+		.ml_name = "get_ringparam",
+		.ml_meth = (PyCFunction)get_ringparam,
+		.ml_flags = METH_VARARGS,
+	},
+	{
+		.ml_name = "set_ringparam",
+		.ml_meth = (PyCFunction)set_ringparam,
 		.ml_flags = METH_VARARGS,
 	},
 	{
