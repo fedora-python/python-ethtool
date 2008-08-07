@@ -1,4 +1,5 @@
 %{!?python_sitearch: %define python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib(1)")}
+%{!?python_ver: %define python_ver %(%{__python} -c "import sys ; print sys.version[:3]")}
 
 Summary: ethtool python bindings
 Name: python-ethtool
@@ -30,6 +31,9 @@ rm -rf %{buildroot}
 %doc COPYING
 %{_sbindir}/pethtool
 %{python_sitearch}/ethtool.so
+%if "%{python_ver}" >= "2.5"
+%{python_sitearch}/*.egg-info
+%endif
 
 %changelog
 * Tue Jun 10 2008 Arnaldo Carvalho de Melo <acme@redhat.com> - 0.1-3
