@@ -17,6 +17,9 @@ ethtool python bindings
 %prep
 %setup -q
 
+%build
+make
+
 %install
 rm -rf %{buildroot}
 make DESTDIR=%{buildroot} install
