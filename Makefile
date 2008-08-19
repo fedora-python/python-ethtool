@@ -1,5 +1,5 @@
 PACKAGE := python-ethtool
-VERSION := $(shell rpm -q --qf '%{VERSION}' --specfile rpm/SPECS/$(PACKAGE).spec)
+VERSION := $(shell rpm -q --qf '%{VERSION} ' --specfile rpm/SPECS/$(PACKAGE).spec | cut -d' ' -f1)
 
 rpmdirs:
 	@[ -d rpm/BUILD ]   || mkdir rpm/BUILD
