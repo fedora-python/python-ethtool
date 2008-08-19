@@ -477,7 +477,7 @@ static int dev_set_int_value(int cmd, PyObject *args)
 
 static PyObject *get_tso(PyObject *self __unused, PyObject *args)
 {
-	int value;
+	int value = 0;
 
 	if (get_dev_int_value(ETHTOOL_GTSO, args, &value) < 0)
 		return NULL;
@@ -496,7 +496,7 @@ static PyObject *set_tso(PyObject *self __unused, PyObject *args)
 
 static PyObject *get_ufo(PyObject *self __unused, PyObject *args)
 {
-	int value;
+	int value = 0;
 
 	if (get_dev_int_value(ETHTOOL_GUFO, args, &value) < 0)
 		return NULL;
@@ -506,7 +506,7 @@ static PyObject *get_ufo(PyObject *self __unused, PyObject *args)
 
 static PyObject *get_gso(PyObject *self __unused, PyObject *args)
 {
-	int value;
+	int value = 0;
 
 	if (get_dev_int_value(ETHTOOL_GGSO, args, &value) < 0)
 		return NULL;
@@ -516,7 +516,7 @@ static PyObject *get_gso(PyObject *self __unused, PyObject *args)
 
 static PyObject *get_sg(PyObject *self __unused, PyObject *args)
 {
-	int value;
+	int value = 0;
 
 	if (get_dev_int_value(ETHTOOL_GSG, args, &value) < 0)
 		return NULL;
