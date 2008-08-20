@@ -1,18 +1,20 @@
 %{!?python_sitearch: %define python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib(1)")}
 %{!?python_ver: %define python_ver %(%{__python} -c "import sys ; print sys.version[:3]")}
 
-Summary: ethtool python bindings
+Summary: Ethernet settings python bindings
 Name: python-ethtool
 Version: 0.2
 Release: 1%{?dist}
 Source0: %{name}-%{version}.tar.bz2
-License: GPLv2+
+License: GPLv2
 Group: System Environment/Libraries
 BuildRequires: python-devel
 BuildRoot:  %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 %description
-ethtool python bindings
+Python bindings for the ethtool kernel interface, that allows querying and
+changing of ethernet card settings, such as speed, port, autonegotiation, and
+PCI locations.
 
 %prep
 %setup -q
@@ -39,6 +41,10 @@ rm -rf %{buildroot}
 %endif
 
 %changelog
+* Wed Aug 20 2008 Arnaldo Carvalho de Melo <acme@redhat.com> - 0.2-1
+- Expand description and summary fields, as part of the fedora
+  review process.
+
 * Tue Jun 10 2008 Arnaldo Carvalho de Melo <acme@redhat.com> - 0.1-3
 - add dist to the release tag
 
