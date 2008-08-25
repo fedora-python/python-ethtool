@@ -124,7 +124,6 @@ static PyObject *get_devices(PyObject *self __unused, PyObject *args __unused)
 
 static PyObject *get_hwaddress(PyObject *self __unused, PyObject *args)
 {
-	struct ethtool_cmd ecmd;
 	struct ifreq ifr;
 	int fd, err;
 	char *devname;
@@ -133,8 +132,7 @@ static PyObject *get_hwaddress(PyObject *self __unused, PyObject *args)
 	if (!PyArg_ParseTuple(args, "s", &devname))
 		return NULL;
 
-	/* Setup our control structures. */
-	memset(&ecmd, 0, sizeof(ecmd));
+	/* Setup our request structure. */
 	memset(&ifr, 0, sizeof(ifr));
 	strncpy(&ifr.ifr_name[0], devname, IFNAMSIZ);
 	ifr.ifr_name[IFNAMSIZ - 1] = 0;
@@ -173,7 +171,6 @@ static PyObject *get_hwaddress(PyObject *self __unused, PyObject *args)
 
 static PyObject *get_ipaddress(PyObject *self __unused, PyObject *args)
 {
-	struct ethtool_cmd ecmd;
 	struct ifreq ifr;
 	int fd, err;
 	char *devname;
@@ -182,8 +179,7 @@ static PyObject *get_ipaddress(PyObject *self __unused, PyObject *args)
 	if (!PyArg_ParseTuple(args, "s", &devname))
 		return NULL;
 
-	/* Setup our control structures. */
-	memset(&ecmd, 0, sizeof(ecmd));
+	/* Setup our request structure. */
 	memset(&ifr, 0, sizeof(ifr));
 	strncpy(&ifr.ifr_name[0], devname, IFNAMSIZ);
 	ifr.ifr_name[IFNAMSIZ - 1] = 0;
@@ -217,9 +213,44 @@ static PyObject *get_ipaddress(PyObject *self __unused, PyObject *args)
 	return PyString_FromString(ipaddr);
 }
 
+static PyObject *get_flags (PyObject *self __unused, PyObject *args)
+{
+	struct ifreq ifr;
+	char *devname;
+	int fd, err;
+
+	if (!PyArg_ParseTuple(args, "s", &devname))
+		return NULL;
+
+	/* Setup our request structure. */
+	memset(&ifr, 0, sizeof(ifr));
+	strncpy(&ifr.ifr_name[0], devname, IFNAMSIZ);
+	ifr.ifr_name[IFNAMSIZ - 1] = 0;
+
+	/* Open control socket. */
+	fd = socket(AF_INET, SOCK_DGRAM, 0);
+	if (fd < 0) {
+		PyErr_SetString(PyExc_OSError, strerror(errno));
+		return NULL;
+	}
+	err = ioctl(fd, SIOCGIFFLAGS, &ifr);
+	if(err < 0) {
+		char buf[2048];
+		int eno = errno;
+		snprintf(buf, sizeof(buf), "[Errno %d] %s", eno, strerror(eno));
+		PyErr_SetString(PyExc_IOError, buf);
+		close(fd);
+		return NULL;
+	}
+
+	close(fd);
+
+	return Py_BuildValue("h", ifr.ifr_flags);
+
+
+}
 static PyObject *get_netmask (PyObject *self __unused, PyObject *args)
 {
-	struct ethtool_cmd ecmd;
 	struct ifreq ifr;
 	int fd, err;
 	char *devname;
@@ -228,8 +259,7 @@ static PyObject *get_netmask (PyObject *self __unused, PyObject *args)
 	if (!PyArg_ParseTuple(args, "s", &devname))
 		return NULL;
 
-	/* Setup our control structures. */
-	memset(&ecmd, 0, sizeof(ecmd));
+	/* Setup our request structure. */
 	memset(&ifr, 0, sizeof(ifr));
 	strncpy(&ifr.ifr_name[0], devname, IFNAMSIZ);
 	ifr.ifr_name[IFNAMSIZ - 1] = 0;
@@ -265,7 +295,6 @@ static PyObject *get_netmask (PyObject *self __unused, PyObject *args)
 
 static PyObject *get_broadcast(PyObject *self __unused, PyObject *args)
 {
-	struct ethtool_cmd ecmd;
 	struct ifreq ifr;
 	int fd, err;
 	char *devname;
@@ -274,8 +303,7 @@ static PyObject *get_broadcast(PyObject *self __unused, PyObject *args)
 	if (!PyArg_ParseTuple(args, "s", &devname))
 		return NULL;
 
-	/* Setup our control structures. */
-	memset(&ecmd, 0, sizeof(ecmd));
+	/* Setup our request structure. */
 	memset(&ifr, 0, sizeof(ifr));
 	strncpy(&ifr.ifr_name[0], devname, IFNAMSIZ);
 	ifr.ifr_name[IFNAMSIZ - 1] = 0;
@@ -427,7 +455,7 @@ static PyObject *get_businfo(PyObject *self __unused, PyObject *args)
 
 static int send_command(int cmd, char *devname, void *value)
 {
-	/* Setup our control structures. */
+	/* Setup our request structure. */
 	int fd, err;
 	struct ifreq ifr;
 	struct ethtool_value *eval = value;
@@ -463,7 +491,6 @@ static int get_dev_value(int cmd, PyObject *args, void *value)
 	int err = -1;
 
 	if (PyArg_ParseTuple(args, "s", &devname))
-		/* Setup our control structures. */
 		err = send_command(cmd, devname, value);
 
 	return err;
@@ -809,11 +836,34 @@ static struct PyMethodDef PyEthModuleMethods[] = {
 		.ml_meth = (PyCFunction)get_sg,
 		.ml_flags = METH_VARARGS,
 	},
+	{
+		.ml_name = "get_flags",
+		.ml_meth = (PyCFunction)get_flags,
+		.ml_flags = METH_VARARGS,
+	},
 	{	.ml_name = NULL, },
 };
 
 PyMODINIT_FUNC initethtool(void)
 {
-	Py_InitModule("ethtool", PyEthModuleMethods);
+	PyObject *m;
+	m = Py_InitModule("ethtool", PyEthModuleMethods);
+	PyModule_AddIntConstant(m, "IFF_UP", IFF_UP);			/* Interface is up. */
+	PyModule_AddIntConstant(m, "IFF_BROADCAST", IFF_BROADCAST);	/* Broadcast address valid. */
+	PyModule_AddIntConstant(m, "IFF_DEBUG", IFF_DEBUG);		/* Turn on debugging. */
+	PyModule_AddIntConstant(m, "IFF_LOOPBACK", IFF_LOOPBACK);	/* Is a loopback net */
+	PyModule_AddIntConstant(m, "IFF_POINTOPOINT", IFF_POINTOPOINT); /* Is a point-to-point link */
+	PyModule_AddIntConstant(m, "IFF_NOTRAILERS", IFF_NOTRAILERS);	/* Avoid use of trailers */
+	PyModule_AddIntConstant(m, "IFF_RUNNING", IFF_RUNNING);		/* Resources allocated */
+	PyModule_AddIntConstant(m, "IFF_NOARP", IFF_NOARP);		/* No address resolution protocol. */
+	PyModule_AddIntConstant(m, "IFF_PROMISC", IFF_PROMISC);		/* Receive all packets. */
+	PyModule_AddIntConstant(m, "IFF_ALLMULTI", IFF_ALLMULTI);	/* Receive all multicast packets. */
+	PyModule_AddIntConstant(m, "IFF_MASTER", IFF_MASTER);		/* Master of a load balancer. */
+	PyModule_AddIntConstant(m, "IFF_SLAVE", IFF_SLAVE);		/* Slave of a load balancer. */
+	PyModule_AddIntConstant(m, "IFF_MULTICAST", IFF_MULTICAST);	/* Supports multicast. */
+	PyModule_AddIntConstant(m, "IFF_PORTSEL", IFF_PORTSEL);		/* Can set media type. */
+	PyModule_AddIntConstant(m, "IFF_AUTOMEDIA", IFF_AUTOMEDIA);	/* Auto media select active. */
+	PyModule_AddIntConstant(m, "IFF_DYNAMIC", IFF_DYNAMIC);		/* Dialup device with changing addresses.  */
 }
+
 
