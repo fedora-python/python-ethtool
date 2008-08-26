@@ -3,7 +3,7 @@
 
 Summary: Ethernet settings python bindings
 Name: python-ethtool
-Version: 0.2
+Version: 0.3
 Release: 1%{?dist}
 URL: http://git.kernel.org/?p=linux/kernel/git/acme/python-ethtool.git
 Source: http://userweb.kernel.org/~acme/python-ethtool/%{name}-%{version}.tar.bz2
@@ -28,6 +28,7 @@ rm -rf %{buildroot}
 make DESTDIR=%{buildroot} install
 mkdir -p %{buildroot}%{_sbindir}
 cp -f pethtool.py %{buildroot}%{_sbindir}/pethtool
+cp -f pifconfig.py %{buildroot}%{_sbindir}/pifconfig
 
 %clean
 rm -rf %{buildroot}
@@ -36,12 +37,18 @@ rm -rf %{buildroot}
 %defattr(-,root,root)
 %doc COPYING
 %{_sbindir}/pethtool
+%{_sbindir}/pifconfig
 %{python_sitearch}/ethtool.so
 %if "%{python_ver}" >= "2.5"
 %{python_sitearch}/*.egg-info
 %endif
 
 %changelog
+* Tue Aug 26 2008 Arnaldo Carvalho de Melo <acme@redhat.com> - 0.3-1
+- Add get_flags method from the first python-ethtool contributor, yay
+- Add pifconfig command, that mimics the ifconfig tool using the
+  bindings available
+
 * Wed Aug 20 2008 Arnaldo Carvalho de Melo <acme@redhat.com> - 0.2-1
 - Expand description and summary fields, as part of the fedora
   review process.

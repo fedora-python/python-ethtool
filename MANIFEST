@@ -1,5 +1,6 @@
 COPYING
 pethtool.py
+pifconfig.py
 python-ethtool/ethtool.c
 python-ethtool/ethtool-copy.h
 setup.py
