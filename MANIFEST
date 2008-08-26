@@ -1,5 +1,5 @@
 COPYING
-ethtool-cmd.py
+pethtool.py
 python-ethtool/ethtool.c
 python-ethtool/ethtool-copy.h
 setup.py

@@ -27,7 +27,7 @@ make
 rm -rf %{buildroot}
 make DESTDIR=%{buildroot} install
 mkdir -p %{buildroot}%{_sbindir}
-cp -f ethtool-cmd.py %{buildroot}%{_sbindir}/pethtool
+cp -f pethtool.py %{buildroot}%{_sbindir}/pethtool
 
 %clean
 rm -rf %{buildroot}
