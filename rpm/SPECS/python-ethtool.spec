@@ -4,7 +4,7 @@
 Summary: Ethernet settings python bindings
 Name: python-ethtool
 Version: 0.3
-Release: 1%{?dist}
+Release: 2%{?dist}
 URL: http://git.kernel.org/?p=linux/kernel/git/acme/python-ethtool.git
 Source: http://userweb.kernel.org/~acme/python-ethtool/%{name}-%{version}.tar.bz2
 License: GPLv2
@@ -21,14 +21,14 @@ PCI locations.
 %setup -q
 
 %build
-make
+%{__python} setup.py build
 
 %install
 rm -rf %{buildroot}
-make DESTDIR=%{buildroot} install
+%{__python} setup.py install --skip-build --root %{buildroot}
 mkdir -p %{buildroot}%{_sbindir}
-cp -f pethtool.py %{buildroot}%{_sbindir}/pethtool
-cp -f pifconfig.py %{buildroot}%{_sbindir}/pifconfig
+cp -p pethtool.py %{buildroot}%{_sbindir}/pethtool
+cp -p pifconfig.py %{buildroot}%{_sbindir}/pifconfig
 
 %clean
 rm -rf %{buildroot}
@@ -44,6 +44,10 @@ rm -rf %{buildroot}
 %endif
 
 %changelog
+* Fri Sep  5 2008 Arnaldo Carvalho de Melo <acme@redhat.com> - 0.3-2
+- Rewrote build and install sections as part of the fedora review process
+  BZ #459549
+
 * Tue Aug 26 2008 Arnaldo Carvalho de Melo <acme@redhat.com> - 0.3-1
 - Add get_flags method from the first python-ethtool contributor, yay
 - Add pifconfig command, that mimics the ifconfig tool using the
