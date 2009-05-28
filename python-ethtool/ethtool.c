@@ -26,6 +26,10 @@
 #include <sys/ioctl.h>
 #include <sys/types.h>
 
+#ifndef IFF_DYNAMIC
+#define IFF_DYNAMIC     0x8000          /* dialup device with changing addresses*/
+#endif
+
 typedef unsigned long long u64;
 typedef __uint32_t u32;
 typedef __uint16_t u16;
