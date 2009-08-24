@@ -26,6 +26,8 @@
 #include <sys/ioctl.h>
 #include <sys/types.h>
 
+#include "etherinfo.h"
+
 #ifndef IFF_DYNAMIC
 #define IFF_DYNAMIC     0x8000          /* dialup device with changing addresses*/
 #endif
@@ -41,6 +43,8 @@ typedef __uint8_t u8;
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 
 #define _PATH_PROCNET_DEV "/proc/net/dev"
+
+struct etherinfo *ethernet_devices = NULL;
 
 static PyObject *get_active_devices(PyObject *self __unused, PyObject *args __unused)
 {
@@ -216,6 +220,32 @@ static PyObject *get_ipaddress(PyObject *self __unused, PyObject *args)
 
 	return PyString_FromString(ipaddr);
 }
+
+static PyObject *get_ipaddresses(PyObject *self __unused, PyObject *args) {
+	PyObject *devlist = NULL;
+	struct etherinfo *ethptr = NULL;
+
+	devlist = PyList_New(0);
+	for( ethptr = ethernet_devices; ethptr->next != NULL; ethptr = ethptr->next) {
+		if( ethptr->ipv4_address ) {
+			PyObject *dev = PyList_New(0);
+			PyList_Append(dev, PyString_FromString(ethptr->device));
+			PyList_Append(dev, PyInt_FromLong(AF_INET));
+			PyList_Append(dev, PyString_FromString(ethptr->ipv4_address));
+			PyList_Append(devlist, dev);
+		}
+		if( ethptr->ipv6_address ) {
+			PyObject *dev = PyList_New(0);
+			PyList_Append(dev, PyString_FromString(ethptr->device));
+			PyList_Append(dev, PyInt_FromLong(AF_INET6));
+			PyList_Append(dev, PyString_FromString(ethptr->ipv6_address));
+			PyList_Append(devlist, dev);
+		}
+	}
+
+	return devlist;
+}
+
 
 static PyObject *get_flags (PyObject *self __unused, PyObject *args)
 {
@@ -776,6 +806,11 @@ static struct PyMethodDef PyEthModuleMethods[] = {
 		.ml_flags = METH_VARARGS,
 	},
 	{
+		.ml_name = "get_ipaddresses",
+		.ml_meth = (PyCFunction)get_ipaddresses,
+		.ml_flags = METH_VARARGS,
+	},
+	{
 		.ml_name = "get_netmask",
 		.ml_meth = (PyCFunction)get_netmask,
 		.ml_flags = METH_VARARGS,
@@ -868,6 +903,9 @@ PyMODINIT_FUNC initethtool(void)
 	PyModule_AddIntConstant(m, "IFF_PORTSEL", IFF_PORTSEL);		/* Can set media type. */
 	PyModule_AddIntConstant(m, "IFF_AUTOMEDIA", IFF_AUTOMEDIA);	/* Auto media select active. */
 	PyModule_AddIntConstant(m, "IFF_DYNAMIC", IFF_DYNAMIC);		/* Dialup device with changing addresses.  */
-}
+	PyModule_AddIntConstant(m, "AF_INET", AF_INET);                 /* IPv4 interface */
+	PyModule_AddIntConstant(m, "AF_INET6", AF_INET6);               /* IPv6 interface */
 
+	ethernet_devices = get_etherinfo();
+}
 
