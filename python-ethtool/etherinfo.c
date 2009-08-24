@@ -74,7 +74,9 @@ int update_etherinfo(struct etherinfo *ipadrchain, int index, int af_type,
                 }
         }
         if( ptr == NULL ) {
-                return 0;
+		PyErr_SetString(PyExc_RuntimeError,
+				"Could not locate interface record");
+            return 0;
         }
 
         switch( af_type ) {
@@ -221,7 +223,7 @@ int read_netlink_results(int fd, struct sockaddr_nl *local,
 		}
 
 		if (status == 0) {
-			fprintf(stderr, "** ERROR ** EOF on netlink\n");
+			PyErr_SetString(PyExc_RuntimeError, "EOF on netlink");
 			return 0;
 		}
 
@@ -240,7 +242,8 @@ int read_netlink_results(int fd, struct sockaddr_nl *local,
 				struct nlmsgerr *err = (struct nlmsgerr*)NLMSG_DATA(h);
 
 				if (h->nlmsg_len < NLMSG_LENGTH(sizeof(struct nlmsgerr))) {
-					fprintf(stderr, "** ERROR ** Error message truncated\n");
+					PyErr_SetString(PyExc_RuntimeError,
+							"Error message truncated\n");
 				} else {
 					errno = -err->error;
 					PyErr_SetString(PyExc_OSError, strerror(errno));
@@ -249,7 +252,7 @@ int read_netlink_results(int fd, struct sockaddr_nl *local,
 			}
 			// Process/decode data
 			if( !callback(h, ethinf, &process_ethinfo_idxptr) ) {
-				fprintf(stderr, "** ERROR ** callback failed\n");
+				// Error already set in callback
 				return 0;
 			}
 		skip_data:
@@ -257,11 +260,11 @@ int read_netlink_results(int fd, struct sockaddr_nl *local,
 		}
 
 		if (msg.msg_flags & MSG_TRUNC) {
-			fprintf(stderr, "** INFO ** Message truncated\n");
+			PyErr_SetString(PyExc_RuntimeError, "Message truncated\n");
 			continue;
 		}
 		if (status) {
-			fprintf(stderr, "** WARNING ** Remnant of size %d\n", status);
+			PyErr_SetString(PyExc_RuntimeError, "Not all data available was processed");
 			return 0;
 		}
 	}
@@ -322,6 +325,8 @@ int etherinfo_proc_getlink(struct nlmsghdr *msg, struct etherinfo *ethinfchain, 
                 // Append new record if we hit the end of the chain
                 (*idxptr)->next = new_etherinfo_record();
 		if( *idxptr == NULL ) {
+			PyErr_SetString(PyExc_RuntimeError,
+					"Could not allocate memory to another interface");
 			return 0;
 		}
         }
@@ -333,10 +338,20 @@ int etherinfo_proc_getlink(struct nlmsghdr *msg, struct etherinfo *ethinfchain, 
 		switch( rta->rta_type ) {
 		case IFLA_IFNAME:
                         (*idxptr)->device = strdup((char *)RTA_DATA(rta));
+			if( !(*idxptr)->device ) {
+				PyErr_SetString(PyExc_RuntimeError,
+						"Could not allocate memory for interface name");
+				return 0;
+			}
 			break;
 
 		case IFLA_ADDRESS:
                         (*idxptr)->hwaddress = (char *)malloc(258);
+			if( !(*idxptr)->hwaddress ) {
+				PyErr_SetString(PyExc_RuntimeError,
+						"Could not allocate memory for hardware address");
+				return 0;
+			}
                         memset((*idxptr)->hwaddress, 0, 258);
                         ll_addr_n2a(RTA_DATA(rta), RTA_PAYLOAD(rta), ifinfo->ifi_type,
 				    (*idxptr)->hwaddress, 256);
@@ -369,6 +384,11 @@ int etherinfo_proc_getaddr(struct nlmsghdr *msg, struct etherinfo *ethinfchain, 
 		switch( rta->rta_type ) {
 		case IFA_ADDRESS: // IP address + netmask
                         ifa_addr = (char *) malloc(130);
+			if( !ifa_addr ) {
+				PyErr_SetString(PyExc_RuntimeError,
+						"Could not allocate memory for IP address");
+				return 0;
+			}
                         memset(ifa_addr, 0, 130);
 			inet_ntop(ifaddr->ifa_family, RTA_DATA(rta), ifa_addr, 128);
                         ifa_netmask = ifaddr->ifa_prefixlen;
@@ -376,6 +396,11 @@ int etherinfo_proc_getaddr(struct nlmsghdr *msg, struct etherinfo *ethinfchain, 
 
 		case IFA_BROADCAST:
                         ifa_brd = (char *) malloc(130);
+			if( !ifa_brd ) {
+				PyErr_SetString(PyExc_RuntimeError,
+						"Could not allocate memory for broadcase address");
+				return 0;
+			}
                         memset(ifa_brd, 0, 130);
 			inet_ntop(ifaddr->ifa_family, RTA_DATA(rta), ifa_brd, 128);
 			break;
@@ -429,7 +454,7 @@ void dump_etherinfo(FILE *fp, struct etherinfo *ethinfo)
 
 struct etherinfo *get_etherinfo()
 {
-	int fd, result;
+	int fd;
 	struct sockaddr_nl local;
 	struct etherinfo *ethinf = NULL;
 
@@ -452,37 +477,29 @@ struct etherinfo *get_etherinfo()
 
         // Get some hardware info - ifname, type and hwaddress.  Populates ethinf
 	if( !send_netlink_query(fd, GET_LINK) ) {
-		result = 1;
 		goto error;
 	}
 	if( !read_netlink_results(fd, &local, etherinfo_proc_getlink, ethinf) ) {
-		result = 1;
 		goto error;
 	}
 
 
         // IPv4 information - updates the interfaces found in ethinfo
 	if( !send_netlink_query(fd, GET_IPV4) ) {
-		result = 1;
 		goto error;
 	}
 	if( !read_netlink_results(fd, &local, etherinfo_proc_getaddr, ethinf) ) {
-		result = 1;
 		goto error;
 	}
 
 
         // IPv6 information - updates the interfaces found in ethinfo
 	if( !send_netlink_query(fd, GET_IPV6) ) {
-		result = 1;
 		goto error;
 	}
 	if( !read_netlink_results(fd, &local, etherinfo_proc_getaddr, ethinf) ) {
-		result = 1;
 		goto error;
 	}
-
-	result = 0;
 	goto exit;
 
  error:
