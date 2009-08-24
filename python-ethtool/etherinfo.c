@@ -15,6 +15,7 @@
  * General Public License for more details.
  */
 
+#include <Python.h>
 #include <bits/sockaddr.h>
 #include <stdio.h>
 #include <string.h>
@@ -50,7 +51,7 @@ inline struct etherinfo *new_etherinfo_record()
 {
 	struct etherinfo *ptr;
 
-	ptr = (struct etherinfo *) malloc(sizeof(struct etherinfo)+1);
+	ptr = malloc(sizeof(struct etherinfo)+1);
 	if( ptr ) {
 		memset(ptr, 0, sizeof(struct etherinfo)+1);
 	}
@@ -132,12 +133,12 @@ int open_netlink_socket(struct sockaddr_nl *local)
 
 	fd = socket(local->nl_family, SOCK_RAW, NETLINK_ROUTE);
 	if(fd < 0) {
-		PyErr_SetString(PuExc_OSError, strerror(errno));
+		PyErr_SetString(PyExc_OSError, strerror(errno));
 		return -1;
 	}
 
 	if(bind(fd, (struct sockaddr*) local, sizeof(*local)) < 0) {
-		PyErr_SetString(PuExc_OSError, strerror(errno));
+		PyErr_SetString(PyExc_OSError, strerror(errno));
 		return -1;
 	}
 
@@ -177,7 +178,7 @@ int send_netlink_query(int fd, int get_type)
 	msg_info.msg_iovlen = 1;
 
 	if( sendmsg(fd, &msg_info, 0) < 0 ) {
-		PyErr_SetString(PuExc_OSError, strerror(errno));
+		PyErr_SetString(PyExc_OSError, strerror(errno));
 		return 0;
 	}
 	return 1;
@@ -215,7 +216,7 @@ int read_netlink_results(int fd, struct sockaddr_nl *local,
 		if (status < 0) {
 			if (errno == EINTR || errno == EAGAIN)
 				continue;
-			PyErr_SetString(PuExc_OSError, strerror(errno));
+			PyErr_SetString(PyExc_OSError, strerror(errno));
 			return 0;
 		}
 
@@ -242,7 +243,7 @@ int read_netlink_results(int fd, struct sockaddr_nl *local,
 					fprintf(stderr, "** ERROR ** Error message truncated\n");
 				} else {
 					errno = -err->error;
-					PyErr_SetString(PuExc_OSError, strerror(errno));
+					PyErr_SetString(PyExc_OSError, strerror(errno));
 				}
 				return 0;
 			}
