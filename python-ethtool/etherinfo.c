@@ -37,7 +37,6 @@
 struct nl_request {
 	struct nlmsghdr		nlmsg_info;
 	struct ifaddrmsg	ifaddrmsg_info;
-	char			buffer[2048];
 };
 
 /*
@@ -51,7 +50,9 @@ inline struct etherinfo *new_etherinfo_record()
 	struct etherinfo *ptr;
 
 	ptr = (struct etherinfo *) malloc(sizeof(struct etherinfo)+1);
-	memset(ptr, 0, sizeof(struct etherinfo)+1);
+	if( ptr ) {
+		memset(ptr, 0, sizeof(struct etherinfo)+1);
+	}
 
 	return ptr;
 }
@@ -130,12 +131,12 @@ int open_netlink_socket(struct sockaddr_nl *local)
 
 	fd = socket(local->nl_family, SOCK_RAW, NETLINK_ROUTE);
 	if(fd < 0) {
-		perror("socket\n");
+		PyErr_SetString(PuExc_OSError, strerror(errno));
 		return -1;
 	}
 
 	if(bind(fd, (struct sockaddr*) local, sizeof(*local)) < 0) {
-		perror("sock bind");
+		PyErr_SetString(PuExc_OSError, strerror(errno));
 		return -1;
 	}
 
@@ -175,7 +176,7 @@ int send_netlink_query(int fd, int get_type)
 	msg_info.msg_iovlen = 1;
 
 	if( sendmsg(fd, &msg_info, 0) < 0 ) {
-		perror("sendmsg");
+		PyErr_SetString(PuExc_OSError, strerror(errno));
 		return 0;
 	}
 	return 1;
@@ -213,7 +214,7 @@ int read_netlink_results(int fd, struct sockaddr_nl *local,
 		if (status < 0) {
 			if (errno == EINTR || errno == EAGAIN)
 				continue;
-			perror("recvmsg");
+			PyErr_SetString(PuExc_OSError, strerror(errno));
 			return 0;
 		}
 
@@ -240,7 +241,7 @@ int read_netlink_results(int fd, struct sockaddr_nl *local,
 					fprintf(stderr, "** ERROR ** Error message truncated\n");
 				} else {
 					errno = -err->error;
-					perror("RTNETLINK error");
+					PyErr_SetString(PuExc_OSError, strerror(errno));
 				}
 				return 0;
 			}
@@ -318,6 +319,9 @@ int etherinfo_proc_getlink(struct nlmsghdr *msg, struct etherinfo *ethinfchain, 
         if( (*idxptr)->next == NULL ) {
                 // Append new record if we hit the end of the chain
                 (*idxptr)->next = new_etherinfo_record();
+		if( *idxptr == NULL ) {
+			return 0;
+		}
         }
 
         // Store information
@@ -440,6 +444,9 @@ struct etherinfo *get_etherinfo()
 
 	// Create an empty record, where ethernet information will be saved
 	ethinf = new_etherinfo_record();
+	if( !ethinf ) {
+		return NULL;
+	}
 
         // Get some hardware info - ifname, type and hwaddress.  Populates ethinf
 	if( !send_netlink_query(fd, GET_LINK) ) {
