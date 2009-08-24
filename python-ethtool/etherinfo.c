@@ -3,6 +3,7 @@
  * Copyright (C) 2009 Red Hat Inc.
  *
  * David Sommerseth <davids@redhat.com>
+ * Parts of this code is based on ideas and solutions in iproute2
  *
  * This application is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
