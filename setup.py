@@ -3,7 +3,8 @@
 from distutils.core import setup, Extension
 
 ethtool = Extension('ethtool',
-		    sources = ['python-ethtool/ethtool.c', 'python-ethtool/etherinfo.c'])
+		    sources = ['python-ethtool/ethtool.c',
+                               'python-ethtool/etherinfo.c', 'python-ethtool/etherinfo_obj.c'])
 
 # don't reformat this line, Makefile parses it
 setup(name='ethtool',

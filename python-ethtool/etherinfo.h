@@ -31,6 +31,7 @@ struct etherinfo {
 };
 
 struct etherinfo *get_etherinfo();
+void free_etherinfo(struct etherinfo *ptr);
 void dump_etherinfo(FILE *, struct etherinfo *);
 
 #endif

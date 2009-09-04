@@ -27,6 +27,7 @@
 #include <sys/types.h>
 
 #include "etherinfo.h"
+#include "etherinfo_obj.h"
 
 #ifndef IFF_DYNAMIC
 #define IFF_DYNAMIC     0x8000          /* dialup device with changing addresses*/
@@ -45,6 +46,7 @@ typedef __uint8_t u8;
 #define _PATH_PROCNET_DEV "/proc/net/dev"
 
 struct etherinfo *ethernet_devices = NULL;
+int etherinfo_cache_dirty = 0;
 
 static PyObject *get_active_devices(PyObject *self __unused, PyObject *args __unused)
 {
@@ -224,6 +226,10 @@ static PyObject *get_ipaddress(PyObject *self __unused, PyObject *args)
 static PyObject *get_ipaddresses(PyObject *self __unused, PyObject *args) {
 	PyObject *devlist = NULL;
 	struct etherinfo *ethptr = NULL;
+
+	if( ethernet_devices == NULL ) {
+		ethernet_devices = get_etherinfo();
+	}
 
 	devlist = PyList_New(0);
 	for( ethptr = ethernet_devices; ethptr->next != NULL; ethptr = ethptr->next) {
@@ -883,10 +889,19 @@ static struct PyMethodDef PyEthModuleMethods[] = {
 	{	.ml_name = NULL, },
 };
 
+
 PyMODINIT_FUNC initethtool(void)
 {
 	PyObject *m;
-	m = Py_InitModule("ethtool", PyEthModuleMethods);
+	m = Py_InitModule3("ethtool", PyEthModuleMethods, "Python ethtool module");
+
+	// Prepare the ethtool.etherinfo class
+	if (PyType_Ready(&ethtool_etherinfoType) < 0)
+		return;
+	Py_INCREF(&ethtool_etherinfoType);
+	PyModule_AddObject(m, "etherinfo", (PyObject *)&ethtool_etherinfoType);
+
+	// Setup constants
 	PyModule_AddIntConstant(m, "IFF_UP", IFF_UP);			/* Interface is up. */
 	PyModule_AddIntConstant(m, "IFF_BROADCAST", IFF_BROADCAST);	/* Broadcast address valid. */
 	PyModule_AddIntConstant(m, "IFF_DEBUG", IFF_DEBUG);		/* Turn on debugging. */
@@ -905,7 +920,5 @@ PyMODINIT_FUNC initethtool(void)
 	PyModule_AddIntConstant(m, "IFF_DYNAMIC", IFF_DYNAMIC);		/* Dialup device with changing addresses.  */
 	PyModule_AddIntConstant(m, "AF_INET", AF_INET);                 /* IPv4 interface */
 	PyModule_AddIntConstant(m, "AF_INET6", AF_INET6);               /* IPv6 interface */
-
-	ethernet_devices = get_etherinfo();
 }
 
