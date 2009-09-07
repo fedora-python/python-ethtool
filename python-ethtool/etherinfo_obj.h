@@ -20,6 +20,7 @@ PyObject *_ethtool_etherinfo_new(PyTypeObject *, PyObject *, PyObject *);
 int _ethtool_etherinfo_init(etherinfo_py *, PyObject *, PyObject *);
 PyObject *_ethtool_etherinfo_getter(etherinfo_py *, PyObject *);
 int _ethtool_etherinfo_setter(etherinfo_py *, PyObject *, PyObject *);
+PyObject *_ethtool_etherinfo_str(etherinfo_py *self);
 
 /**
  * This is required by Python, which lists all accessible methods
@@ -73,7 +74,7 @@ PyTypeObject ethtool_etherinfoType = {
     0,                         /*tp_as_mapping*/
     0,                         /*tp_hash */
     0,                         /*tp_call*/
-    0,                         /*tp_str*/
+    (reprfunc)_ethtool_etherinfo_str,        /*tp_str*/
     (getattrofunc)_ethtool_etherinfo_getter, /*tp_getattro*/
     (setattrofunc)_ethtool_etherinfo_setter, /*tp_setattro*/
     0,                         /*tp_as_buffer*/

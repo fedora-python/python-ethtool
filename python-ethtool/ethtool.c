@@ -45,9 +45,6 @@ typedef __uint8_t u8;
 
 #define _PATH_PROCNET_DEV "/proc/net/dev"
 
-struct etherinfo *ethernet_devices = NULL;
-int etherinfo_cache_dirty = 0;
-
 static PyObject *get_active_devices(PyObject *self __unused, PyObject *args __unused)
 {
 	PyObject *list;
@@ -226,10 +223,9 @@ static PyObject *get_ipaddress(PyObject *self __unused, PyObject *args)
 static PyObject *get_ipaddresses(PyObject *self __unused, PyObject *args) {
 	PyObject *devlist = NULL;
 	struct etherinfo *ethptr = NULL;
+	struct etherinfo *ethernet_devices = NULL;
 
-	if( ethernet_devices == NULL ) {
-		ethernet_devices = get_etherinfo();
-	}
+	ethernet_devices = get_etherinfo();
 
 	devlist = PyList_New(0);
 	for( ethptr = ethernet_devices; ethptr->next != NULL; ethptr = ethptr->next) {
@@ -247,6 +243,57 @@ static PyObject *get_ipaddresses(PyObject *self __unused, PyObject *args) {
 			PyList_Append(dev, PyString_FromString(ethptr->ipv6_address));
 			PyList_Append(devlist, dev);
 		}
+	}
+	free_etherinfo(ethernet_devices);
+
+	return devlist;
+}
+
+
+/**
+ * Retrieves the current information about all interfaces.  All interfaces will be
+ * returned as a list of objects per interface.
+ *
+ * @param self Not used
+ * @param args Python arguments
+ *
+ * @return Python list of objects on success, otherwise NULL.
+ */
+static PyObject *get_interfaceinfo(PyObject *self __unused, PyObject *args) {
+	PyObject *devlist = NULL, *ethinf_py = NULL;
+	struct etherinfo *devinfo = NULL, *ptr = NULL;
+
+	devinfo = get_etherinfo();
+	if( !devinfo ) {
+		PyErr_SetString(PyExc_OSError, strerror(errno));
+		return NULL;
+	}
+
+	/* Slice up the etherinfo struct and populate individual objects with
+	 * the current ethernet information.
+	 */
+	devlist = PyList_New(0);
+        while( devinfo->next != NULL ) {
+		/* Get copy of pointers, before we start slicing it up */
+		ptr = devinfo->next;  /* Fetch the pointer to the next element first */
+		devinfo->next = NULL; /* Make the current slice do not point anywhere else */
+
+		/* Instantiate a new etherinfo object with the device information */
+		ethinf_py = PyCObject_FromVoidPtr(devinfo, NULL);
+		if( ethinf_py ) {
+			/* Prepare the argument list for the object constructor */
+			PyObject *args = PyTuple_New(1);
+			PyTuple_SetItem(args, 0, ethinf_py);
+
+			/* Create the object */
+			PyObject *dev = PyObject_CallObject((PyObject *)&ethtool_etherinfoType, args);
+			PyList_Append(devlist, dev);
+		}
+		devinfo = ptr; 	/* Go to the next element */
+	}
+	/* clean up headers which might not be used or considered interesting */
+	if( devinfo != NULL ) {
+		free_etherinfo(devinfo);
 	}
 
 	return devlist;
@@ -814,6 +861,11 @@ static struct PyMethodDef PyEthModuleMethods[] = {
 	{
 		.ml_name = "get_ipaddresses",
 		.ml_meth = (PyCFunction)get_ipaddresses,
+		.ml_flags = METH_VARARGS,
+	},
+	{
+		.ml_name = "get_interface_info",
+		.ml_meth = (PyCFunction)get_interfaceinfo,
 		.ml_flags = METH_VARARGS,
 	},
 	{

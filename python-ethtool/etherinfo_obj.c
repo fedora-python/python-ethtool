@@ -41,8 +41,6 @@ PyObject *_ethtool_etherinfo_new(PyTypeObject *type, PyObject *args, PyObject *k
 	etherinfo_py *self;
 
 	self = (etherinfo_py *)type->tp_alloc(type, 0);
-	if (self != NULL) {
-	}
 	return (PyObject *)self;
 }
 
@@ -58,12 +56,25 @@ PyObject *_ethtool_etherinfo_new(PyTypeObject *type, PyObject *args, PyObject *k
  */
 int _ethtool_etherinfo_init(etherinfo_py *self, PyObject *args, PyObject *kwds)
 {
-	self->info = (struct etherinfo *) malloc(sizeof(struct etherinfo)+2);
-	memset(self->info, 0, sizeof(struct etherinfo)+2);
-	self->info->device = strdup("test");
+	static char *etherinfo_kwlist[] = {"etherinfo_ptr", NULL};
+	PyObject *ethinf_ptr = NULL;
+
+	if( !PyArg_ParseTupleAndKeywords(args, kwds, "O", etherinfo_kwlist, &ethinf_ptr)) {
+		PyErr_SetString(PyExc_AttributeError, "Invalid data pointer to constructor");
+		return -1;
+	}
+	self->info = (struct etherinfo *) PyCObject_AsVoidPtr(ethinf_ptr);
 	return 0;
 }
 
+/**
+ * Null safe PyString_FromString() wrapper.  If input string is NULL, a False value will be returned
+ *
+ * @param str Input C string (char *)
+ *
+ * @return Returns a PyObject with either the input string wrapped up, or a Python False value.
+ */
+#define RETURN_STRING(str) (str ? PyString_FromString(str) : Py_False);
 
 /**
  * ethtool.etherinfo function for retrieving data from a Python object.
@@ -83,17 +94,17 @@ PyObject *_ethtool_etherinfo_getter(etherinfo_py *self, PyObject *attr_o)
 	}
 
 	if( strcmp(attr, "device") == 0 ) {
-		return PyString_FromString(self->info->device);
+		return RETURN_STRING(self->info->device);
 	} else if( strcmp(attr, "mac_address") == 0 ) {
-		return PyString_FromString(self->info->hwaddress);
+		return RETURN_STRING(self->info->hwaddress);
 	} else if( strcmp(attr, "ipv4_address") == 0 ) {
-		return PyString_FromString(self->info->ipv4_address);
+		return RETURN_STRING(self->info->ipv4_address);
 	} else if( strcmp(attr, "ipv4_netmask") == 0 ) {
 		return PyInt_FromLong(self->info->ipv4_netmask);
 	} else if( strcmp(attr, "ipv4_broadcast") == 0 ) {
-		return PyString_FromString(self->info->ipv4_broadcast);
+		return RETURN_STRING(self->info->ipv4_broadcast);
 	} else if( strcmp(attr, "ipv6_address") == 0 ) {
-		return PyString_FromString(self->info->ipv6_address);
+		return RETURN_STRING(self->info->ipv6_address);
 	} else if( strcmp(attr, "ipv6_netmask") == 0 ) {
 		return PyInt_FromLong(self->info->ipv6_netmask);
 	}
@@ -119,3 +130,46 @@ int _ethtool_etherinfo_setter(etherinfo_py *self, PyObject *attr_o, PyObject *va
 }
 
 
+/**
+ * Creates a human readable format of the information when object is being treated as a string
+ *
+ * @param self
+ *
+ * @return Returns a PyObject with a string with all of the information
+ */
+PyObject *_ethtool_etherinfo_str(etherinfo_py *self)
+{
+	PyObject *ret = NULL;
+
+	if( !self || !self->info ) {
+		PyErr_SetString(PyExc_AttributeError, "No data available");
+		return NULL;
+	}
+
+	ret = PyString_FromFormat("Device %s:\n", self->info->device);
+	if( self->info->hwaddress ) {
+		PyObject *tmp = PyString_FromFormat("\tMAC address: %s\n", self->info->hwaddress);
+		PyString_Concat(&ret, tmp);
+	}
+
+	if( self->info->ipv4_address ) {
+		PyObject *tmp = PyString_FromFormat("\tIPv4 address: %s/%i",
+						   self->info->ipv4_address,
+						   self->info->ipv4_netmask);
+		if( self->info->ipv4_broadcast ) {
+			PyObject *tmp2 = PyString_FromFormat("    Broadcast: %s",
+							     self->info->ipv4_broadcast);
+			PyString_Concat(&tmp, tmp2);
+		}
+		PyString_Concat(&tmp, PyString_FromString("\n"));
+		PyString_Concat(&ret, tmp);
+	}
+
+	if( self->info->ipv6_address ) {
+		PyObject *tmp = PyString_FromFormat("\tIPv6 address: %s/%i\n",
+						   self->info->ipv6_address,
+						   self->info->ipv6_netmask);
+		PyString_Concat(&ret, tmp);
+	}
+	return ret;
+}
