@@ -68,13 +68,13 @@ int _ethtool_etherinfo_init(etherinfo_py *self, PyObject *args, PyObject *kwds)
 }
 
 /**
- * Null safe PyString_FromString() wrapper.  If input string is NULL, a False value will be returned
+ * NULL safe PyString_FromString() wrapper.  If input string is NULL, None will be returned
  *
  * @param str Input C string (char *)
  *
- * @return Returns a PyObject with either the input string wrapped up, or a Python False value.
+ * @return Returns a PyObject with either the input string wrapped up, or a Python None value.
  */
-#define RETURN_STRING(str) (str ? PyString_FromString(str) : Py_False);
+#define RETURN_STRING(str) (str ? PyString_FromString(str) : Py_None);
 
 /**
  * ethtool.etherinfo function for retrieving data from a Python object.
