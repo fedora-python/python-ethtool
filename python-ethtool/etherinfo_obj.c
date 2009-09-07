@@ -108,8 +108,7 @@ PyObject *_ethtool_etherinfo_getter(etherinfo_py *self, PyObject *attr_o)
 	} else if( strcmp(attr, "ipv6_netmask") == 0 ) {
 		return PyInt_FromLong(self->info->ipv6_netmask);
 	}
-	PyErr_SetString(PyExc_AttributeError, "Unknown attribute name");
-	return NULL;
+	return PyObject_GenericGetAttr((PyObject *)self, attr_o);
 }
 
 
