@@ -220,35 +220,6 @@ static PyObject *get_ipaddress(PyObject *self __unused, PyObject *args)
 	return PyString_FromString(ipaddr);
 }
 
-static PyObject *get_ipaddresses(PyObject *self __unused, PyObject *args) {
-	PyObject *devlist = NULL;
-	struct etherinfo *ethptr = NULL;
-	struct etherinfo *ethernet_devices = NULL;
-
-	ethernet_devices = get_etherinfo();
-
-	devlist = PyList_New(0);
-	for( ethptr = ethernet_devices; ethptr->next != NULL; ethptr = ethptr->next) {
-		if( ethptr->ipv4_address ) {
-			PyObject *dev = PyList_New(0);
-			PyList_Append(dev, PyString_FromString(ethptr->device));
-			PyList_Append(dev, PyInt_FromLong(AF_INET));
-			PyList_Append(dev, PyString_FromString(ethptr->ipv4_address));
-			PyList_Append(devlist, dev);
-		}
-		if( ethptr->ipv6_address ) {
-			PyObject *dev = PyList_New(0);
-			PyList_Append(dev, PyString_FromString(ethptr->device));
-			PyList_Append(dev, PyInt_FromLong(AF_INET6));
-			PyList_Append(dev, PyString_FromString(ethptr->ipv6_address));
-			PyList_Append(devlist, dev);
-		}
-	}
-	free_etherinfo(ethernet_devices);
-
-	return devlist;
-}
-
 
 /**
  * Retrieves the current information about all interfaces.  All interfaces will be
@@ -856,11 +827,6 @@ static struct PyMethodDef PyEthModuleMethods[] = {
 	{
 		.ml_name = "get_ipaddr",
 		.ml_meth = (PyCFunction)get_ipaddress,
-		.ml_flags = METH_VARARGS,
-	},
-	{
-		.ml_name = "get_ipaddresses",
-		.ml_meth = (PyCFunction)get_ipaddresses,
 		.ml_flags = METH_VARARGS,
 	},
 	{
