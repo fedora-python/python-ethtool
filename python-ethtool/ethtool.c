@@ -230,10 +230,55 @@ static PyObject *get_ipaddress(PyObject *self __unused, PyObject *args)
  *
  * @return Python list of objects on success, otherwise NULL.
  */
-static PyObject *get_interfaceinfo(PyObject *self __unused, PyObject *args) {
+static PyObject *get_interface_info(PyObject *self __unused, PyObject *args) {
 	PyObject *devlist = NULL, *ethinf_py = NULL;
+	PyObject *inargs = NULL;
 	struct etherinfo *devinfo = NULL, *ptr = NULL;
+	char **fetch_devs;
+	int fetch_devs_len = 0;
 
+	if (!PyArg_ParseTuple(args, "|O", &inargs)) {
+		PyErr_SetString(PyExc_LookupError,
+				"Argument must be either a string, list or a tuple");
+		return NULL;
+	}
+
+	/* Parse input arguments if we got them */
+	if( inargs != NULL ) {
+		if( PyString_Check(inargs) ) { /* Input argument is just a string */
+			fetch_devs_len = 1;
+			fetch_devs = calloc(1, sizeof(char *));
+			fetch_devs[0] = PyString_AsString(inargs);
+		} else if( PyTuple_Check(inargs) ) { /* Input argument is a tuple list with devices */
+			int i, j = 0;
+
+			fetch_devs_len = PyTuple_Size(inargs);
+			fetch_devs = calloc(fetch_devs_len+1, sizeof(char *));
+			for( i = 0; i < fetch_devs_len; i++ ) {
+				PyObject *elmt = PyTuple_GetItem(inargs, i);
+				if( elmt && PyString_Check(elmt) ) {
+					fetch_devs[j++] = PyString_AsString(elmt);
+				}
+			}
+			fetch_devs_len = j;
+		} else if( PyList_Check(inargs) ) { /* Input argument is a list with devices */
+			int i, j = 0;
+
+			fetch_devs_len = PyList_Size(inargs);
+			fetch_devs = calloc(fetch_devs_len+1, sizeof(char *));
+			for( i = 0; i < fetch_devs_len; i++ ) {
+				PyObject *elmt = PyList_GetItem(inargs, i);
+				if( elmt && PyString_Check(elmt) ) {
+					fetch_devs[j++] = PyString_AsString(elmt);
+				}
+			}
+			fetch_devs_len = j;
+		} else {
+			PyErr_SetString(PyExc_LookupError,
+					"Argument must be either a string, list or a tuple");
+			return NULL;
+		}
+	}
 	devinfo = get_etherinfo();
 	if( !devinfo ) {
 		PyErr_SetString(PyExc_OSError, strerror(errno));
@@ -249,6 +294,20 @@ static PyObject *get_interfaceinfo(PyObject *self __unused, PyObject *args) {
 		ptr = devinfo->next;  /* Fetch the pointer to the next element first */
 		devinfo->next = NULL; /* Make the current slice do not point anywhere else */
 
+		/* Skip this device only if we have a list of devices and the current one  */
+		/* does not match                                                          */
+		if( fetch_devs_len > 0) {
+			int i;
+			for( i = 0; i < fetch_devs_len; i++ ) {
+				if( fetch_devs[i] && (strcmp(fetch_devs[i], devinfo->device) == 0) ) {
+					goto found_dev; /* Add this device to the devlist */
+				}
+			}
+			/* Free the info which we don't need, and continue */
+			free_etherinfo(devinfo);
+			goto next_dev;
+		}
+	found_dev:
 		/* Instantiate a new etherinfo object with the device information */
 		ethinf_py = PyCObject_FromVoidPtr(devinfo, NULL);
 		if( ethinf_py ) {
@@ -260,11 +319,16 @@ static PyObject *get_interfaceinfo(PyObject *self __unused, PyObject *args) {
 			PyObject *dev = PyObject_CallObject((PyObject *)&ethtool_etherinfoType, args);
 			PyList_Append(devlist, dev);
 		}
+	next_dev:
 		devinfo = ptr; 	/* Go to the next element */
 	}
 	/* clean up headers which might not be used or considered interesting */
 	if( devinfo != NULL ) {
 		free_etherinfo(devinfo);
+	}
+
+	if( fetch_devs_len > 0 ) {
+		free(fetch_devs);
 	}
 
 	return devlist;
@@ -831,7 +895,7 @@ static struct PyMethodDef PyEthModuleMethods[] = {
 	},
 	{
 		.ml_name = "get_interface_info",
-		.ml_meth = (PyCFunction)get_interfaceinfo,
+		.ml_meth = (PyCFunction)get_interface_info,
 		.ml_flags = METH_VARARGS,
 	},
 	{
