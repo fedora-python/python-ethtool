@@ -18,8 +18,7 @@
 #define _ETHERINFO_H
 
 struct etherinfo {
-        int index;
-        int type;
+	int index;
 	char *device;
 	char *hwaddress;
 	char *ipv4_address;
@@ -27,7 +26,6 @@ struct etherinfo {
 	char *ipv4_broadcast;
 	char *ipv6_address;
 	int ipv6_netmask;
-	struct etherinfo *next;
 };
 
 struct etherinfo *get_etherinfo();
