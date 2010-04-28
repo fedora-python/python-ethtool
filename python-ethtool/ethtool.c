@@ -31,6 +31,7 @@
 #include "etherinfo.h"
 
 static struct _nlconnection nlconnection;
+extern PyTypeObject ethtool_etherinfoType;
 
 #ifndef IFF_DYNAMIC
 #define IFF_DYNAMIC     0x8000          /* dialup device with changing addresses*/
