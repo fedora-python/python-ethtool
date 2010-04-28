@@ -26,8 +26,11 @@
 #include <sys/ioctl.h>
 #include <sys/types.h>
 
-#include "etherinfo.h"
+#include "etherinfo_struct.h"
 #include "etherinfo_obj.h"
+#include "etherinfo.h"
+
+static struct _nlconnection nlconnection;
 
 #ifndef IFF_DYNAMIC
 #define IFF_DYNAMIC     0x8000          /* dialup device with changing addresses*/
@@ -233,7 +236,6 @@ static PyObject *get_ipaddress(PyObject *self __unused, PyObject *args)
 static PyObject *get_interface_info(PyObject *self __unused, PyObject *args) {
 	PyObject *devlist = NULL, *ethinf_py = NULL;
 	PyObject *inargs = NULL;
-	struct etherinfo *devinfo = NULL;
 	char **fetch_devs;
 	int i = 0, fetch_devs_len = 0;
 
@@ -280,16 +282,32 @@ static PyObject *get_interface_info(PyObject *self __unused, PyObject *args) {
 		}
 	}
 
-
+	devlist = PyList_New(0);
 	for( i = 0; i < fetch_devs_len; i++ ) {
-		devinfo = get_etherinfo(fetch_devs[i]);
-		if( !devinfo ) {
+		struct etherinfo_obj_data *objdata = NULL;
+
+		/* Allocate memory for data structures for each device */
+		objdata = calloc(1, sizeof(struct etherinfo_obj_data));
+		if( !objdata ) {
 			PyErr_SetString(PyExc_OSError, strerror(errno));
 			return NULL;
 		}
 
+		objdata->ethinfo = calloc(1, sizeof(struct etherinfo));
+		if( !objdata->ethinfo ) {
+			PyErr_SetString(PyExc_OSError, strerror(errno));
+			return NULL;
+		}
+
+		/* Store the device name and a reference to the NETLINK connection for
+		 * objects to use when quering for device info
+		 */
+		objdata->ethinfo->device = strdup(fetch_devs[i]);
+		objdata->ethinfo->index = -1;
+		objdata->nlc = &nlconnection; /* Global variable */
+
 		/* Instantiate a new etherinfo object with the device information */
-		ethinf_py = PyCObject_FromVoidPtr(devinfo, NULL);
+		ethinf_py = PyCObject_FromVoidPtr(objdata, NULL);
 		if( ethinf_py ) {
 			/* Prepare the argument list for the object constructor */
 			PyObject *args = PyTuple_New(1);
@@ -297,10 +315,9 @@ static PyObject *get_interface_info(PyObject *self __unused, PyObject *args) {
 
 			/* Create the object */
 			PyObject *dev = PyObject_CallObject((PyObject *)&ethtool_etherinfoType, args);
-			PyList_Append(devlist, dev);
-		}
-		if( devinfo != NULL ) {
-			free_etherinfo(devinfo);
+			if( dev ) {
+				PyList_Append(devlist, dev);
+			}
 		}
 	}
 	if( fetch_devs_len > 0 ) {
@@ -948,6 +965,52 @@ static struct PyMethodDef PyEthModuleMethods[] = {
 };
 
 
+/**
+ * Connects to the NETLINK interface and stores the connection handles in the given struct.  This
+ * should be called as part of the main ethtool module init.
+ *
+ * @param nlc Structure which keeps the NETLINK connection handle
+ *
+ * @return Returns 1 on success, otherwise 0.
+ */
+int open_netlink(struct _nlconnection *nlc)
+{
+	if( !nlc ) {
+		return 0;
+	}
+
+	nlc->nlrt_handle = nl_handle_alloc();
+	nl_connect(nlc->nlrt_handle, NETLINK_ROUTE);
+	return (nlc->nlrt_handle != NULL);
+}
+
+
+/**
+ * Closes the NETLINK connection.  This should be called automatically whenever
+ * the ethtool module is unloaded from Python.
+ *
+ * @param ptr Points at a struct _nlconnection object with an open NETLINK connection
+ */
+void close_netlink(void *ptr)
+{
+	struct _nlconnection *nlc;
+
+	if( !ptr ) {
+		return;
+	}
+
+	nlc = (struct _nlconnection *) ptr;
+	if( !nlc->nlrt_handle ) {
+		return;
+	}
+
+	/* Close NETLINK connection */
+	nl_close(nlc->nlrt_handle);
+	nl_handle_destroy(nlc->nlrt_handle);
+	nlc->nlrt_handle = NULL;
+}
+
+
 PyMODINIT_FUNC initethtool(void)
 {
 	PyObject *m;
@@ -958,6 +1021,12 @@ PyMODINIT_FUNC initethtool(void)
 		return;
 	Py_INCREF(&ethtool_etherinfoType);
 	PyModule_AddObject(m, "etherinfo", (PyObject *)&ethtool_etherinfoType);
+
+	// Prepare an internal netlink connection object
+	if( open_netlink(&nlconnection) ) {
+		PyModule_AddObject(m, "__nlconnection",
+				   PyCObject_FromVoidPtr(&nlconnection, close_netlink));
+	}
 
 	// Setup constants
 	PyModule_AddIntConstant(m, "IFF_UP", IFF_UP);			/* Interface is up. */

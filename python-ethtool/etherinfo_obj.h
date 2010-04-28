@@ -36,19 +36,19 @@ static PyMethodDef _ethtool_etherinfo_methods[] = {
  *
  */
 static PyMemberDef _ethtool_etherinfo_members[] = {
-    {"device", T_OBJECT_EX, offsetof(etherinfo_py, info), 0,
+    {"device", T_OBJECT_EX, offsetof(etherinfo_py, data), 0,
      "Device name of the interface"},
-    {"mac_address", T_OBJECT_EX, offsetof(etherinfo_py, info), 0,
+    {"mac_address", T_OBJECT_EX, offsetof(etherinfo_py, data), 0,
      "MAC address / hardware address of the interface"},
-    {"ipv4_address", T_OBJECT_EX, offsetof(etherinfo_py, info), 0,
+    {"ipv4_address", T_OBJECT_EX, offsetof(etherinfo_py, data), 0,
      "IPv4 address"},
-    {"ipv4_netmask", T_INT, offsetof(etherinfo_py, info), 0,
+    {"ipv4_netmask", T_INT, offsetof(etherinfo_py, data), 0,
      "IPv4 netmask in bits"},
-    {"ipv4_broadcast", T_OBJECT_EX, offsetof(etherinfo_py, info), 0,
+    {"ipv4_broadcast", T_OBJECT_EX, offsetof(etherinfo_py, data), 0,
      "IPv4 broadcast address"},
-    {"ipv6_address", T_OBJECT_EX, offsetof(etherinfo_py, info), 0,
+    {"ipv6_address", T_OBJECT_EX, offsetof(etherinfo_py, data), 0,
      "IPv6 address"},
-    {"ipv6_netmask", T_INT, offsetof(etherinfo_py, info), 0,
+    {"ipv6_netmask", T_INT, offsetof(etherinfo_py, data), 0,
      "IPv6 netmask in bits"},
     {NULL}  /* End of member list */
 };

@@ -17,18 +17,16 @@
 #ifndef _ETHERINFO_H
 #define _ETHERINFO_H
 
-struct etherinfo {
-	int index;
-	char *device;
-	char *hwaddress;
-	char *ipv4_address;
-	int ipv4_netmask;
-	char *ipv4_broadcast;
-	char *ipv6_address;
-	int ipv6_netmask;
-};
+#include <netlink/addr.h>
+#include <netlink/netlink.h>
+#include <netlink/handlers.h>
+#include <netlink/route/link.h>
+#include <netlink/route/addr.h>
+#include <arpa/inet.h>
 
-struct etherinfo *get_etherinfo();
+typedef enum {NLQRY_LINK, NLQRY_ADDR} nlQuery;
+
+int get_etherinfo(struct etherinfo *ethinf, struct _nlconnection *nlc, nlQuery query);
 void free_etherinfo(struct etherinfo *ptr);
 void dump_etherinfo(FILE *, struct etherinfo *);
 
