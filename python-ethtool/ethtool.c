@@ -234,7 +234,7 @@ static PyObject *get_ipaddress(PyObject *self __unused, PyObject *args)
  *
  * @return Python list of objects on success, otherwise NULL.
  */
-static PyObject *get_interface_info(PyObject *self __unused, PyObject *args) {
+static PyObject *get_interfaces_info(PyObject *self __unused, PyObject *args) {
 	PyObject *devlist = NULL, *ethinf_py = NULL;
 	PyObject *inargs = NULL;
 	char **fetch_devs;
@@ -888,9 +888,11 @@ static struct PyMethodDef PyEthModuleMethods[] = {
 		.ml_flags = METH_VARARGS,
 	},
 	{
-		.ml_name = "get_interface_info",
-		.ml_meth = (PyCFunction)get_interface_info,
+		.ml_name = "get_interfaces_info",
+		.ml_meth = (PyCFunction)get_interfaces_info,
 		.ml_flags = METH_VARARGS,
+		.ml_doc = "Accepts a string, list or tupples of interface names. "
+		"Returns a list of ethtool.etherinfo objets with device information."
 	},
 	{
 		.ml_name = "get_netmask",
