@@ -104,7 +104,7 @@ PyObject *_ethtool_etherinfo_getter(etherinfo_py *self, PyObject *attr_o)
 		get_etherinfo(self->data->ethinfo, self->data->nlc, NLQRY_LINK);
 		ret = RETURN_STRING(self->data->ethinfo->hwaddress);
 	} else if( strcmp(attr, "ipv4_address") == 0 ) {
-		get_etherinfo(self->data->ethinfo, self->data->nlc, NLQRY_LINK);
+		get_etherinfo(self->data->ethinfo, self->data->nlc, NLQRY_ADDR);
 		ret = RETURN_STRING(self->data->ethinfo->ipv4_address);
 	} else if( strcmp(attr, "ipv4_netmask") == 0 ) {
 		get_etherinfo(self->data->ethinfo, self->data->nlc, NLQRY_ADDR);
