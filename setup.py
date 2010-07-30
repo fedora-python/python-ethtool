@@ -59,7 +59,8 @@ setup(name='ethtool',
             sources = [
                 'python-ethtool/ethtool.c',
                 'python-ethtool/etherinfo.c',
-                'python-ethtool/etherinfo_obj.c'],
+                'python-ethtool/etherinfo_obj.c',
+                'python-ethtool/etherinfo_ipv6_obj.c'],
             include_dirs = libnl['include'],
             library_dirs = libnl['libdirs'],
             libraries = libnl['libs']

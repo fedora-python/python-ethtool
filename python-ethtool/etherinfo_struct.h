@@ -18,8 +18,14 @@ struct etherinfo {
 	char *ipv4_address;
 	int ipv4_netmask;
 	char *ipv4_broadcast;
-	char *ipv6_address;
-	int ipv6_netmask;
+	struct ipv6address *ipv6_addresses;
+};
+
+struct ipv6address {
+	char *address;
+	int netmask;
+	int scope;
+	struct ipv6address *next;
 };
 
 /*
@@ -44,5 +50,20 @@ typedef struct {
 	PyObject_HEAD
 	struct etherinfo_obj_data *data;
 } etherinfo_py;
+
+
+typedef struct {
+	PyObject_HEAD
+	struct ipv6address *addrdata;
+} etherinfo_ipv6_py;
+
+/**
+ * NULL safe PyString_FromString() wrapper.  If input string is NULL, None will be returned
+ *
+ * @param str Input C string (char *)
+ *
+ * @return Returns a PyObject with either the input string wrapped up, or a Python None value.
+ */
+#define RETURN_STRING(str) (str ? PyString_FromString(str) : Py_None)
 
 #endif

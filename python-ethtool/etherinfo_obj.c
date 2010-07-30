@@ -10,9 +10,11 @@
 #include <Python.h>
 #include "structmember.h"
 
+#include <netlink/route/rtnl.h>
 #include "etherinfo_struct.h"
 #include "etherinfo.h"
 
+extern PyTypeObject ethtool_etherinfoIPv6Type;
 
 /**
  * ethtool.etherinfo deallocator - cleans up when a object is deleted
@@ -72,15 +74,6 @@ int _ethtool_etherinfo_init(etherinfo_py *self, PyObject *args, PyObject *kwds)
 }
 
 /**
- * NULL safe PyString_FromString() wrapper.  If input string is NULL, None will be returned
- *
- * @param str Input C string (char *)
- *
- * @return Returns a PyObject with either the input string wrapped up, or a Python None value.
- */
-#define RETURN_STRING(str) (str ? PyString_FromString(str) : Py_None);
-
-/**
  * ethtool.etherinfo function for retrieving data from a Python object.
  *
  * @param self
@@ -112,12 +105,29 @@ PyObject *_ethtool_etherinfo_getter(etherinfo_py *self, PyObject *attr_o)
 	} else if( strcmp(attr, "ipv4_broadcast") == 0 ) {
 		get_etherinfo(self->data->ethinfo, self->data->nlc, NLQRY_ADDR);
 		ret = RETURN_STRING(self->data->ethinfo->ipv4_broadcast);
-	} else if( strcmp(attr, "ipv6_address") == 0 ) {
+	} else if( strcmp(attr, "ipv6_addresses") == 0 ) {
+		struct ipv6address *ipv6 = NULL;
+		int i = 0;
+		ret = PyTuple_New(1);
+
 		get_etherinfo(self->data->ethinfo, self->data->nlc, NLQRY_ADDR);
-		ret = RETURN_STRING(self->data->ethinfo->ipv6_address);
-	} else if( strcmp(attr, "ipv6_netmask") == 0 ) {
-		get_etherinfo(self->data->ethinfo, self->data->nlc, NLQRY_ADDR);
-		ret = PyInt_FromLong(self->data->ethinfo->ipv6_netmask);
+		ipv6 = self->data->ethinfo->ipv6_addresses;
+		while( ipv6 ) {
+			PyObject *ipv6_pyobj = NULL, *ipv6_pydata = NULL, *args = NULL;
+			struct ipv6address *next = ipv6->next;
+
+			ipv6->next = NULL;
+			ipv6_pydata = PyCObject_FromVoidPtr(ipv6, NULL);
+			args = PyTuple_New(1);
+			PyTuple_SetItem(args, 0, ipv6_pydata);
+			ipv6_pyobj = PyObject_CallObject((PyObject *)&ethtool_etherinfoIPv6Type, args);
+			if( ipv6_pyobj ) {
+				PyTuple_SetItem(ret, i++, ipv6_pyobj);
+				_PyTuple_Resize(&ret, i+1);
+			}
+			ipv6 = next;
+		}
+		_PyTuple_Resize(&ret, i);
 	} else {
 		ret = PyObject_GenericGetAttr((PyObject *)self, attr_o);
 	}
@@ -180,11 +190,19 @@ PyObject *_ethtool_etherinfo_str(etherinfo_py *self)
 		PyString_Concat(&ret, tmp);
 	}
 
-	if( self->data->ethinfo->ipv6_address ) {
-		PyObject *tmp = PyString_FromFormat("\tIPv6 address: %s/%i\n",
-						   self->data->ethinfo->ipv6_address,
-						   self->data->ethinfo->ipv6_netmask);
+	if( self->data->ethinfo->ipv6_addresses ) {
+		struct ipv6address *ipv6 = self->data->ethinfo->ipv6_addresses;
+		PyObject *tmp = PyString_FromFormat("\tIPv6 addresses:\n");
 		PyString_Concat(&ret, tmp);
+
+		for( ; ipv6; ipv6 = ipv6->next) {
+			char scope[66];
+
+			rtnl_scope2str(ipv6->scope, scope, 64);
+			PyObject *addr = PyString_FromFormat("\t		[%s] %s/%i\n",
+							     scope, ipv6->address, ipv6->netmask);
+			PyString_Concat(&ret, addr);
+		}
 	}
 	return ret;
 }
@@ -214,10 +232,8 @@ static PyMemberDef _ethtool_etherinfo_members[] = {
      "IPv4 netmask in bits"},
     {"ipv4_broadcast", T_OBJECT_EX, offsetof(etherinfo_py, data), 0,
      "IPv4 broadcast address"},
-    {"ipv6_address", T_OBJECT_EX, offsetof(etherinfo_py, data), 0,
-     "IPv6 address"},
-    {"ipv6_netmask", T_INT, offsetof(etherinfo_py, data), 0,
-     "IPv6 netmask in bits"},
+    {"ipv6_addresses", T_OBJECT_EX, offsetof(etherinfo_py, data), 0,
+     "Returns a list of associated IPv6 addresses"},
     {NULL}  /* End of member list */
 };
 

@@ -24,6 +24,7 @@
 #include <stdlib.h>
 #include <asm/types.h>
 #include <sys/socket.h>
+#include <netlink/route/rtnl.h>
 #include <assert.h>
 #include <errno.h>
 #include "etherinfo_struct.h"
@@ -34,6 +35,30 @@
  *   Internal functions for working with struct etherinfo
  *
  */
+#define SET_STR_VALUE(dst, src) {	 \
+	if( dst ) {		 \
+		free(dst);	 \
+	};			 \
+	dst = strdup(src);	 \
+	}
+
+
+void free_ipv6addresses(struct ipv6address *ptr) {
+	struct ipv6address *ipv6ptr = ptr;
+
+	if( !ptr ) {
+		return;
+	}
+
+	while( ipv6ptr ) {
+		struct ipv6address *tmp = ipv6ptr->next;
+
+		free(ipv6ptr->address);
+		free(ipv6ptr);
+		ipv6ptr = tmp;
+	}
+}
+
 void free_etherinfo(struct etherinfo *ptr)
 {
 	if( ptr == NULL ) { // Just for safety
@@ -51,10 +76,27 @@ void free_etherinfo(struct etherinfo *ptr)
 	if( ptr->ipv4_broadcast ) {
 		free(ptr->ipv4_broadcast);
 	}
-	if( ptr->ipv6_address ) {
-		free(ptr->ipv6_address);
+	if( ptr->ipv6_addresses ) {
+		free_ipv6addresses(ptr->ipv6_addresses);
 	}
 	free(ptr);
+}
+
+struct ipv6address * etherinfo_add_ipv6(struct ipv6address *addrptr, const char *addr, int netmask, int scope) {
+	struct ipv6address *newaddr = NULL;
+
+	newaddr = calloc(1, sizeof(struct ipv6address)+2);
+	if( !newaddr ) {
+		fprintf(stderr, "** ERROR ** Could not allocate memory for a new IPv6 address record (%s/%i [%i])",
+			addr, netmask, scope);
+		return addrptr;
+	}
+
+	SET_STR_VALUE(newaddr->address, addr);
+	newaddr->netmask = netmask;
+	newaddr->scope = scope;
+	newaddr->next = addrptr;
+	return newaddr;
 }
 
 
@@ -62,13 +104,6 @@ void free_etherinfo(struct etherinfo *ptr)
  *  libnl callback functions
  *
  */
-
-#define SET_STR_VALUE(dst, src) {	 \
-	if( dst ) {		 \
-		free(dst);	 \
-	};			 \
-	dst = strdup(src);       \
-	}
 
 static void callback_nl_link(struct nl_object *obj, void *arg)
 {
@@ -134,8 +169,10 @@ static void callback_nl_address(struct nl_object *obj, void *arg)
 				SET_STR_VALUE(ethi->ipv4_broadcast, brdcst_str);
 			}
 		} else {
-			SET_STR_VALUE(ethi->ipv6_address, ip_str);
-			ethi->ipv6_netmask = rtnl_addr_get_prefixlen((struct rtnl_addr*) obj);
+			ethi->ipv6_addresses = etherinfo_add_ipv6(ethi->ipv6_addresses,
+								  ip_str,
+								  rtnl_addr_get_prefixlen((struct rtnl_addr*) obj),
+								  rtnl_addr_get_scope((struct rtnl_addr*) obj));
 		}
 		return;
 	default:
@@ -167,9 +204,17 @@ void dump_etherinfo(FILE *fp, struct etherinfo *ptr)
 		}
 		fprintf(fp, "\n");
 	}
-	if( ptr->ipv6_address ) {
-		fprintf(fp, "\tIPv6 address: %s/%i\n",
-			ptr->ipv6_address, ptr->ipv6_netmask);
+	if( ptr->ipv6_addresses ) {
+		struct ipv6address *ipv6 = ptr->ipv6_addresses;
+
+		fprintf(fp, "\tIPv6 addresses:\n");
+		for(; ipv6; ipv6 = ipv6->next) {
+			char scope[66];
+
+			rtnl_scope2str(ipv6->scope, scope, 64);
+			fprintf(fp, "\t		       [%s] %s/%i\n",
+				scope, ipv6->address, ipv6->netmask);
+		}
 	}
 	fprintf(fp, "\n");
 }
@@ -214,6 +259,10 @@ int get_etherinfo(struct etherinfo *ethinf, struct _nlconnection *nlc, nlQuery q
 		break;
 
 	case NLQRY_ADDR:
+		/* Remove old IPv6 information we might have */
+		free_ipv6addresses(ethinf->ipv6_addresses);
+		ethinf->ipv6_addresses = NULL;
+
 		/* Extract IP address information */
 		addr_cache = rtnl_addr_alloc_cache(nlc->nlrt_handle);
 		addr = rtnl_addr_alloc();

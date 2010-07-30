@@ -30,4 +30,6 @@ int get_etherinfo(struct etherinfo *ethinf, struct _nlconnection *nlc, nlQuery q
 void free_etherinfo(struct etherinfo *ptr);
 void dump_etherinfo(FILE *, struct etherinfo *);
 
+void free_ipv6addresses(struct ipv6address *ptr);
+
 #endif
