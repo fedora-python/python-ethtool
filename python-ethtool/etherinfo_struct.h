@@ -70,7 +70,7 @@ typedef struct {
 typedef struct {
 	PyObject_HEAD
 	struct ipv6address *addrdata; /**< IPv6 address, only one element is used in this case */
-} etherinfo_ipv6_py;
+} etherinfo_ipv6addr_py;
 
 /**
  * NULL safe PyString_FromString() wrapper.  If input string is NULL, None will be returned

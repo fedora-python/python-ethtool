@@ -18,9 +18,9 @@
 /**
  * ethtool.etherinfo_ipv6addr deallocator - cleans up when a object is deleted
  *
- * @param self etherinfo_ipv6_py object structure
+ * @param self etherinfo_ipv6addr_py object structure
  */
-void _ethtool_etherinfo_ipv6_dealloc(etherinfo_ipv6_py *self)
+void _ethtool_etherinfo_ipv6_dealloc(etherinfo_ipv6addr_py *self)
 {
 	if( self->addrdata ) {
 		free_ipv6addresses(self->addrdata);
@@ -40,9 +40,9 @@ void _ethtool_etherinfo_ipv6_dealloc(etherinfo_ipv6_py *self)
  */
 PyObject *_ethtool_etherinfo_ipv6_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-	etherinfo_ipv6_py *self;
+	etherinfo_ipv6addr_py *self;
 
-	self = (etherinfo_ipv6_py *)type->tp_alloc(type, 0);
+	self = (etherinfo_ipv6addr_py *)type->tp_alloc(type, 0);
 	return (PyObject *)self;
 }
 
@@ -56,7 +56,7 @@ PyObject *_ethtool_etherinfo_ipv6_new(PyTypeObject *type, PyObject *args, PyObje
  *
  * @return Returns 0 on success.
  */
-int _ethtool_etherinfo_ipv6_init(etherinfo_ipv6_py *self, PyObject *args, PyObject *kwds)
+int _ethtool_etherinfo_ipv6_init(etherinfo_ipv6addr_py *self, PyObject *args, PyObject *kwds)
 {
 	static char *etherinfo_kwlist[] = {"etherinfo_ipv6_ptr", NULL};
 	PyObject *ethinf_ptr = NULL;
@@ -77,7 +77,7 @@ int _ethtool_etherinfo_ipv6_init(etherinfo_ipv6_py *self, PyObject *args, PyObje
  *
  * @return Returns a PyObject with the value requested on success, otherwise NULL
  */
-PyObject *_ethtool_etherinfo_ipv6_getter(etherinfo_ipv6_py *self, PyObject *attr_o)
+PyObject *_ethtool_etherinfo_ipv6_getter(etherinfo_ipv6addr_py *self, PyObject *attr_o)
 {
 	PyObject *ret;
 	char *attr = PyString_AsString(attr_o);
@@ -113,7 +113,7 @@ PyObject *_ethtool_etherinfo_ipv6_getter(etherinfo_ipv6_py *self, PyObject *attr
  *
  * @return Returns always -1 (failure).
  */
-int _ethtool_etherinfo_ipv6_setter(etherinfo_ipv6_py *self, PyObject *attr_o, PyObject *val_o)
+int _ethtool_etherinfo_ipv6_setter(etherinfo_ipv6addr_py *self, PyObject *attr_o, PyObject *val_o)
 {
 	PyErr_SetString(PyExc_AttributeError, "etherinfo_ipv6addr member values are read-only.");
 	return -1;
@@ -127,7 +127,7 @@ int _ethtool_etherinfo_ipv6_setter(etherinfo_ipv6_py *self, PyObject *attr_o, Py
  *
  * @return Returns a PyObject with a string with all of the information
  */
-PyObject *_ethtool_etherinfo_ipv6_str(etherinfo_ipv6_py *self)
+PyObject *_ethtool_etherinfo_ipv6_str(etherinfo_ipv6addr_py *self)
 {
 	char scope[66];
 
@@ -158,11 +158,11 @@ static PyMethodDef _ethtool_etherinfo_ipv6_methods[] = {
  *
  */
 static PyMemberDef _ethtool_etherinfo_ipv6_members[] = {
-    {"address", T_OBJECT_EX, offsetof(etherinfo_ipv6_py, addrdata), 0,
+    {"address", T_OBJECT_EX, offsetof(etherinfo_ipv6addr_py, addrdata), 0,
      "IPv6 address"},
-    {"netmask", T_OBJECT_EX, offsetof(etherinfo_ipv6_py, addrdata), 0,
+    {"netmask", T_OBJECT_EX, offsetof(etherinfo_ipv6addr_py, addrdata), 0,
      "IPv6 netmask"},
-    {"scope", T_OBJECT_EX, offsetof(etherinfo_ipv6_py, addrdata), 0,
+    {"scope", T_OBJECT_EX, offsetof(etherinfo_ipv6addr_py, addrdata), 0,
      "IPv6 IP address scope"},
     {NULL}  /* End of member list */
 };
@@ -175,7 +175,7 @@ PyTypeObject ethtool_etherinfoIPv6Type = {
     PyObject_HEAD_INIT(NULL)
     0,                         /*ob_size*/
     "ethtool.etherinfo_ipv6addr", /*tp_name*/
-    sizeof(etherinfo_ipv6_py), /*tp_basicsize*/
+    sizeof(etherinfo_ipv6addr_py), /*tp_basicsize*/
     0,                         /*tp_itemsize*/
     (destructor)_ethtool_etherinfo_ipv6_dealloc,/*tp_dealloc*/
     0,                         /*tp_print*/
