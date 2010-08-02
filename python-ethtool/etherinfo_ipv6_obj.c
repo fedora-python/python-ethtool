@@ -16,7 +16,7 @@
 
 
 /**
- * ethtool.etherinfo deallocator - cleans up when a object is deleted
+ * ethtool.etherinfo_ipv6addr deallocator - cleans up when a object is deleted
  *
  * @param self etherinfo_ipv6_py object structure
  */
@@ -30,7 +30,7 @@ void _ethtool_etherinfo_ipv6_dealloc(etherinfo_ipv6_py *self)
 
 
 /**
- * ethtool.etherinfo function, creating a new etherinfo object
+ * ethtool.etherinfo_ipv6addr function, creating a new etherinfo object
  *
  * @param type
  * @param args
@@ -48,7 +48,7 @@ PyObject *_ethtool_etherinfo_ipv6_new(PyTypeObject *type, PyObject *args, PyObje
 
 
 /**
- * ethtool.etherinfo init (constructor) method.  Makes sure the object is initialised correctly.
+ * ethtool.etherinfo_ipv6addr init (constructor) method.  Makes sure the object is initialised correctly.
  *
  * @param self
  * @param args
@@ -70,7 +70,7 @@ int _ethtool_etherinfo_ipv6_init(etherinfo_ipv6_py *self, PyObject *args, PyObje
 }
 
 /**
- * ethtool.etherinfo function for retrieving data from a Python object.
+ * ethtool.etherinfo_ipv6addr function for retrieving data from a Python object.
  *
  * @param self
  * @param attr_o  contains the object member request (which element to return)
@@ -104,7 +104,7 @@ PyObject *_ethtool_etherinfo_ipv6_getter(etherinfo_ipv6_py *self, PyObject *attr
 
 
 /**
- * ethtool.etherinfo function for setting a value to a object member.  This feature is
+ * ethtool.etherinfo_ipv6addr function for setting a value to a object member.  This feature is
  * disabled by always returning -1, as the values are read-only by the user.
  *
  * @param self

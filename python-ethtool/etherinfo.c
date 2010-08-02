@@ -35,6 +35,14 @@
  *   Internal functions for working with struct etherinfo
  *
  */
+
+/**
+ * Simple macro which makes sure the destination string is freed if used earlier.
+ *
+ * @param dst Destination pointer
+ * @param src Source pointer
+ *
+ */
 #define SET_STR_VALUE(dst, src) {	 \
 	if( dst ) {		 \
 		free(dst);	 \
@@ -43,6 +51,11 @@
 	}
 
 
+/**
+ * Frees the memory used by a struct ipv6address pointer chain.  All elements are freed
+ *
+ * @param ptr  Pointer to a struct ipv6address chain.
+ */
 void free_ipv6addresses(struct ipv6address *ptr) {
 	struct ipv6address *ipv6ptr = ptr;
 
@@ -59,6 +72,11 @@ void free_ipv6addresses(struct ipv6address *ptr) {
 	}
 }
 
+/**
+ * Frees the memory used by struct etherinfo, including all struct ipv6address children.
+ *
+ * @param ptr Pointer to a struct etherninfo element
+ */
 void free_etherinfo(struct etherinfo *ptr)
 {
 	if( ptr == NULL ) { // Just for safety
@@ -82,6 +100,17 @@ void free_etherinfo(struct etherinfo *ptr)
 	free(ptr);
 }
 
+
+/**
+ * Add a new IPv6 address record to a struct ipv6address chain
+ *
+ * @param addrptr    Pointer to the current IPv6 address chain.
+ * @param addr       IPv6 address, represented as char * string
+ * @param netmask    IPv6 netmask, as returned by libnl rtnl_addr_get_prefixlen()
+ * @param scope      IPV6 address scope, as returned by libnl rtnl_addr_get_scope()
+ *
+ * @return Returns a new pointer to the chain containing the new element
+ */
 struct ipv6address * etherinfo_add_ipv6(struct ipv6address *addrptr, const char *addr, int netmask, int scope) {
 	struct ipv6address *newaddr = NULL;
 
@@ -100,11 +129,13 @@ struct ipv6address * etherinfo_add_ipv6(struct ipv6address *addrptr, const char 
 }
 
 
-/*
- *  libnl callback functions
+/**
+ *  libnl callback function.  Does the real parsing of a record returned by NETLINK.  This function
+ *  parses LINK related packets
  *
+ * @param obj   Pointer to a struct nl_object response
+ * @param arg   Pointer to a struct etherinfo element where the parse result will be saved
  */
-
 static void callback_nl_link(struct nl_object *obj, void *arg)
 {
 	struct etherinfo *ethi = (struct etherinfo *) arg;
@@ -137,6 +168,13 @@ static void callback_nl_link(struct nl_object *obj, void *arg)
 }
 
 
+/**
+ *  libnl callback function.  Does the real parsing of a record returned by NETLINK.  This function
+ *  parses ADDRESS related packets
+ *
+ * @param obj   Pointer to a struct nl_object response
+ * @param arg   Pointer to a struct etherinfo element where the parse result will be saved
+ */
 static void callback_nl_address(struct nl_object *obj, void *arg)
 {
 	struct etherinfo *ethi = (struct etherinfo *) arg;
@@ -188,6 +226,12 @@ static void callback_nl_address(struct nl_object *obj, void *arg)
  *
  */
 
+/**
+ * Dumps the contents of a struct etherinfo element to file
+ *
+ * @param fp   FILE pointer where to dump
+ * @param ptr  Pointer to a struct etherinfo element
+ */
 void dump_etherinfo(FILE *fp, struct etherinfo *ptr)
 {
 
@@ -220,6 +264,16 @@ void dump_etherinfo(FILE *fp, struct etherinfo *ptr)
 }
 
 
+/**
+ * Query NETLINK for ethernet configuration
+ *
+ * @param ethinf Pointer to an available struct etherinfo element.  The 'device' member
+ *               must contain a valid string to the device to query for information
+ * @param nlc    Pointer to the libnl handle, which is used for the query against NETLINK
+ * @param query  What to query for.  Must be NLQRY_LINK or NLQRY_ADDR.
+ *
+ * @return Returns 1 on success, otherwise 0.
+ */
 int get_etherinfo(struct etherinfo *ethinf, struct _nlconnection *nlc, nlQuery query)
 {
 	struct nl_cache *link_cache;

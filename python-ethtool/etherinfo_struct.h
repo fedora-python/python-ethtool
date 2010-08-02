@@ -10,25 +10,33 @@
 #ifndef _ETHERINFO_STRUCT_H
 #define _ETHERINFO_STRUCT_H
 
-
+/**
+ * Contains IP address information about a particular ethernet device
+ *
+ */
 struct etherinfo {
-	char *device;
-	int index;
-	char *hwaddress;
-	char *ipv4_address;
-	int ipv4_netmask;
-	char *ipv4_broadcast;
-	struct ipv6address *ipv6_addresses;
+	char *device;                       /**< Device name */
+	int index;                          /**< NETLINK index reference */
+	char *hwaddress;                    /**< HW address / MAC address of device */
+	char *ipv4_address;                 /**< Configured IPv4 address */
+	int ipv4_netmask;                   /**< Configured IPv4 netmask */
+	char *ipv4_broadcast;               /**< Configured IPv4 broadcast address */
+	struct ipv6address *ipv6_addresses; /**< Configured IPv6 addresses (as a pointer chain) */
 };
 
+
+/**
+ * Pointer chain with IPv6 addresses associated with a ethernet interface.  Used
+ * by struct etherinfo
+ */
 struct ipv6address {
-	char *address;
-	int netmask;
-	int scope;
-	struct ipv6address *next;
+	char *address;               /**<  Configured IPv6 address */
+	int netmask;                 /**<  Configured IPv6 netmask */
+	int scope;                   /**<  Scope for the IPv6 address */
+	struct ipv6address *next;    /**<  Pointer to next configured IPv6 address */
 };
 
-/*
+/**
  *  NETLINK connection handle and related information to be shared
  *  among all the instantiated etherinfo objects.
  */
@@ -46,15 +54,22 @@ struct etherinfo_obj_data {
 	struct etherinfo *ethinfo;      /**< Contains info about our current interface */
 };
 
+/**
+ * A Python object of struct etherinfo_obj_data
+ *
+ */
 typedef struct {
 	PyObject_HEAD
-	struct etherinfo_obj_data *data;
+	struct etherinfo_obj_data *data; /* IPv4 and IPv6 address information, only one element used */
 } etherinfo_py;
 
-
+/**
+ * A Python object of struct ipv6address
+ *
+ */
 typedef struct {
 	PyObject_HEAD
-	struct ipv6address *addrdata;
+	struct ipv6address *addrdata; /**< IPv6 address, only one element is used in this case */
 } etherinfo_ipv6_py;
 
 /**
