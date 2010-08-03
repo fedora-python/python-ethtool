@@ -14,7 +14,7 @@ BuildRoot:  %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 %description
 Python bindings for the ethtool kernel interface, that allows querying and
-changing of ethernet card settings, such as speed, port, autonegotiation, and
+changing of Ethernet card settings, such as speed, port, auto-negotiation, and
 PCI locations.
 
 %prep
