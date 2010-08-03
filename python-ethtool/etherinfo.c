@@ -1,6 +1,6 @@
 /* etherinfo.c - Retrieve ethernet interface info via NETLINK
  *
- * Copyright (C) 2009 Red Hat Inc.
+ * Copyright (C) 2009-2010 Red Hat Inc.
  *
  * David Sommerseth <davids@redhat.com>
  * Parts of this code is based on ideas and solutions in iproute2

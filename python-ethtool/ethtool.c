@@ -1,7 +1,8 @@
 /*
- * Copyright (C) 2008 Red Hat Inc.
+ * Copyright (C) 2008-2010 Red Hat Inc.
  *
  * Arnaldo Carvalho de Melo <acme@redhat.com>
+ * David Sommerseth <davids@redhat.com>
  *
  * First bits from a Red Hat config tool by Harald Hoyer.
  *
