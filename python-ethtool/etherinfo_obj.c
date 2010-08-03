@@ -121,35 +121,11 @@ PyObject *_ethtool_etherinfo_getter(etherinfo_py *self, PyObject *attr_o)
 	} else if( strcmp(attr, "ipv4_broadcast") == 0 ) {
 		get_etherinfo(self->data->ethinfo, self->data->nlc, NLQRY_ADDR);
 		ret = RETURN_STRING(self->data->ethinfo->ipv4_broadcast);
-	} else if( strcmp(attr, "ipv6_addresses") == 0 ) {
-		struct ipv6address *ipv6 = NULL;
-		int i = 0;
-		ret = PyTuple_New(1);
-
-		get_etherinfo(self->data->ethinfo, self->data->nlc, NLQRY_ADDR);
-		ipv6 = self->data->ethinfo->ipv6_addresses;
-		while( ipv6 ) {
-			PyObject *ipv6_pyobj = NULL, *ipv6_pydata = NULL, *args = NULL;
-			struct ipv6address *next = ipv6->next;
-
-			ipv6->next = NULL;
-			ipv6_pydata = PyCObject_FromVoidPtr(ipv6, NULL);
-			args = PyTuple_New(1);
-			PyTuple_SetItem(args, 0, ipv6_pydata);
-			ipv6_pyobj = PyObject_CallObject((PyObject *)&ethtool_etherinfoIPv6Type, args);
-			if( ipv6_pyobj ) {
-				PyTuple_SetItem(ret, i++, ipv6_pyobj);
-				_PyTuple_Resize(&ret, i+1);
-			}
-			ipv6 = next;
-		}
-		_PyTuple_Resize(&ret, i);
 	} else {
 		ret = PyObject_GenericGetAttr((PyObject *)self, attr_o);
 	}
 	return ret;
 }
-
 
 /**
  * ethtool.etherinfo function for setting a value to a object member.  This feature is
@@ -225,12 +201,55 @@ PyObject *_ethtool_etherinfo_str(etherinfo_py *self)
 
 
 /**
- * This is required by Python, which lists all accessible methods
- * in the object.  But no methods are provided.
+ * Returns a tuple list of ethertool.etherinfo_ipv6addr objects, containing configured
+ * IPv6 addresses
+ *
+ * @param self
+ * @param notused
+ *
+ * @return Returns a Python tuple list of ethertool.etherinfo_ipv6addr objects
+ */
+PyObject * _ethtool_etherinfo_get_ipv6_addresses(etherinfo_py *self, PyObject *notused) {
+	PyObject *ret;
+	struct ipv6address *ipv6 = NULL;
+	int i = 0;
+
+	if( !self || !self->data ) {
+		PyErr_SetString(PyExc_AttributeError, "No data available");
+		return NULL;
+	}
+
+	get_etherinfo(self->data->ethinfo, self->data->nlc, NLQRY_ADDR);
+	ipv6 = self->data->ethinfo->ipv6_addresses;
+	ret = PyTuple_New(1);
+	while( ipv6 ) {
+		PyObject *ipv6_pyobj = NULL, *ipv6_pydata = NULL, *args = NULL;
+		struct ipv6address *next = ipv6->next;
+
+		ipv6->next = NULL;
+		ipv6_pydata = PyCObject_FromVoidPtr(ipv6, NULL);
+		args = PyTuple_New(1);
+		PyTuple_SetItem(args, 0, ipv6_pydata);
+		ipv6_pyobj = PyObject_CallObject((PyObject *)&ethtool_etherinfoIPv6Type, args);
+		if( ipv6_pyobj ) {
+			PyTuple_SetItem(ret, i++, ipv6_pyobj);
+			_PyTuple_Resize(&ret, i+1);
+		}
+		ipv6 = next;
+	}
+	_PyTuple_Resize(&ret, i);
+	return ret;
+}
+
+
+/**
+ * Defines all available methods in the ethtool.etherinfo class
  *
  */
 static PyMethodDef _ethtool_etherinfo_methods[] = {
-    {NULL}  /**< No methods defined */
+	{"get_ipv6_addresses", _ethtool_etherinfo_get_ipv6_addresses, METH_NOARGS,
+	 "Retrieve configured IPv6 addresses.  Returns a tuple list of etherinfo_ipv6addr objects"},
+	{NULL}  /**< No methods defined */
 };
 
 /**
@@ -248,8 +267,6 @@ static PyMemberDef _ethtool_etherinfo_members[] = {
      "IPv4 netmask in bits"},
     {"ipv4_broadcast", T_OBJECT_EX, offsetof(etherinfo_py, data), 0,
      "IPv4 broadcast address"},
-    {"ipv6_addresses", T_OBJECT_EX, offsetof(etherinfo_py, data), 0,
-     "Returns a list of associated IPv6 addresses"},
     {NULL}  /* End of member list */
 };
 
