@@ -274,7 +274,7 @@ void dump_etherinfo(FILE *fp, struct etherinfo *ptr)
  *
  * @return Returns 1 on success, otherwise 0.
  */
-int get_etherinfo(struct etherinfo *ethinf, struct _nlconnection *nlc, nlQuery query)
+int get_etherinfo(struct etherinfo *ethinf, struct nl_handle *nlc, nlQuery query)
 {
 	struct nl_cache *link_cache;
 	struct nl_cache *addr_cache;
@@ -291,7 +291,7 @@ int get_etherinfo(struct etherinfo *ethinf, struct _nlconnection *nlc, nlQuery q
 	 * interface index if we have that
 	 */
 	if( ethinf->index < 0 ) {
-		link_cache = rtnl_link_alloc_cache(nlc->nlrt_handle);
+		link_cache = rtnl_link_alloc_cache(nlc);
 		ethinf->index = rtnl_link_name2i(link_cache, ethinf->device);
 		if( ethinf->index < 0 ) {
 			return 0;
@@ -303,7 +303,7 @@ int get_etherinfo(struct etherinfo *ethinf, struct _nlconnection *nlc, nlQuery q
 	switch( query ) {
 	case NLQRY_LINK:
 		/* Extract MAC/hardware address of the interface */
-		link_cache = rtnl_link_alloc_cache(nlc->nlrt_handle);
+		link_cache = rtnl_link_alloc_cache(nlc);
 		link = rtnl_link_alloc();
 		rtnl_link_set_ifindex(link, ethinf->index);
 		nl_cache_foreach_filter(link_cache, (struct nl_object *)link, callback_nl_link, ethinf);
@@ -318,7 +318,7 @@ int get_etherinfo(struct etherinfo *ethinf, struct _nlconnection *nlc, nlQuery q
 		ethinf->ipv6_addresses = NULL;
 
 		/* Extract IP address information */
-		addr_cache = rtnl_addr_alloc_cache(nlc->nlrt_handle);
+		addr_cache = rtnl_addr_alloc_cache(nlc);
 		addr = rtnl_addr_alloc();
 		rtnl_addr_set_ifindex(addr, ethinf->index);
 		nl_cache_foreach_filter(addr_cache, (struct nl_object *)addr, callback_nl_address, ethinf);

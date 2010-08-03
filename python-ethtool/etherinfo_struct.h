@@ -51,13 +51,6 @@ struct ipv6address {
 	struct ipv6address *next;    /**<  Pointer to next configured IPv6 address */
 };
 
-/**
- *  NETLINK connection handle and related information to be shared
- *  among all the instantiated etherinfo objects.
- */
-struct _nlconnection {
-	struct nl_handle *nlrt_handle;
-};
 
 /**
  * Contains the internal data structure of the
@@ -65,7 +58,7 @@ struct _nlconnection {
  *
  */
 struct etherinfo_obj_data {
-	struct _nlconnection *nlc;	/**< Contains NETLINK connection info */
+	struct nl_handle *nlc;          /**< Contains NETLINK connection info */
 	struct etherinfo *ethinfo;      /**< Contains info about our current interface */
 };
 

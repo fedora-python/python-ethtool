@@ -31,7 +31,7 @@
 #include "etherinfo_obj.h"
 #include "etherinfo.h"
 
-static struct _nlconnection nlconnection;
+static struct nl_handle *nlconnection = NULL;
 extern PyTypeObject ethtool_etherinfoType;
 extern PyTypeObject ethtool_etherinfoIPv6Type;
 
@@ -307,7 +307,7 @@ static PyObject *get_interfaces_info(PyObject *self __unused, PyObject *args) {
 		 */
 		objdata->ethinfo->device = strdup(fetch_devs[i]);
 		objdata->ethinfo->index = -1;
-		objdata->nlc = &nlconnection; /* Global variable */
+		objdata->nlc = nlconnection; /* Global variable */
 
 		/* Instantiate a new etherinfo object with the device information */
 		ethinf_py = PyCObject_FromVoidPtr(objdata, NULL);
@@ -971,22 +971,22 @@ static struct PyMethodDef PyEthModuleMethods[] = {
 
 
 /**
- * Connects to the NETLINK interface and stores the connection handles in the given struct.  This
- * should be called as part of the main ethtool module init.
+ * Connects to the NETLINK interface.  This should only be
+ * called once as part of the main ethtool module init.
  *
- * @param nlc Structure which keeps the NETLINK connection handle
+ * @param nlc Structure which keeps the NETLINK connection handle (struct nl_handle)
  *
  * @return Returns 1 on success, otherwise 0.
  */
-int open_netlink(struct _nlconnection *nlc)
+int open_netlink(struct nl_handle **nlc)
 {
-	if( !nlc ) {
+	if( *nlc ) {
 		return 0;
 	}
 
-	nlc->nlrt_handle = nl_handle_alloc();
-	nl_connect(nlc->nlrt_handle, NETLINK_ROUTE);
-	return (nlc->nlrt_handle != NULL);
+	*nlc = nl_handle_alloc();
+	nl_connect(*nlc, NETLINK_ROUTE);
+	return (*nlc != NULL);
 }
 
 
@@ -994,25 +994,25 @@ int open_netlink(struct _nlconnection *nlc)
  * Closes the NETLINK connection.  This should be called automatically whenever
  * the ethtool module is unloaded from Python.
  *
- * @param ptr Points at a struct _nlconnection object with an open NETLINK connection
+ * @param ptr  Pointer to the pointer of struct nl_handle, which contains the NETLINK connection
  */
-void close_netlink(void *ptr)
+void close_netlink(void **ptr)
 {
-	struct _nlconnection *nlc;
+	struct nl_handle *nlc;
 
-	if( !ptr ) {
+	if( !ptr && !*ptr ) {
 		return;
 	}
 
-	nlc = (struct _nlconnection *) ptr;
-	if( !nlc->nlrt_handle ) {
+	nlc = (struct nl_handle *) *ptr;
+	if( !nlc ) {
 		return;
 	}
 
 	/* Close NETLINK connection */
-	nl_close(nlc->nlrt_handle);
-	nl_handle_destroy(nlc->nlrt_handle);
-	nlc->nlrt_handle = NULL;
+	nl_close(nlc);
+	nl_handle_destroy(nlc);
+	*ptr = NULL; /* reset the pointers pointer address */
 }
 
 
