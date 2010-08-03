@@ -152,7 +152,7 @@ PyObject *_ethtool_etherinfo_ipv6_str(etherinfo_ipv6addr_py *self)
 	}
 
 	rtnl_scope2str(self->addrdata->scope, scope, 64);
-	return PyString_FromFormat("[%s] %s/%i\n",
+	return PyString_FromFormat("[%s] %s/%i",
 				   scope,
 				   self->addrdata->address,
 				   self->addrdata->netmask);
