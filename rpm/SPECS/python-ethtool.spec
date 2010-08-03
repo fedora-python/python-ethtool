@@ -3,10 +3,10 @@
 
 Summary: Ethernet settings python bindings
 Name: python-ethtool
-Version: 0.3
-Release: 3%{?dist}
-URL: http://git.kernel.org/?p=linux/kernel/git/acme/python-ethtool.git
-Source: http://userweb.kernel.org/~acme/python-ethtool/%{name}-%{version}.tar.bz2
+Version: 0.4
+Release: 1%{?dist}
+URL: http://fedorapeople.org/gitweb?p=dsommers/public_git/python-ethtool.git;a=summary
+Source: http://dsommers.fedorapeople.org/python-ethtool/%{name}-%{version}.tar.bz2
 License: GPLv2
 Group: System Environment/Libraries
 BuildRequires: python-devel libnl-devel
@@ -44,8 +44,11 @@ rm -rf %{buildroot}
 %endif
 
 %changelog
-* Wed Apr 28 2010 David Sommerseth <davids@redhat.com> - 0.3-3
-- Updated with IPv6 support, via ethtool.get_interface_info()
+* Wed Apr 28 2010 David Sommerseth <davids@redhat.com> - 0.4-1
+- David Sommerseth is now taking over the maintenance of python-ethtool
+- New URLs for upstream source code
+- Added new API: ethtool.get_interfaces_info() - returns list of etherinfo objects
+- Added support retrieving for IPv6 address, using etherinfo::get_ipv6_addresses()
 
 * Fri Sep  5 2008 Arnaldo Carvalho de Melo <acme@redhat.com> - 0.3-2
 - Rewrote build and install sections as part of the fedora review process
