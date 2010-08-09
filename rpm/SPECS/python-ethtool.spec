@@ -3,7 +3,7 @@
 
 Summary: Ethernet settings python bindings
 Name: python-ethtool
-Version: 0.4
+Version: 0.5
 Release: 1%{?dist}
 URL: http://fedorapeople.org/gitweb?p=dsommers/public_git/python-ethtool.git;a=summary
 Source: http://dsommers.fedorapeople.org/python-ethtool/%{name}-%{version}.tar.bz2
@@ -44,6 +44,9 @@ rm -rf %{buildroot}
 %endif
 
 %changelog
+* Mon Aug  9 2010 David Sommerseth <davids@redhat.com> - 0.5-1
+- Fixed double free issue (commit c52ed2cbdc5b851ebc7b)
+
 * Wed Apr 28 2010 David Sommerseth <davids@redhat.com> - 0.4-1
 - David Sommerseth is now taking over the maintenance of python-ethtool
 - New URLs for upstream source code
