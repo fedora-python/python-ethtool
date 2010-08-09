@@ -66,7 +66,9 @@ void free_ipv6addresses(struct ipv6address *ptr) {
 	while( ipv6ptr ) {
 		struct ipv6address *tmp = ipv6ptr->next;
 
-		free(ipv6ptr->address);
+		if( ipv6ptr->address ) {
+			free(ipv6ptr->address);
+		}
 		free(ipv6ptr);
 		ipv6ptr = tmp;
 	}
@@ -313,10 +315,6 @@ int get_etherinfo(struct etherinfo *ethinf, struct nl_handle *nlc, nlQuery query
 		break;
 
 	case NLQRY_ADDR:
-		/* Remove old IPv6 information we might have */
-		free_ipv6addresses(ethinf->ipv6_addresses);
-		ethinf->ipv6_addresses = NULL;
-
 		/* Extract IP address information */
 		addr_cache = rtnl_addr_alloc_cache(nlc);
 		addr = rtnl_addr_alloc();

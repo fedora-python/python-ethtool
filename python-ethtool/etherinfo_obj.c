@@ -234,6 +234,7 @@ PyObject * _ethtool_etherinfo_get_ipv6_addresses(etherinfo_py *self, PyObject *n
 		if( ipv6_pyobj ) {
 			PyTuple_SetItem(ret, i++, ipv6_pyobj);
 			_PyTuple_Resize(&ret, i+1);
+			Py_INCREF(ipv6_pyobj);
 		}
 		ipv6 = next;
 	}
