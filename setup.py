@@ -2,6 +2,7 @@
 
 from distutils.core import setup, Extension
 import commands
+import sys
 
 ethtool = Extension('ethtool',
 		    sources = ['python-ethtool/ethtool.c',
