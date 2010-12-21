@@ -147,7 +147,7 @@ static void callback_nl_link(struct nl_object *obj, void *arg)
 	unsigned char *binaddr;
 	char hwaddr[130], *ptr;
 
-	if( (ethi == NULL) || (ethi->hwaddress != NULL) ) {
+	if( (ethi == NULL) || (ethi->hwaddress != NULL) || (addr == NULL) ) {
 		return;
 	}
 
