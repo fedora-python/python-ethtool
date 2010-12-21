@@ -9,7 +9,6 @@ python-ethtool/etherinfo_ipv6_obj.c
 python-ethtool/etherinfo_struct.h
 python-ethtool/etherinfo.h
 python-ethtool/etherinfo_obj.h
-python-ethtool/etherinfo_ipv6_obj.h
 setup.py
 rpm/SPECS/python-ethtool.spec
 MANIFEST
