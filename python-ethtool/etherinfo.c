@@ -319,6 +319,14 @@ int get_etherinfo(struct etherinfo *ethinf, struct nl_handle *nlc, nlQuery query
 		addr_cache = rtnl_addr_alloc_cache(nlc);
 		addr = rtnl_addr_alloc();
 		rtnl_addr_set_ifindex(addr, ethinf->index);
+
+                /* Make sure we don't have any old IPv6 addresses saved */
+                if( ethinf->ipv6_addresses ) {
+                        free_ipv6addresses(ethinf->ipv6_addresses);
+                        ethinf->ipv6_addresses = NULL;
+                }
+
+                /* Retrieve all address information */
 		nl_cache_foreach_filter(addr_cache, (struct nl_object *)addr, callback_nl_address, ethinf);
 		rtnl_addr_put(addr);
 		nl_cache_free(addr_cache);
