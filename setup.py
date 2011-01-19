@@ -4,6 +4,8 @@ from distutils.core import setup, Extension
 import commands
 import sys
 
+version = '0.6'
+
 ethtool = Extension('ethtool',
 		    sources = ['python-ethtool/ethtool.c',
                                'python-ethtool/etherinfo.c', 'python-ethtool/etherinfo_obj.c'])
@@ -49,7 +51,7 @@ libnl = pkgconfig('libnl-1')
 
 # don't reformat this line, Makefile parses it
 setup(name='ethtool',
-      version='0.2',
+      version=version,
       description='Python module to interface with ethtool',
       author='Harald Hoyer & Arnaldo Carvalho de Melo',
       author_email='acme@redhat.com',
@@ -64,7 +66,8 @@ setup(name='ethtool',
                 'python-ethtool/etherinfo_ipv6_obj.c'],
             include_dirs = libnl['include'],
             library_dirs = libnl['libdirs'],
-            libraries = libnl['libs']
+            libraries = libnl['libs'],
+            define_macros = [('VERSION', '"%s"' % version)]
             )
         ]
 )

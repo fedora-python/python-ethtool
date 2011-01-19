@@ -1058,5 +1058,6 @@ PyMODINIT_FUNC initethtool(void)
 	PyModule_AddIntConstant(m, "IFF_DYNAMIC", IFF_DYNAMIC);		/* Dialup device with changing addresses.  */
 	PyModule_AddIntConstant(m, "AF_INET", AF_INET);                 /* IPv4 interface */
 	PyModule_AddIntConstant(m, "AF_INET6", AF_INET6);               /* IPv6 interface */
+	PyModule_AddStringConstant(m, "version", "python-ethtool v" VERSION);
 }
 
