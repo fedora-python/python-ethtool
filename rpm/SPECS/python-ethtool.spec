@@ -3,7 +3,7 @@
 
 Summary: Ethernet settings python bindings
 Name: python-ethtool
-Version: 0.5
+Version: 0.6
 Release: 1%{?dist}
 URL: http://fedorapeople.org/gitweb?p=dsommers/public_git/python-ethtool.git;a=summary
 Source: http://dsommers.fedorapeople.org/python-ethtool/%{name}-%{version}.tar.bz2
@@ -44,6 +44,13 @@ rm -rf %{buildroot}
 %endif
 
 %changelog
+* Wed Jan 19 2011 David Sommerseth <dazo@users.sourceforge.net> - 0.6-1
+- Don't segfault if we don't receive any address from rtnl_link_get_addr()
+- Remove errornous file from MANIFEST
+- Added ethtool.version string constant
+- Avoid duplicating IPv6 address information
+- import sys module in setup.py (Miroslav Suchy)
+
 * Mon Aug  9 2010 David Sommerseth <davids@redhat.com> - 0.5-1
 - Fixed double free issue (commit c52ed2cbdc5b851ebc7b)
 
