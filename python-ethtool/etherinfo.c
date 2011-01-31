@@ -34,6 +34,52 @@
 
 pthread_mutex_t nlc_counter_mtx = PTHREAD_MUTEX_INITIALIZER;
 
+#ifdef LIBNL_1_0
+#define NLHDR_COMMON                            \
+        int                     ce_refcnt;      \
+        struct nl_object_ops *  ce_ops;         \
+        struct nl_cache *       ce_cache;       \
+        struct nl_list_head     ce_list;        \
+        int                     ce_msgtype;     \
+        int                     ce_flags;       \
+        uint32_t                ce_mask;
+
+struct nl_cache
+{
+        struct nl_list_head     c_items;
+        int                     c_nitems;
+        int                     c_iarg1;
+        int                     c_iarg2;
+        struct nl_cache_ops *   c_ops;
+};
+
+struct nl_object
+{
+        NLHDR_COMMON
+};
+
+void nl_cache_free(struct nl_cache *cache)
+{
+        struct nl_object *obj, *tmp;
+
+        if( !cache )
+                return;
+
+        nl_list_for_each_entry_safe(obj, tmp, &cache->c_items, ce_list) {
+                struct nl_cache *cache = obj->ce_cache;
+                if( !cache ) {
+                        break;
+                }
+
+                nl_list_del(&obj->ce_list);
+                obj->ce_cache = NULL;
+                nl_object_put(obj);
+                cache->c_nitems--;
+        }
+        free(cache);
+}
+#endif
+
 /*
  *
  *   Internal functions for working with struct etherinfo

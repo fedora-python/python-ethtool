@@ -64,7 +64,8 @@ setup(name='ethtool',
             include_dirs = libnl['include'],
             library_dirs = libnl['libdirs'],
             libraries = libnl['libs'],
-            define_macros = [('VERSION', '"%s"' % version)]
+            define_macros = [('VERSION', '"%s"' % version),
+                             ('LIBNL_1_0', None)]
             )
         ]
 )
