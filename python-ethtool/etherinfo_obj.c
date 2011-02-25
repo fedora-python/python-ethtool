@@ -222,19 +222,42 @@ PyObject * _ethtool_etherinfo_get_ipv6_addresses(etherinfo_py *self, PyObject *n
 	get_etherinfo(self->data->ethinfo, self->data->nlc, NLQRY_ADDR);
 	ipv6 = self->data->ethinfo->ipv6_addresses;
 	ret = PyTuple_New(1);
+	if( !ret ) {
+		PyErr_SetString(PyExc_MemoryError,
+				"[INTERNAL] Failed to allocate tuple list for "
+				"IPv6 address objects");
+		return NULL;
+	}
 	while( ipv6 ) {
 		PyObject *ipv6_pyobj = NULL, *ipv6_pydata = NULL, *args = NULL;
 		struct ipv6address *next = ipv6->next;
 
 		ipv6->next = NULL;
 		ipv6_pydata = PyCObject_FromVoidPtr(ipv6, NULL);
+		if( !ipv6_pydata ) {
+			PyErr_SetString(PyExc_MemoryError,
+					"[INTERNAL] Failed to create python object "
+					"containing IPv6 address");
+			return NULL;
+		}
 		args = PyTuple_New(1);
+		if( !args ) {
+			PyErr_SetString(PyExc_MemoryError,
+					"[INTERNAL] Failed to allocate argument list "
+					"a new IPv6 address object");
+			return NULL;
+		}
 		PyTuple_SetItem(args, 0, ipv6_pydata);
 		ipv6_pyobj = PyObject_CallObject((PyObject *)&ethtool_etherinfoIPv6Type, args);
 		if( ipv6_pyobj ) {
 			PyTuple_SetItem(ret, i++, ipv6_pyobj);
 			_PyTuple_Resize(&ret, i+1);
 			Py_INCREF(ipv6_pyobj);
+		} else {
+			PyErr_SetString(PyExc_RuntimeError,
+					"[INTERNAL] Failed to initialise the new "
+					"IPv6 address object");
+			return NULL;
 		}
 		ipv6 = next;
 	}
