@@ -87,6 +87,6 @@ typedef struct {
  *
  * @return Returns a PyObject with either the input string wrapped up, or a Python None value.
  */
-#define RETURN_STRING(str) (str ? PyString_FromString(str) : Py_None)
+#define RETURN_STRING(str) (str ? PyString_FromString(str) : (Py_INCREF(Py_None), Py_None))
 
 #endif
