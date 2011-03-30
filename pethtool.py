@@ -15,7 +15,7 @@
 import getopt, ethtool, sys
 
 def usage():
-	print '''Usage: ethtool [OPTIONS] [<interface>]
+	print '''Usage: pethtool [OPTIONS] [<interface>]
 	-h|--help               Give this help list
 	-c|--show-coalesce      Show coalesce options
 	-C|--coalesce		Set coalesce options
