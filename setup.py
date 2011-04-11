@@ -4,7 +4,7 @@ from distutils.core import setup, Extension
 import commands
 import sys
 
-version = '0.6'
+version = '0.7'
 
 ethtool = Extension('ethtool',
 		    sources = ['python-ethtool/ethtool.c',
@@ -53,8 +53,8 @@ libnl = pkgconfig('libnl-1')
 setup(name='ethtool',
       version=version,
       description='Python module to interface with ethtool',
-      author='Harald Hoyer & Arnaldo Carvalho de Melo',
-      author_email='acme@redhat.com',
+      author='Harald Hoyer, Arnaldo Carvalho de Melo, David Sommerseth',
+      author_email='davids@redhat.com',
       url='http://fedoraproject.org/wiki/python-ethtool',
       ext_modules=[
         Extension(

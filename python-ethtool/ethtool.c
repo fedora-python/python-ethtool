@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2010 Red Hat Inc.
+ * Copyright (C) 2008-2011 Red Hat Inc.
  *
  * Arnaldo Carvalho de Melo <acme@redhat.com>
  * David Sommerseth <davids@redhat.com>
@@ -32,6 +32,7 @@
 #include "etherinfo.h"
 
 static struct nl_handle *nlconnection = NULL;
+unsigned int nlconnection_users = 0;  /* How many NETLINK users are active? */
 extern PyTypeObject ethtool_etherinfoType;
 extern PyTypeObject ethtool_etherinfoIPv6Type;
 
@@ -314,7 +315,8 @@ static PyObject *get_interfaces_info(PyObject *self __unused, PyObject *args) {
 		 */
 		objdata->ethinfo->device = strdup(fetch_devs[i]);
 		objdata->ethinfo->index = -1;
-		objdata->nlc = nlconnection; /* Global variable */
+		objdata->nlc = &nlconnection;
+		objdata->nlc_users = &nlconnection_users;
 
 		/* Instantiate a new etherinfo object with the device information */
 		ethinf_py = PyCObject_FromVoidPtr(objdata, NULL);
@@ -979,52 +981,6 @@ static struct PyMethodDef PyEthModuleMethods[] = {
 };
 
 
-/**
- * Connects to the NETLINK interface.  This should only be
- * called once as part of the main ethtool module init.
- *
- * @param nlc Structure which keeps the NETLINK connection handle (struct nl_handle)
- *
- * @return Returns 1 on success, otherwise 0.
- */
-int open_netlink(struct nl_handle **nlc)
-{
-	if( *nlc ) {
-		return 0;
-	}
-
-	*nlc = nl_handle_alloc();
-	nl_connect(*nlc, NETLINK_ROUTE);
-	return (*nlc != NULL);
-}
-
-
-/**
- * Closes the NETLINK connection.  This should be called automatically whenever
- * the ethtool module is unloaded from Python.
- *
- * @param ptr  Pointer to the pointer of struct nl_handle, which contains the NETLINK connection
- */
-void close_netlink(void **ptr)
-{
-	struct nl_handle *nlc;
-
-	if( !ptr && !*ptr ) {
-		return;
-	}
-
-	nlc = (struct nl_handle *) *ptr;
-	if( !nlc ) {
-		return;
-	}
-
-	/* Close NETLINK connection */
-	nl_close(nlc);
-	nl_handle_destroy(nlc);
-	*ptr = NULL; /* reset the pointers pointer address */
-}
-
-
 PyMODINIT_FUNC initethtool(void)
 {
 	PyObject *m;
@@ -1041,12 +997,6 @@ PyMODINIT_FUNC initethtool(void)
 		return;
 	Py_INCREF(&ethtool_etherinfoIPv6Type);
 	PyModule_AddObject(m, "etherinfo_ipv6addr", (PyObject *)&ethtool_etherinfoIPv6Type);
-
-	// Prepare an internal netlink connection object
-	if( open_netlink(&nlconnection) ) {
-		PyModule_AddObject(m, "__nlconnection",
-				   PyCObject_FromVoidPtr(&nlconnection, close_netlink));
-	}
 
 	// Setup constants
 	PyModule_AddIntConstant(m, "IFF_UP", IFF_UP);			/* Interface is up. */

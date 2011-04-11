@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2010 Red Hat Inc.
+ * Copyright (C) 2009-2011 Red Hat Inc.
  *
  * David Sommerseth <davids@redhat.com>
  *
@@ -58,7 +58,9 @@ struct ipv6address {
  *
  */
 struct etherinfo_obj_data {
-	struct nl_handle *nlc;          /**< Contains NETLINK connection info */
+	struct nl_handle **nlc;         /**< Contains NETLINK connection info (global) */
+	unsigned int *nlc_users;	/**< Resource counter for the NETLINK connection (global) */
+	unsigned short nlc_active;	/**< Is this instance using NETLINK? */
 	struct etherinfo *ethinfo;      /**< Contains info about our current interface */
 };
 

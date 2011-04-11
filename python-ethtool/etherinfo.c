@@ -1,6 +1,6 @@
 /* etherinfo.c - Retrieve ethernet interface info via NETLINK
  *
- * Copyright (C) 2009-2010 Red Hat Inc.
+ * Copyright (C) 2009-2011 Red Hat Inc.
  *
  * David Sommerseth <davids@redhat.com>
  * Parts of this code is based on ideas and solutions in iproute2
@@ -27,8 +27,11 @@
 #include <netlink/route/rtnl.h>
 #include <assert.h>
 #include <errno.h>
+#include <pthread.h>
 #include "etherinfo_struct.h"
 #include "etherinfo.h"
+
+pthread_mutex_t nlc_counter_mtx = PTHREAD_MUTEX_INITIALIZER;
 
 /*
  *
@@ -274,15 +277,25 @@ void dump_etherinfo(FILE *fp, struct etherinfo *ptr)
  *
  * @return Returns 1 on success, otherwise 0.
  */
-int get_etherinfo(struct etherinfo *ethinf, struct nl_handle *nlc, nlQuery query)
+int get_etherinfo(struct etherinfo_obj_data *data, nlQuery query)
 {
 	struct nl_cache *link_cache;
 	struct nl_cache *addr_cache;
 	struct rtnl_addr *addr;
 	struct rtnl_link *link;
+	struct etherinfo *ethinf = NULL;
 	int ret = 0;
 
-	if( !ethinf || !nlc ) {
+	if( !data || !data->ethinfo ) {
+		return 0;
+	}
+	ethinf = data->ethinfo;
+
+	/* Open a NETLINK connection on-the-fly */
+	if( !open_netlink(data) ) {
+		PyErr_Format(PyExc_RuntimeError,
+			     "Could not open a NETLINK connection for %s",
+			     ethinf->device);
 		return 0;
 	}
 
@@ -291,7 +304,7 @@ int get_etherinfo(struct etherinfo *ethinf, struct nl_handle *nlc, nlQuery query
 	 * interface index if we have that
 	 */
 	if( ethinf->index < 0 ) {
-		link_cache = rtnl_link_alloc_cache(nlc);
+		link_cache = rtnl_link_alloc_cache(*data->nlc);
 		ethinf->index = rtnl_link_name2i(link_cache, ethinf->device);
 		if( ethinf->index < 0 ) {
 			return 0;
@@ -303,7 +316,7 @@ int get_etherinfo(struct etherinfo *ethinf, struct nl_handle *nlc, nlQuery query
 	switch( query ) {
 	case NLQRY_LINK:
 		/* Extract MAC/hardware address of the interface */
-		link_cache = rtnl_link_alloc_cache(nlc);
+		link_cache = rtnl_link_alloc_cache(*data->nlc);
 		link = rtnl_link_alloc();
 		rtnl_link_set_ifindex(link, ethinf->index);
 		nl_cache_foreach_filter(link_cache, (struct nl_object *)link, callback_nl_link, ethinf);
@@ -314,7 +327,7 @@ int get_etherinfo(struct etherinfo *ethinf, struct nl_handle *nlc, nlQuery query
 
 	case NLQRY_ADDR:
 		/* Extract IP address information */
-		addr_cache = rtnl_addr_alloc_cache(nlc);
+		addr_cache = rtnl_addr_alloc_cache(*data->nlc);
 		addr = rtnl_addr_alloc();
 		rtnl_addr_set_ifindex(addr, ethinf->index);
 
@@ -337,3 +350,75 @@ int get_etherinfo(struct etherinfo *ethinf, struct nl_handle *nlc, nlQuery query
 	return ret;
 }
 
+
+/**
+ * Connects to the NETLINK interface.  This will be called
+ * for each etherinfo object being generated, and it will
+ * keep a separate file descriptor open for each object
+ *
+ * @param data etherinfo_obj_data structure
+ *
+ * @return Returns 1 on success, otherwise 0.
+ */
+int open_netlink(struct etherinfo_obj_data *data)
+{
+	if( !data ) {
+		return 0;
+	}
+
+	/* Reuse already established NETLINK connection, if a connection exists */
+	if( *data->nlc ) {
+		/* If this object has not used NETLINK earlier, tag it as a user */
+		if( !data->nlc_active ) {
+			pthread_mutex_lock(&nlc_counter_mtx);
+			(*data->nlc_users)++;
+			pthread_mutex_unlock(&nlc_counter_mtx);
+		}
+		data->nlc_active = 1;
+		return 1;
+	}
+
+	/* No earlier connections exists, establish a new one */
+	*data->nlc = nl_handle_alloc();
+	nl_connect(*data->nlc, NETLINK_ROUTE);
+	if( (*data->nlc != NULL) ) {
+		/* Tag this object as an active user */
+		pthread_mutex_lock(&nlc_counter_mtx);
+		(*data->nlc_users)++;
+		pthread_mutex_unlock(&nlc_counter_mtx);
+		data->nlc_active = 1;
+		return 1;
+	} else {
+		return 0;
+	}
+}
+
+
+/**
+ * Closes the NETLINK connection.  This should be called automatically whenever
+ * the corresponding etherinfo object is deleted.
+ *
+ * @param ptr  Pointer to the pointer of struct nl_handle, which contains the NETLINK connection
+ */
+void close_netlink(struct etherinfo_obj_data *data)
+{
+	if( !data || !(*data->nlc) ) {
+		return;
+	}
+
+	/* Untag this object as a NETLINK user */
+	data->nlc_active = 0;
+	pthread_mutex_lock(&nlc_counter_mtx);
+	(*data->nlc_users)--;
+	pthread_mutex_unlock(&nlc_counter_mtx);
+
+	/* Don't close the connection if there are more users */
+	if( *data->nlc_users > 0) {
+		return;
+	}
+
+	/* Close NETLINK connection */
+	nl_close(*data->nlc);
+	nl_handle_destroy(*data->nlc);
+	*data->nlc = NULL;
+}

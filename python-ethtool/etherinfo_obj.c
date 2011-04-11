@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2010 Red Hat Inc.
+ * Copyright (C) 2009-2011 Red Hat Inc.
  *
  * David Sommerseth <davids@redhat.com>
  *
@@ -40,6 +40,8 @@ extern PyTypeObject ethtool_etherinfoIPv6Type;
 void _ethtool_etherinfo_dealloc(etherinfo_py *self)
 {
 	if( self->data ) {
+		close_netlink(self->data);
+
 		if( self->data->ethinfo ) {
 			free_etherinfo(self->data->ethinfo);
 		}
@@ -110,20 +112,21 @@ PyObject *_ethtool_etherinfo_getter(etherinfo_py *self, PyObject *attr_o)
 	if( strcmp(attr, "device") == 0 ) {
 		ret = RETURN_STRING(self->data->ethinfo->device);
 	} else if( strcmp(attr, "mac_address") == 0 ) {
-		get_etherinfo(self->data->ethinfo, self->data->nlc, NLQRY_LINK);
+		get_etherinfo(self->data, NLQRY_LINK);
 		ret = RETURN_STRING(self->data->ethinfo->hwaddress);
 	} else if( strcmp(attr, "ipv4_address") == 0 ) {
-		get_etherinfo(self->data->ethinfo, self->data->nlc, NLQRY_ADDR);
+		get_etherinfo(self->data, NLQRY_ADDR);
 		ret = RETURN_STRING(self->data->ethinfo->ipv4_address);
 	} else if( strcmp(attr, "ipv4_netmask") == 0 ) {
-		get_etherinfo(self->data->ethinfo, self->data->nlc, NLQRY_ADDR);
+		get_etherinfo(self->data, NLQRY_ADDR);
 		ret = PyInt_FromLong(self->data->ethinfo->ipv4_netmask);
 	} else if( strcmp(attr, "ipv4_broadcast") == 0 ) {
-		get_etherinfo(self->data->ethinfo, self->data->nlc, NLQRY_ADDR);
+		get_etherinfo(self->data, NLQRY_ADDR);
 		ret = RETURN_STRING(self->data->ethinfo->ipv4_broadcast);
 	} else {
 		ret = PyObject_GenericGetAttr((PyObject *)self, attr_o);
 	}
+
 	return ret;
 }
 
@@ -160,8 +163,8 @@ PyObject *_ethtool_etherinfo_str(etherinfo_py *self)
 		return NULL;
 	}
 
-	get_etherinfo(self->data->ethinfo, self->data->nlc, NLQRY_LINK);
-	get_etherinfo(self->data->ethinfo, self->data->nlc, NLQRY_ADDR);
+	get_etherinfo(self->data, NLQRY_LINK);
+	get_etherinfo(self->data, NLQRY_ADDR);
 
 	ret = PyString_FromFormat("Device %s:\n", self->data->ethinfo->device);
 	if( self->data->ethinfo->hwaddress ) {
@@ -223,7 +226,7 @@ PyObject * _ethtool_etherinfo_get_ipv6_addresses(etherinfo_py *self, PyObject *n
 		return NULL;
 	}
 
-	get_etherinfo(self->data->ethinfo, self->data->nlc, NLQRY_ADDR);
+	get_etherinfo(self->data, NLQRY_ADDR);
 	ipv6 = self->data->ethinfo->ipv6_addresses;
 	ret = PyTuple_New(1);
 	if( !ret ) {
