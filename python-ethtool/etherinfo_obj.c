@@ -167,6 +167,7 @@ PyObject *_ethtool_etherinfo_str(etherinfo_py *self)
 	if( self->data->ethinfo->hwaddress ) {
 		PyObject *tmp = PyString_FromFormat("\tMAC address: %s\n", self->data->ethinfo->hwaddress);
 		PyString_Concat(&ret, tmp);
+		Py_DECREF(tmp);
 	}
 
 	if( self->data->ethinfo->ipv4_address ) {
@@ -174,19 +175,21 @@ PyObject *_ethtool_etherinfo_str(etherinfo_py *self)
 						   self->data->ethinfo->ipv4_address,
 						   self->data->ethinfo->ipv4_netmask);
 		if( self->data->ethinfo->ipv4_broadcast ) {
-			PyObject *tmp2 = PyString_FromFormat("    Broadcast: %s",
+			PyObject *tmp2 = PyString_FromFormat("	  Broadcast: %s",
 							     self->data->ethinfo->ipv4_broadcast);
 			PyString_Concat(&tmp, tmp2);
+			Py_DECREF(tmp2);
 		}
 		PyString_Concat(&tmp, PyString_FromString("\n"));
 		PyString_Concat(&ret, tmp);
+		Py_DECREF(tmp);
 	}
 
 	if( self->data->ethinfo->ipv6_addresses ) {
 		struct ipv6address *ipv6 = self->data->ethinfo->ipv6_addresses;
 		PyObject *tmp = PyString_FromFormat("\tIPv6 addresses:\n");
 		PyString_Concat(&ret, tmp);
-
+		Py_DECREF(tmp);
 		for( ; ipv6; ipv6 = ipv6->next) {
 			char scope[66];
 
@@ -194,6 +197,7 @@ PyObject *_ethtool_etherinfo_str(etherinfo_py *self)
 			PyObject *addr = PyString_FromFormat("\t		[%s] %s/%i\n",
 							     scope, ipv6->address, ipv6->netmask);
 			PyString_Concat(&ret, addr);
+			Py_DECREF(addr);
 		}
 	}
 	return ret;
@@ -249,10 +253,10 @@ PyObject * _ethtool_etherinfo_get_ipv6_addresses(etherinfo_py *self, PyObject *n
 		}
 		PyTuple_SetItem(args, 0, ipv6_pydata);
 		ipv6_pyobj = PyObject_CallObject((PyObject *)&ethtool_etherinfoIPv6Type, args);
+		Py_DECREF(args);
 		if( ipv6_pyobj ) {
 			PyTuple_SetItem(ret, i++, ipv6_pyobj);
 			_PyTuple_Resize(&ret, i+1);
-			Py_INCREF(ipv6_pyobj);
 		} else {
 			PyErr_SetString(PyExc_RuntimeError,
 					"[INTERNAL] Failed to initialise the new "
@@ -262,6 +266,7 @@ PyObject * _ethtool_etherinfo_get_ipv6_addresses(etherinfo_py *self, PyObject *n
 		ipv6 = next;
 	}
 	_PyTuple_Resize(&ret, i);
+	self->data->ethinfo->ipv6_addresses = NULL;
 	return ret;
 }
 

@@ -93,8 +93,11 @@ static PyObject *get_active_devices(PyObject *self __unused, PyObject *args __un
 	ifr = ifc.ifc_req;
 	for (n = 0; n < ifc.ifc_len; n += sizeof(struct ifreq)) {
 		if (!(ioctl(skfd, SIOCGIFFLAGS, ifr) < 0))
-			if (ifr->ifr_flags & IFF_UP)
-				PyList_Append(list, PyString_FromString(ifr->ifr_name));
+			if (ifr->ifr_flags & IFF_UP) {
+				PyObject *str = PyString_FromString(ifr->ifr_name);
+				PyList_Append(list, str);
+				Py_DECREF(str);
+			}
 			ifr++;
 	}
 
@@ -118,6 +121,7 @@ static PyObject *get_devices(PyObject *self __unused, PyObject *args __unused)
 	/* skip over first two lines */
 	ret = fgets(buffer, 256, fd); ret = fgets(buffer, 256, fd);
 	while (!feof(fd)) {
+		PyObject *str;
 		char *name = buffer;
 		char *end = buffer;
 
@@ -129,7 +133,10 @@ static PyObject *get_devices(PyObject *self __unused, PyObject *args __unused)
 		*end = 0; /* terminate where colon was */
 		while (*name == ' ')
 			name++; /* skip over leading whitespace if any */
-		PyList_Append(list, PyString_FromString(name));
+
+		str = PyString_FromString(name);
+		PyList_Append(list, str);
+		Py_DECREF(str);
 	}
 	fclose(fd);
 	return list;
@@ -320,7 +327,9 @@ static PyObject *get_interfaces_info(PyObject *self __unused, PyObject *args) {
 			PyObject *dev = PyObject_CallObject((PyObject *)&ethtool_etherinfoType, args);
 			if( dev ) {
 				PyList_Append(devlist, dev);
+				Py_DECREF(dev);
 			}
+			Py_DECREF(args);
 		}
 	}
 	if( fetch_devs_len > 0 ) {

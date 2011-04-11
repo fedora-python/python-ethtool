@@ -59,16 +59,14 @@
 void free_ipv6addresses(struct ipv6address *ptr) {
 	struct ipv6address *ipv6ptr = ptr;
 
-	if( !ptr ) {
-		return;
-	}
-
 	while( ipv6ptr ) {
 		struct ipv6address *tmp = ipv6ptr->next;
 
 		if( ipv6ptr->address ) {
 			free(ipv6ptr->address);
+			ipv6ptr->address = NULL;
 		}
+		memset(ipv6ptr, 0, sizeof(struct ipv6address));
 		free(ipv6ptr);
 		ipv6ptr = tmp;
 	}
