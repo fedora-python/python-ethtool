@@ -3,13 +3,13 @@
 
 Summary: Ethernet settings python bindings
 Name: python-ethtool
-Version: 0.6
+Version: 0.7
 Release: 1%{?dist}
 URL: http://fedorapeople.org/gitweb?p=dsommers/public_git/python-ethtool.git;a=summary
 Source: http://dsommers.fedorapeople.org/python-ethtool/%{name}-%{version}.tar.bz2
 License: GPLv2
 Group: System Environment/Libraries
-BuildRequires: python-devel libnl-devel
+BuildRequires: python-devel libnl-devel asciidoc
 BuildRoot:  %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 %description
@@ -22,13 +22,17 @@ PCI locations.
 
 %build
 %{__python} setup.py build
+a2x -d manpage -f manpage man/pethtool.8.asciidoc
+a2x -d manpage -f manpage man/pifconfig.8.asciidoc
 
 %install
 rm -rf %{buildroot}
 %{__python} setup.py install --skip-build --root %{buildroot}
-mkdir -p %{buildroot}%{_sbindir}
+mkdir -p %{buildroot}%{_sbindir}  %{buildroot}%{_mandir}/man8
 cp -p pethtool.py %{buildroot}%{_sbindir}/pethtool
 cp -p pifconfig.py %{buildroot}%{_sbindir}/pifconfig
+%{__gzip} -c man/pethtool.8 > %{buildroot}%{_mandir}/man8/pethtool.8.gz
+%{__gzip} -c man/pifconfig.8 > %{buildroot}%{_mandir}/man8/pifconfig.8.gz
 
 %clean
 rm -rf %{buildroot}
@@ -38,12 +42,21 @@ rm -rf %{buildroot}
 %doc COPYING
 %{_sbindir}/pethtool
 %{_sbindir}/pifconfig
+%doc %{_mandir}/man8/*
 %{python_sitearch}/ethtool.so
 %if "%{python_ver}" >= "2.5"
 %{python_sitearch}/*.egg-info
 %endif
 
 %changelog
+* Mon Apr 11 2011 David Sommerseth <davids@redhat.com> - 0.7-1
+- Fixed several memory leaks (commit aa2c20e697af, abc7f912f66d)
+- Improved error checking towards NULL values(commit 4e928d62a8e3)
+- Fixed typo in pethtool --help (commit 710766dc722)
+- Only open a NETLINK connection when needed (commit 508ffffbb3c)
+- Added man page for pifconfig and pethtool (commit 9f0d17aa532, rhbz#638475)
+- Force NETLINK socket to close on fork() using FD_CLOEXEC (commit 1680cbeb40e)
+
 * Wed Jan 19 2011 David Sommerseth <dazo@users.sourceforge.net> - 0.6-1
 - Don't segfault if we don't receive any address from rtnl_link_get_addr()
 - Remove errornous file from MANIFEST
