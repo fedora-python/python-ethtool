@@ -15,11 +15,7 @@
 #   General Public License for more details.
 
 import getopt, ethtool, sys
-
-def usage():
-	print '''Usage:
-  pifconfig <interface>
-'''
+from optparse import OptionParser
 
 def flags2str(flags):
 	string = ""
@@ -76,23 +72,21 @@ def show_config(device):
 def main():
 	global all_devices
 
-	try:
-		opts, args = getopt.getopt(sys.argv[1:],
-					   "h",
-					   ("help",))
-	except getopt.GetoptError, err:
-		usage()
-		print str(err)
-		sys.exit(2)
+        usage="usage: %prog [interface [interface [interface] ...]]"
+        parser = OptionParser(usage=usage)
+        (opts, args) = parser.parse_args()
 
-	for o, a in opts:
-		if o in ("-h", "--help"):
-			usage()
-			return
+        if args is None or len(args) == 0:
+                sel_devs = ethtool.get_active_devices()
+        else:
+                sel_devs = args
 
-	active_devices = ethtool.get_active_devices()
-	for device in active_devices:
-		show_config(device)
+	for device in sel_devs:
+                try:
+                        show_config(device)
+                except Exception, ex:
+                        print "** ERROR ** [Device %s]: %s" % (device, str(ex))
+                        sys.exit(2)
 
 if __name__ == '__main__':
     main()

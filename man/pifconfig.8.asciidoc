@@ -8,7 +8,7 @@ pifconfig - display information about a network interface
 
 SYNOPSIS
 --------
-pifconfig [INTERFACE]
+pifconfig [INTERFACE [INTERFACE [INTERFACE] ...]]
 
 
 DESCRIPTION
@@ -22,8 +22,8 @@ OPTIONS
 -------
 
 INTERFACE::
-Display information about only this interface. If no interface is given
-then all interfaces are displayed.
+Display information about only the listed interfaces. If no interface is given
+all interfaces are displayed.
 
 -h, --help::
 Show help message and exit.
@@ -39,4 +39,4 @@ AUTHORS
 -------
 Arnaldo Carvalho de Melo <acme@redhat.com>
 
-Man page written by Miroslav Suchý <msuchy@redhat.com>
+Man page written by Miroslav Suchý <msuchy@redhat.com>, David Sommerseth <davids@redhat.com>
