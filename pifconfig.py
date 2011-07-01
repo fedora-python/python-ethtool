@@ -65,9 +65,15 @@ def show_config(device):
           inet addr:%s''' % ipaddr,
 	if not (flags & (ethtool.IFF_LOOPBACK | ethtool.IFF_POINTOPOINT)):
 		print "Bcast:%s" % ethtool.get_broadcast(device),
-	print '''  Mask:%s
-	  %s
-''' % (netmask, flags2str(flags))
+	print '  Mask:%s' % netmask
+	for info in ethtool.get_interfaces_info(device):
+		for addr in info.get_ipv6_addresses():
+			print ("	  inet6 addr: %s/%s Scope: %s"
+			       % (addr.address,
+				  addr.netmask,
+				  addr.scope))
+	print '	  %s' % flags2str(flags)
+	print
 
 def main():
 	global all_devices
