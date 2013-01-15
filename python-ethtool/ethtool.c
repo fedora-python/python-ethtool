@@ -500,7 +500,7 @@ static PyObject *get_module(PyObject *self __unused, PyObject *args)
 		int eno = errno;
 		FILE *file;
 		int found = 0;
-		char driver[100], dev[100];
+		char driver[101], dev[101];
 		close(fd);
 
 		/* Before bailing, maybe it is a PCMCIA/PC Card? */
