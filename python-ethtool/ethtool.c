@@ -247,7 +247,7 @@ static PyObject *get_ipaddress(PyObject *self __unused, PyObject *args)
 static PyObject *get_interfaces_info(PyObject *self __unused, PyObject *args) {
 	PyObject *devlist = NULL, *ethinf_py = NULL;
 	PyObject *inargs = NULL;
-	char **fetch_devs;
+	char **fetch_devs = NULL;
 	int i = 0, fetch_devs_len = 0;
 
 	if (!PyArg_ParseTuple(args, "|O", &inargs)) {
@@ -301,12 +301,14 @@ static PyObject *get_interfaces_info(PyObject *self __unused, PyObject *args) {
 		objdata = calloc(1, sizeof(struct etherinfo_obj_data));
 		if( !objdata ) {
 			PyErr_SetString(PyExc_OSError, strerror(errno));
+			free(fetch_devs);
 			return NULL;
 		}
 
 		objdata->ethinfo = calloc(1, sizeof(struct etherinfo));
 		if( !objdata->ethinfo ) {
 			PyErr_SetString(PyExc_OSError, strerror(errno));
+			free(fetch_devs);
 			return NULL;
 		}
 
@@ -334,9 +336,8 @@ static PyObject *get_interfaces_info(PyObject *self __unused, PyObject *args) {
 			Py_DECREF(args);
 		}
 	}
-	if( fetch_devs_len > 0 ) {
-		free(fetch_devs);
-	}
+
+	free(fetch_devs);
 
 	return devlist;
 }
