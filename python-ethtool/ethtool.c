@@ -129,7 +129,7 @@ static PyObject *get_devices(PyObject *self __unused, PyObject *args __unused)
 		if (fgets(buffer, 256, fd) == NULL)
 			break;
 		/* find colon */
-		while (end && *end != ':')
+		while (*end && *end != ':')
 			end++;
 		*end = 0; /* terminate where colon was */
 		while (*name == ' ')
