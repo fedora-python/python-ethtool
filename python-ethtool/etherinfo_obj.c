@@ -101,7 +101,6 @@ int _ethtool_etherinfo_init(etherinfo_py *self, PyObject *args, PyObject *kwds)
  */
 PyObject *_ethtool_etherinfo_getter(etherinfo_py *self, PyObject *attr_o)
 {
-	PyObject *ret;
 	char *attr = PyString_AsString(attr_o);
 
 	if( !self || !self->data ) {
@@ -110,24 +109,22 @@ PyObject *_ethtool_etherinfo_getter(etherinfo_py *self, PyObject *attr_o)
 	}
 
 	if( strcmp(attr, "device") == 0 ) {
-		ret = RETURN_STRING(self->data->ethinfo->device);
+		return RETURN_STRING(self->data->ethinfo->device);
 	} else if( strcmp(attr, "mac_address") == 0 ) {
 		get_etherinfo(self->data, NLQRY_LINK);
-		ret = RETURN_STRING(self->data->ethinfo->hwaddress);
+		return RETURN_STRING(self->data->ethinfo->hwaddress);
 	} else if( strcmp(attr, "ipv4_address") == 0 ) {
 		get_etherinfo(self->data, NLQRY_ADDR);
-		ret = RETURN_STRING(self->data->ethinfo->ipv4_address);
+		return RETURN_STRING(self->data->ethinfo->ipv4_address);
 	} else if( strcmp(attr, "ipv4_netmask") == 0 ) {
 		get_etherinfo(self->data, NLQRY_ADDR);
-		ret = PyInt_FromLong(self->data->ethinfo->ipv4_netmask);
+		return PyInt_FromLong(self->data->ethinfo->ipv4_netmask);
 	} else if( strcmp(attr, "ipv4_broadcast") == 0 ) {
 		get_etherinfo(self->data, NLQRY_ADDR);
-		ret = RETURN_STRING(self->data->ethinfo->ipv4_broadcast);
+		return RETURN_STRING(self->data->ethinfo->ipv4_broadcast);
 	} else {
-		ret = PyObject_GenericGetAttr((PyObject *)self, attr_o);
+		return PyObject_GenericGetAttr((PyObject *)self, attr_o);
 	}
-
-	return ret;
 }
 
 /**
