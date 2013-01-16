@@ -91,6 +91,41 @@ int _ethtool_etherinfo_init(etherinfo_py *self, PyObject *args, PyObject *kwds)
 	return 0;
 }
 
+/*
+  The old approach of having a single IPv4 address per device meant each result
+  that came in from netlink overwrote the old result.
+
+  Mimic it by returning the last entry in the list (if any).
+
+  The return value is a *borrowed reference* (or NULL)
+*/
+static PyNetlinkIPv4Address*
+get_last_address(etherinfo_py *self)
+{
+	Py_ssize_t size;
+	PyObject *list;
+
+	assert(self);
+	list = self->data->ethinfo->ipv4_addresses;
+	if (!list) {
+		return NULL;
+	}
+
+	if (!PyList_Check(list)) {
+		return NULL;
+	}
+
+	size = PyList_Size(list);
+	if (size > 0) {
+		PyObject *item = PyList_GetItem(list, size - 1);
+		if (Py_TYPE(item) == &ethtool_netlink_ipv4_address_Type) {
+			return (PyNetlinkIPv4Address*)item;
+		}
+	}
+
+	return NULL;
+}
+
 /**
  * ethtool.etherinfo function for retrieving data from a Python object.
  *
@@ -102,6 +137,7 @@ int _ethtool_etherinfo_init(etherinfo_py *self, PyObject *args, PyObject *kwds)
 PyObject *_ethtool_etherinfo_getter(etherinfo_py *self, PyObject *attr_o)
 {
 	char *attr = PyString_AsString(attr_o);
+	PyNetlinkIPv4Address *py_addr;
 
 	if( !self || !self->data ) {
 		PyErr_SetString(PyExc_AttributeError, "No data available");
@@ -115,13 +151,32 @@ PyObject *_ethtool_etherinfo_getter(etherinfo_py *self, PyObject *attr_o)
 		return RETURN_STRING(self->data->ethinfo->hwaddress);
 	} else if( strcmp(attr, "ipv4_address") == 0 ) {
 		get_etherinfo(self->data, NLQRY_ADDR);
-		return RETURN_STRING(self->data->ethinfo->ipv4_address);
+		/* For compatiblity with old approach, return last IPv4 address: */
+		py_addr = get_last_address(self);
+		if (py_addr) {
+		  if (py_addr->ipv4_address) {
+		      Py_INCREF(py_addr->ipv4_address);
+		      return py_addr->ipv4_address;
+		  }
+		}
+		Py_RETURN_NONE;
 	} else if( strcmp(attr, "ipv4_netmask") == 0 ) {
 		get_etherinfo(self->data, NLQRY_ADDR);
-		return PyInt_FromLong(self->data->ethinfo->ipv4_netmask);
+		py_addr = get_last_address(self);
+		if (py_addr) {
+		  return PyInt_FromLong(py_addr->ipv4_netmask);
+		}
+		return PyInt_FromLong(0);
 	} else if( strcmp(attr, "ipv4_broadcast") == 0 ) {
 		get_etherinfo(self->data, NLQRY_ADDR);
-		return RETURN_STRING(self->data->ethinfo->ipv4_broadcast);
+		py_addr = get_last_address(self);
+		if (py_addr) {
+		  if (py_addr->ipv4_broadcast) {
+		      Py_INCREF(py_addr->ipv4_broadcast);
+		      return py_addr->ipv4_broadcast;
+		  }
+		}
+		Py_RETURN_NONE;
 	} else {
 		return PyObject_GenericGetAttr((PyObject *)self, attr_o);
 	}
@@ -170,19 +225,21 @@ PyObject *_ethtool_etherinfo_str(etherinfo_py *self)
 		Py_DECREF(tmp);
 	}
 
-	if( self->data->ethinfo->ipv4_address ) {
-		PyObject *tmp = PyString_FromFormat("\tIPv4 address: %s/%i",
-						   self->data->ethinfo->ipv4_address,
-						   self->data->ethinfo->ipv4_netmask);
-		if( self->data->ethinfo->ipv4_broadcast ) {
-			PyObject *tmp2 = PyString_FromFormat("	  Broadcast: %s",
-							     self->data->ethinfo->ipv4_broadcast);
-			PyString_Concat(&tmp, tmp2);
-			Py_DECREF(tmp2);
-		}
-		PyString_Concat(&tmp, PyString_FromString("\n"));
-		PyString_Concat(&ret, tmp);
-		Py_DECREF(tmp);
+	if( self->data->ethinfo->ipv4_addresses ) {
+               Py_ssize_t i;
+               for (i = 0; i < PyList_Size(self->data->ethinfo->ipv4_addresses); i++) {
+                       PyNetlinkIPv4Address *py_addr = (PyNetlinkIPv4Address *)PyList_GetItem(self->data->ethinfo->ipv4_addresses, i);
+                       PyObject *tmp = PyString_FromFormat("\tIPv4 address: ");
+                       PyString_Concat(&tmp, py_addr->ipv4_address);
+                       PyString_ConcatAndDel(&tmp, PyString_FromFormat("/%d", py_addr->ipv4_netmask));
+                       if (py_addr->ipv4_broadcast ) {
+                                PyString_ConcatAndDel(&tmp,
+                                                      PyString_FromString("	  Broadcast: "));
+                                PyString_Concat(&tmp, py_addr->ipv4_broadcast);
+                       }
+                       PyString_ConcatAndDel(&tmp, PyString_FromString("\n"));
+                       PyString_ConcatAndDel(&ret, tmp);
+               }
 	}
 
 	if( self->data->ethinfo->ipv6_addresses ) {
@@ -200,6 +257,24 @@ PyObject *_ethtool_etherinfo_str(etherinfo_py *self)
 			Py_DECREF(addr);
 		}
 	}
+	return ret;
+}
+
+static PyObject *
+_ethtool_etherinfo_get_ipv4_addresses(etherinfo_py *self, PyObject *notused) {
+	PyObject *ret;
+
+	if( !self || !self->data ) {
+		PyErr_SetString(PyExc_AttributeError, "No data available");
+		return NULL;
+	}
+
+	get_etherinfo(self->data, NLQRY_ADDR);
+
+	/* Transfer ownership of reference: */
+	ret = self->data->ethinfo->ipv4_addresses;
+	self->data->ethinfo->ipv4_addresses = NULL;
+
 	return ret;
 }
 
@@ -276,27 +351,11 @@ PyObject * _ethtool_etherinfo_get_ipv6_addresses(etherinfo_py *self, PyObject *n
  *
  */
 static PyMethodDef _ethtool_etherinfo_methods[] = {
-	{"get_ipv6_addresses", _ethtool_etherinfo_get_ipv6_addresses, METH_NOARGS,
+	{"get_ipv4_addresses", (PyCFunction)_ethtool_etherinfo_get_ipv4_addresses, METH_NOARGS,
+	 "Retrieve configured IPv4 addresses.  Returns a list of NetlinkIP4Address objects"},
+	{"get_ipv6_addresses", (PyCFunction)_ethtool_etherinfo_get_ipv6_addresses, METH_NOARGS,
 	 "Retrieve configured IPv6 addresses.  Returns a tuple list of etherinfo_ipv6addr objects"},
 	{NULL}  /**< No methods defined */
-};
-
-/**
- * Defines all accessible object members
- *
- */
-static PyMemberDef _ethtool_etherinfo_members[] = {
-    {"device", T_OBJECT_EX, offsetof(etherinfo_py, data), 0,
-     "Device name of the interface"},
-    {"mac_address", T_OBJECT_EX, offsetof(etherinfo_py, data), 0,
-     "MAC address / hardware address of the interface"},
-    {"ipv4_address", T_OBJECT_EX, offsetof(etherinfo_py, data), 0,
-     "IPv4 address"},
-    {"ipv4_netmask", T_INT, offsetof(etherinfo_py, data), 0,
-     "IPv4 netmask in bits"},
-    {"ipv4_broadcast", T_OBJECT_EX, offsetof(etherinfo_py, data), 0,
-     "IPv4 broadcast address"},
-    {NULL}  /* End of member list */
 };
 
 /**
@@ -333,7 +392,7 @@ PyTypeObject ethtool_etherinfoType = {
     0,		               /* tp_iter */
     0,		               /* tp_iternext */
     _ethtool_etherinfo_methods,            /* tp_methods */
-    _ethtool_etherinfo_members,            /* tp_members */
+    0,                         /* tp_members */
     0,                         /* tp_getset */
     0,                         /* tp_base */
     0,                         /* tp_dict */

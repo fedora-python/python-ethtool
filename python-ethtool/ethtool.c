@@ -999,6 +999,9 @@ PyMODINIT_FUNC initethtool(void)
 	Py_INCREF(&ethtool_etherinfoIPv6Type);
 	PyModule_AddObject(m, "etherinfo_ipv6addr", (PyObject *)&ethtool_etherinfoIPv6Type);
 
+	if (PyType_Ready(&ethtool_netlink_ipv4_address_Type))
+		return;
+
 	// Setup constants
 	PyModule_AddIntConstant(m, "IFF_UP", IFF_UP);			/* Interface is up. */
 	PyModule_AddIntConstant(m, "IFF_BROADCAST", IFF_BROADCAST);	/* Broadcast address valid. */

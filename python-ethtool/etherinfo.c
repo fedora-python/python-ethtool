@@ -92,12 +92,8 @@ void free_etherinfo(struct etherinfo *ptr)
 	if( ptr->hwaddress ) {
 		free(ptr->hwaddress);
 	}
-	if( ptr->ipv4_address ) {
-		free(ptr->ipv4_address);
-	}
-	if( ptr->ipv4_broadcast ) {
-		free(ptr->ipv4_broadcast);
-	}
+	Py_XDECREF(ptr->ipv4_addresses);
+
 	if( ptr->ipv6_addresses ) {
 		free_ipv6addresses(ptr->ipv6_addresses);
 	}
@@ -171,6 +167,36 @@ static void callback_nl_link(struct nl_object *obj, void *arg)
 	SET_STR_VALUE(ethi->hwaddress, hwaddr);
 }
 
+/**
+ * For use by callback_nl_address
+ * Returns 0 for success; -1 for error (though this is currently ignored)
+ */
+static int
+append_object_for_netlink_address(struct etherinfo *ethi,
+                                  struct nl_object *obj,
+                                  struct rtnl_addr *addr)
+{
+	PyObject *addr_obj;
+
+	assert(ethi);
+	assert(ethi->ipv4_addresses);
+	assert(addr);
+
+	addr_obj = make_python_address_from_rtnl_addr(obj, addr);
+	if (!addr_obj) {
+	  return -1;
+	}
+
+	if (-1 == PyList_Append(ethi->ipv4_addresses, addr_obj)) {
+	  Py_DECREF(addr_obj);
+	  return -1;
+	}
+
+	Py_DECREF(addr_obj);
+
+	/* Success */
+	return 0;
+}
 
 /**
  *  libnl callback function.  Does the real parsing of a record returned by NETLINK.  This function
@@ -199,17 +225,7 @@ static void callback_nl_address(struct nl_object *obj, void *arg)
 		inet_ntop(family, nl_addr_get_binary_addr(addr), (char *)&ip_str, 64);
 
 		if( family == AF_INET ) {
-			struct nl_addr *brdcst = rtnl_addr_get_broadcast((struct rtnl_addr *)obj);
-			char brdcst_str[66];
-
-			SET_STR_VALUE(ethi->ipv4_address, ip_str);
-			ethi->ipv4_netmask = rtnl_addr_get_prefixlen((struct rtnl_addr*) obj);
-
-			if( brdcst ) {
-				memset(&brdcst_str, 0, 66);
-				inet_ntop(family, nl_addr_get_binary_addr(brdcst), (char *)&brdcst_str, 64);
-				SET_STR_VALUE(ethi->ipv4_broadcast, brdcst_str);
-			}
+                        (void)append_object_for_netlink_address(ethi, obj, (struct rtnl_addr*) addr);
 		} else {
 			ethi->ipv6_addresses = etherinfo_add_ipv6(ethi->ipv6_addresses,
 								  ip_str,
@@ -244,13 +260,18 @@ void dump_etherinfo(FILE *fp, struct etherinfo *ptr)
 		fprintf(fp, "MAC address: %s", ptr->hwaddress);
 	}
 	fprintf(fp, "\n");
-	if( ptr->ipv4_address ) {
-		fprintf(fp, "\tIPv4 Address: %s/%i",
-			ptr->ipv4_address, ptr->ipv4_netmask);
-		if( ptr->ipv4_broadcast ) {
-			fprintf(fp, "  -  Broadcast: %s", ptr->ipv4_broadcast);
-		}
-		fprintf(fp, "\n");
+	if( ptr->ipv4_addresses ) {
+		Py_ssize_t i;
+		for (i = 0; i < PyList_Size(ptr->ipv4_addresses); i++) {
+			PyNetlinkIPv4Address *addr = (PyNetlinkIPv4Address *)PyList_GetItem(ptr->ipv4_addresses, i);
+			fprintf(fp, "\tIPv4 Address: %s/%i",
+                                PyString_AsString(addr->ipv4_address),
+                                addr->ipv4_netmask);
+                        if( addr->ipv4_broadcast ) {
+                              fprintf(fp, "  -  Broadcast: %s", PyString_AsString(addr->ipv4_broadcast));
+                        }
+                        fprintf(fp, "\n");
+                }
 	}
 	if( ptr->ipv6_addresses ) {
 		struct ipv6address *ipv6 = ptr->ipv6_addresses;
@@ -336,6 +357,13 @@ int get_etherinfo(struct etherinfo_obj_data *data, nlQuery query)
                 if( ethinf->ipv6_addresses ) {
                         free_ipv6addresses(ethinf->ipv6_addresses);
                         ethinf->ipv6_addresses = NULL;
+                }
+
+                /* Likewise for IPv4 addresses: */
+                Py_XDECREF(ethinf->ipv4_addresses);
+                ethinf->ipv4_addresses = PyList_New(0);
+                if (!ethinf->ipv4_addresses) {
+                        return 0;
                 }
 
                 /* Retrieve all address information */

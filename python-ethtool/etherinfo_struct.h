@@ -13,6 +13,8 @@
  * General Public License for more details.
  */
 
+#include <netlink/route/addr.h>
+
 /**
  * @file   etherinfo_struct.h
  * @author David Sommerseth <dsommers@wsdsommers.usersys.redhat.com>
@@ -33,12 +35,18 @@ struct etherinfo {
 	char *device;                       /**< Device name */
 	int index;                          /**< NETLINK index reference */
 	char *hwaddress;                    /**< HW address / MAC address of device */
-	char *ipv4_address;                 /**< Configured IPv4 address */
-	int ipv4_netmask;                   /**< Configured IPv4 netmask */
-	char *ipv4_broadcast;               /**< Configured IPv4 broadcast address */
+	PyObject *ipv4_addresses;        /**< list of PyNetlinkIPv4Address instances */
 	struct ipv6address *ipv6_addresses; /**< Configured IPv6 addresses (as a pointer chain) */
 };
 
+/* Python object containing data baked from a (struct rtnl_addr) */
+typedef struct PyNetlinkIPv4Address {
+	PyObject_HEAD
+	PyObject *ipv4_address;		/**< string: Configured IPv4 address */
+	int ipv4_netmask;		/**< int: Configured IPv4 netmask */
+	PyObject *ipv4_broadcast;	/**< string: Configured IPv4 broadcast address */
+} PyNetlinkIPv4Address;
+extern PyTypeObject ethtool_netlink_ipv4_address_Type;
 
 /**
  * Pointer chain with IPv6 addresses associated with a ethernet interface.  Used
@@ -90,5 +98,10 @@ typedef struct {
  * @return Returns a PyObject with either the input string wrapped up, or a Python None value.
  */
 #define RETURN_STRING(str) (str ? PyString_FromString(str) : (Py_INCREF(Py_None), Py_None))
+
+PyObject *
+make_python_address_from_rtnl_addr(struct nl_object *obj,
+                                   struct rtnl_addr *addr);
+
 
 #endif
