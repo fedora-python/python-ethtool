@@ -4,7 +4,7 @@ from distutils.core import setup, Extension
 import commands
 import sys
 
-version = '0.7'
+version = '0.8'
 
 def pkgconfig(pkg):
     def _str2list(pkgstr, onlystr):
