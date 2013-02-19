@@ -6,7 +6,7 @@ Name: python-ethtool
 Version: 0.8
 Release: 1%{?dist}
 URL: http://git.fedorahosted.org/cgit/python-ethtool.git
-Source: http://dsommers.fedorapeople.org/python-ethtool/%{name}-%{version}.tar.bz2
+Source: https://fedorahosted.org/releases/p/y/python-ethtool/python-ethtool-%{version}.tar.bz2
 License: GPLv2
 Group: System Environment/Libraries
 BuildRequires: python-devel libnl-devel asciidoc
