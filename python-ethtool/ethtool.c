@@ -26,6 +26,7 @@
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
+#include <ifaddrs.h>
 
 #include "etherinfo_struct.h"
 #include "etherinfo_obj.h"
@@ -55,55 +56,24 @@ typedef __uint8_t u8;
 static PyObject *get_active_devices(PyObject *self __unused, PyObject *args __unused)
 {
 	PyObject *list;
-	int numreqs = 30;
-	struct ifconf ifc;
-	struct ifreq *ifr;
-	int n;
+	struct ifaddrs *ifaddr, *ifa;
 
-	/* SIOCGIFCONF currently seems to only work properly on AF_INET sockets
-	   (as of 2.1.128) */
-	/* Open control socket. */
-	int skfd = socket(AF_INET, SOCK_DGRAM, 0);
-
-	if (skfd < 0) {
+	if (getifaddrs(&ifaddr) == -1) {
 		PyErr_SetString(PyExc_OSError, strerror(errno));
 		return NULL;
 	}
 
-	ifc.ifc_buf = NULL;
-	for (;;) {
-		ifc.ifc_len = sizeof(struct ifreq) * numreqs;
-		ifc.ifc_buf = realloc(ifc.ifc_buf, ifc.ifc_len);
-
-		if (ioctl(skfd, SIOCGIFCONF, &ifc) < 0) {
-			PyErr_SetString(PyExc_OSError, strerror(errno));
-			free(ifc.ifc_buf);
-			close(skfd);
-			return NULL;
-		}
-
-		if (ifc.ifc_len == (int)sizeof(struct ifreq) * numreqs) {
-			/* assume it overflowed and try again */
-			numreqs += 10;
-			continue;
-		}
-		break;
-	}
-
 	list = PyList_New(0);
-	ifr = ifc.ifc_req;
-	for (n = 0; n < ifc.ifc_len; n += sizeof(struct ifreq)) {
-		if (!(ioctl(skfd, SIOCGIFFLAGS, ifr) < 0))
-			if (ifr->ifr_flags & IFF_UP) {
-				PyObject *str = PyString_FromString(ifr->ifr_name);
-				PyList_Append(list, str);
-				Py_DECREF(str);
-			}
-			ifr++;
+	for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) {
+		PyObject *str = PyString_FromString(ifa->ifa_name);
+		/* names are not unique (listed for both ipv4 and ipv6) */
+		if (!PySequence_Contains(list, str) && (ifa->ifa_flags & (IFF_UP))) {
+			PyList_Append(list, str);
+		}
+	Py_DECREF(str);
 	}
 
-	free(ifc.ifc_buf);
-	close(skfd);
+	freeifaddrs(ifaddr);
 
 	return list;
 }
