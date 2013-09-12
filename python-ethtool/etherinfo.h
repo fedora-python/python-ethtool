@@ -17,13 +17,6 @@
 #ifndef _ETHERINFO_H
 #define _ETHERINFO_H
 
-#include <netlink/addr.h>
-#include <netlink/netlink.h>
-#include <netlink/handlers.h>
-#include <netlink/route/link.h>
-#include <netlink/route/addr.h>
-#include <arpa/inet.h>
-
 typedef enum {NLQRY_LINK, NLQRY_ADDR} nlQuery; /**<  Supported query types in the etherinfo code */
 
 int get_etherinfo(struct etherinfo_obj_data *data, nlQuery query);

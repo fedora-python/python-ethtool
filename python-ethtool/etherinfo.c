@@ -1,6 +1,6 @@
 /* etherinfo.c - Retrieve ethernet interface info via NETLINK
  *
- * Copyright (C) 2009-2011 Red Hat Inc.
+ * Copyright (C) 2009-2013 Red Hat Inc.
  *
  * David Sommerseth <davids@redhat.com>
  * Parts of this code is based on ideas and solutions in iproute2
@@ -25,6 +25,13 @@
 #include <stdlib.h>
 #include <asm/types.h>
 #include <sys/socket.h>
+#include <arpa/inet.h>
+#include <netlink/netlink.h>
+#include <netlink/socket.h>
+#include <netlink/cache.h>
+#include <netlink/addr.h>
+#include <netlink/route/addr.h>
+#include <netlink/route/link.h>
 #include <netlink/route/rtnl.h>
 #include <assert.h>
 #include <errno.h>
@@ -111,19 +118,29 @@ void free_etherinfo(struct etherinfo *ptr)
  *
  * @return Returns a new pointer to the chain containing the new element
  */
-struct ipv6address * etherinfo_add_ipv6(struct ipv6address *addrptr, const char *addr, int netmask, int scope) {
+struct ipv6address * etherinfo_add_ipv6(struct ipv6address *addrptr, struct rtnl_addr *addr) {
 	struct ipv6address *newaddr = NULL;
+	char buf[INET6_ADDRSTRLEN+2];
+	int af_family;
+
+	af_family = rtnl_addr_get_family(addr);
+        if( af_family != AF_INET && af_family != AF_INET6 ) {
+                return addrptr;
+        }
+
+	memset(&buf, 0, sizeof(buf));
+	inet_ntop(af_family, nl_addr_get_binary_addr(rtnl_addr_get_local(addr)), buf, sizeof(buf));
 
 	newaddr = calloc(1, sizeof(struct ipv6address)+2);
 	if( !newaddr ) {
 		fprintf(stderr, "** ERROR ** Could not allocate memory for a new IPv6 address record (%s/%i [%i])",
-			addr, netmask, scope);
+			buf, rtnl_addr_get_prefixlen(addr), rtnl_addr_get_scope(addr));
 		return addrptr;
 	}
 
-	SET_STR_VALUE(newaddr->address, addr);
-	newaddr->netmask = netmask;
-	newaddr->scope = scope;
+	SET_STR_VALUE(newaddr->address, buf);
+	newaddr->netmask = rtnl_addr_get_prefixlen(addr);
+	newaddr->scope = rtnl_addr_get_scope(addr);
 	newaddr->next = addrptr;
 	return newaddr;
 }
@@ -140,30 +157,14 @@ static void callback_nl_link(struct nl_object *obj, void *arg)
 {
 	struct etherinfo *ethi = (struct etherinfo *) arg;
 	struct rtnl_link *link = (struct rtnl_link *) obj;
-	struct nl_addr *addr = rtnl_link_get_addr(link);
-	unsigned int i, len;
-	unsigned char *binaddr;
-	char hwaddr[130], *ptr;
+	char hwaddr[130];
 
-	if( (ethi == NULL) || (ethi->hwaddress != NULL) || (addr == NULL) ) {
+	if( (ethi == NULL) || (ethi->hwaddress != NULL) ) {
 		return;
 	}
 
-	binaddr = nl_addr_get_binary_addr(addr);
 	memset(&hwaddr, 0, 130);
-	len = 20;
-	ptr = (char *)&hwaddr;
-	for( i = 0; i < 6; i++ ) {
-		if( i == 0 ) {
-			snprintf(ptr, len, "%02X", *(binaddr+i));
-			len -= 2;
-			ptr += 2;
-		} else {
-			snprintf(ptr, len, ":%02X", *(binaddr+i));
-			len -= 3;
-			ptr += 3;
-		}
-	}
+	nl_addr2str(rtnl_link_get_addr(link), hwaddr, sizeof(hwaddr));
 	SET_STR_VALUE(ethi->hwaddress, hwaddr);
 }
 
@@ -173,7 +174,6 @@ static void callback_nl_link(struct nl_object *obj, void *arg)
  */
 static int
 append_object_for_netlink_address(struct etherinfo *ethi,
-                                  struct nl_object *obj,
                                   struct rtnl_addr *addr)
 {
 	PyObject *addr_obj;
@@ -182,7 +182,7 @@ append_object_for_netlink_address(struct etherinfo *ethi,
 	assert(ethi->ipv4_addresses);
 	assert(addr);
 
-	addr_obj = make_python_address_from_rtnl_addr(obj, addr);
+	addr_obj = make_python_address_from_rtnl_addr(addr);
 	if (!addr_obj) {
 	  return -1;
 	}
@@ -208,30 +208,18 @@ append_object_for_netlink_address(struct etherinfo *ethi,
 static void callback_nl_address(struct nl_object *obj, void *arg)
 {
 	struct etherinfo *ethi = (struct etherinfo *) arg;
-	struct nl_addr *addr;
-	char ip_str[66];
-	int family;
+	struct rtnl_addr *rtaddr = (struct rtnl_addr *) obj;
 
 	if( ethi == NULL ) {
 		return;
 	}
 
-	addr = rtnl_addr_get_local((struct rtnl_addr *)obj);
-	family = nl_addr_get_family(addr);
-	switch( family ) {
+	switch( rtnl_addr_get_family(rtaddr) ) {
 	case AF_INET:
+                append_object_for_netlink_address(ethi, rtaddr);
+                return;
 	case AF_INET6:
-		memset(&ip_str, 0, 66);
-		inet_ntop(family, nl_addr_get_binary_addr(addr), (char *)&ip_str, 64);
-
-		if( family == AF_INET ) {
-                        (void)append_object_for_netlink_address(ethi, obj, (struct rtnl_addr*) addr);
-		} else {
-			ethi->ipv6_addresses = etherinfo_add_ipv6(ethi->ipv6_addresses,
-								  ip_str,
-								  rtnl_addr_get_prefixlen((struct rtnl_addr*) obj),
-								  rtnl_addr_get_scope((struct rtnl_addr*) obj));
-		}
+                ethi->ipv6_addresses = etherinfo_add_ipv6(ethi->ipv6_addresses, rtaddr);
 		return;
 	default:
 		return;
@@ -326,8 +314,16 @@ int get_etherinfo(struct etherinfo_obj_data *data, nlQuery query)
 	 * interface index if we have that
 	 */
 	if( ethinf->index < 0 ) {
-		link_cache = rtnl_link_alloc_cache(*data->nlc);
-		ethinf->index = rtnl_link_name2i(link_cache, ethinf->device);
+		if( rtnl_link_alloc_cache(*data->nlc, AF_UNSPEC, &link_cache) < 0) {
+                        return 0;
+                }
+
+                link = rtnl_link_get_by_name(link_cache, ethinf->device);
+                if( !link ) {
+                        return 0;
+                }
+
+		ethinf->index = rtnl_link_get_ifindex(link);
 		if( ethinf->index < 0 ) {
 			return 0;
 		}
@@ -338,10 +334,12 @@ int get_etherinfo(struct etherinfo_obj_data *data, nlQuery query)
 	switch( query ) {
 	case NLQRY_LINK:
 		/* Extract MAC/hardware address of the interface */
-		link_cache = rtnl_link_alloc_cache(*data->nlc);
+		if( rtnl_link_alloc_cache(*data->nlc, AF_UNSPEC, &link_cache) < 0) {
+                        return 0;
+                }
 		link = rtnl_link_alloc();
 		rtnl_link_set_ifindex(link, ethinf->index);
-		nl_cache_foreach_filter(link_cache, (struct nl_object *)link, callback_nl_link, ethinf);
+		nl_cache_foreach_filter(link_cache, OBJ_CAST(link), callback_nl_link, ethinf);
 		rtnl_link_put(link);
 		nl_cache_free(link_cache);
 		ret = 1;
@@ -349,7 +347,9 @@ int get_etherinfo(struct etherinfo_obj_data *data, nlQuery query)
 
 	case NLQRY_ADDR:
 		/* Extract IP address information */
-		addr_cache = rtnl_addr_alloc_cache(*data->nlc);
+		if( rtnl_addr_alloc_cache(*data->nlc, &addr_cache) < 0) {
+                        return 0;
+                }
 		addr = rtnl_addr_alloc();
 		rtnl_addr_set_ifindex(addr, ethinf->index);
 
@@ -367,7 +367,7 @@ int get_etherinfo(struct etherinfo_obj_data *data, nlQuery query)
                 }
 
                 /* Retrieve all address information */
-		nl_cache_foreach_filter(addr_cache, (struct nl_object *)addr, callback_nl_address, ethinf);
+		nl_cache_foreach_filter(addr_cache, OBJ_CAST(addr), callback_nl_address, ethinf);
 		rtnl_addr_put(addr);
 		nl_cache_free(addr_cache);
 		ret = 1;
@@ -408,7 +408,7 @@ int open_netlink(struct etherinfo_obj_data *data)
 	}
 
 	/* No earlier connections exists, establish a new one */
-	*data->nlc = nl_handle_alloc();
+	*data->nlc = nl_socket_alloc();
 	nl_connect(*data->nlc, NETLINK_ROUTE);
 	if( (*data->nlc != NULL) ) {
 		/* Force O_CLOEXEC flag on the NETLINK socket */
@@ -455,6 +455,6 @@ void close_netlink(struct etherinfo_obj_data *data)
 
 	/* Close NETLINK connection */
 	nl_close(*data->nlc);
-	nl_handle_destroy(*data->nlc);
+	nl_socket_free(*data->nlc);
 	*data->nlc = NULL;
 }

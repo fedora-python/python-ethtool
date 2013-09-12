@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2011 Red Hat Inc.
+ * Copyright (C) 2008-2013 Red Hat Inc.
  *
  * Arnaldo Carvalho de Melo <acme@redhat.com>
  * David Sommerseth <davids@redhat.com>
@@ -22,17 +22,17 @@
 #include <stdint.h>
 #include <unistd.h>
 #include <sys/socket.h>
-#include <net/if.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <ifaddrs.h>
+#include <netlink/route/addr.h>
 
 #include "etherinfo_struct.h"
 #include "etherinfo_obj.h"
 #include "etherinfo.h"
 
-static struct nl_handle *nlconnection = NULL;
+static struct nl_sock *nlconnection = NULL;
 unsigned int nlconnection_users = 0;  /* How many NETLINK users are active? */
 extern PyTypeObject ethtool_etherinfoType;
 extern PyTypeObject ethtool_etherinfoIPv6Type;

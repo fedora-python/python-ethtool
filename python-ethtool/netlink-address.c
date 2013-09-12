@@ -17,13 +17,15 @@
 #include <Python.h>
 #include "structmember.h"
 
-#include <netlink/route/rtnl.h>
+#include <arpa/inet.h>
+#include <netlink/addr.h>
+#include <netlink/route/addr.h>
 #include "etherinfo_struct.h"
 #include "etherinfo.h"
 
 /* IPv4 Addresses: */
 static PyObject *
-PyNetlinkIPv4Address_from_rtnl_addr(struct nl_object *nl_obj, struct rtnl_addr *addr)
+PyNetlinkIPv4Address_from_rtnl_addr(struct rtnl_addr *addr)
 {
 	PyNetlinkIPv4Address *py_obj;
 	char buf[INET_ADDRSTRLEN+1];
@@ -37,7 +39,7 @@ PyNetlinkIPv4Address_from_rtnl_addr(struct nl_object *nl_obj, struct rtnl_addr *
 
 	/* Set ipv4_address: */
 	memset(&buf, 0, sizeof(buf));
-	if (!inet_ntop(AF_INET, nl_addr_get_binary_addr((struct nl_addr *)addr),
+	if (!inet_ntop(AF_INET, nl_addr_get_binary_addr(rtnl_addr_get_local(addr)),
 		       buf, sizeof(buf))) {
 		PyErr_SetFromErrno(PyExc_RuntimeError);
 		goto error;
@@ -48,11 +50,11 @@ PyNetlinkIPv4Address_from_rtnl_addr(struct nl_object *nl_obj, struct rtnl_addr *
 	}
 
 	/* Set ipv4_netmask: */
-	py_obj->ipv4_netmask = rtnl_addr_get_prefixlen((struct rtnl_addr*)nl_obj);
+	py_obj->ipv4_netmask = rtnl_addr_get_prefixlen(addr);
 
 	/* Set ipv4_broadcast: */
 	py_obj->ipv4_broadcast = NULL;
-	brdcst = rtnl_addr_get_broadcast((struct rtnl_addr*)nl_obj);
+	brdcst = rtnl_addr_get_broadcast(addr);
 	if( brdcst ) {
 		memset(&buf, 0, sizeof(buf));
 		if (!inet_ntop(AF_INET, nl_addr_get_binary_addr(brdcst),
@@ -132,18 +134,14 @@ PyTypeObject ethtool_netlink_ipv4_address_Type = {
 
 /* Factory function, in case we want to generalize this to add IPv6 support */
 PyObject *
-make_python_address_from_rtnl_addr(struct nl_object *obj,
-				   struct rtnl_addr *addr)
+make_python_address_from_rtnl_addr(struct rtnl_addr *addr)
 {
-	int family;
 	assert(addr);
 
-	family = nl_addr_get_family((struct nl_addr *)addr);
-
-	switch( family ) {
+	switch( rtnl_addr_get_family(addr) ) {
 
 	case AF_INET:
-		return PyNetlinkIPv4Address_from_rtnl_addr(obj, addr);
+		return PyNetlinkIPv4Address_from_rtnl_addr(addr);
 
 		/*
 		  For now, we just support IPv4 addresses.

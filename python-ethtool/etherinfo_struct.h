@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2011 Red Hat Inc.
+ * Copyright (C) 2009-2013 Red Hat Inc.
  *
  * David Sommerseth <davids@redhat.com>
  *
@@ -13,7 +13,6 @@
  * General Public License for more details.
  */
 
-#include <netlink/route/addr.h>
 
 /**
  * @file   etherinfo_struct.h
@@ -66,7 +65,7 @@ struct ipv6address {
  *
  */
 struct etherinfo_obj_data {
-	struct nl_handle **nlc;         /**< Contains NETLINK connection info (global) */
+	struct nl_sock **nlc;           /**< Contains NETLINK connection info (global) */
 	unsigned int *nlc_users;	/**< Resource counter for the NETLINK connection (global) */
 	unsigned short nlc_active;	/**< Is this instance using NETLINK? */
 	struct etherinfo *ethinfo;      /**< Contains info about our current interface */
@@ -99,9 +98,7 @@ typedef struct {
  */
 #define RETURN_STRING(str) (str ? PyString_FromString(str) : (Py_INCREF(Py_None), Py_None))
 
-PyObject *
-make_python_address_from_rtnl_addr(struct nl_object *obj,
-                                   struct rtnl_addr *addr);
+PyObject * make_python_address_from_rtnl_addr(struct rtnl_addr *addr);
 
 
 #endif

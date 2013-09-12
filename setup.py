@@ -4,7 +4,7 @@ from distutils.core import setup, Extension
 import commands
 import sys
 
-version = '0.8'
+version = '0.9'
 
 def pkgconfig(pkg):
     def _str2list(pkgstr, onlystr):
@@ -43,7 +43,8 @@ def pkgconfig(pkg):
             }
 
 
-libnl = pkgconfig('libnl-1')
+libnl = pkgconfig('libnl-3.0')
+libnl['libs'].append('nl-route-3')
 
 # don't reformat this line, Makefile parses it
 setup(name='ethtool',
