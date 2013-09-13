@@ -35,6 +35,7 @@ struct etherinfo {
 	int index;                          /**< NETLINK index reference */
 	char *hwaddress;                    /**< HW address / MAC address of device */
 	PyObject *ipv4_addresses;        /**< list of PyNetlinkIPv4Address instances */
+	PyObject *ipv6_addresses;        /**< list of PyNetlinkIPv6Addresses instances */
 };
 
 /* Python object containing data baked from a (struct rtnl_addr) */
@@ -45,6 +46,15 @@ typedef struct PyNetlinkIPv4Address {
 	PyObject *ipv4_broadcast;	/**< string: Configured IPv4 broadcast address */
 } PyNetlinkIPv4Address;
 extern PyTypeObject ethtool_netlink_ipv4_address_Type;
+
+/* Python object containing data baked from a (struct rtnl_addr) */
+typedef struct PyNetlinkIPv6Address {
+	PyObject_HEAD
+	PyObject *ipv6_address;		/**< string: Configured IPv6 address */
+	int ipv6_netmask;		/**< int: Configured IPv6 prefix */
+        PyObject *ipv6_scope;           /**< string: IPv6 address scope */
+} PyNetlinkIPv6Address;
+extern PyTypeObject ethtool_netlink_ipv6_address_Type;
 
 /**
  * Contains the internal data structure of the

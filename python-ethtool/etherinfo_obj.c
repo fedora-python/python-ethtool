@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2011 Red Hat Inc.
+ * Copyright (C) 2009-2013 Red Hat Inc.
  *
  * David Sommerseth <davids@redhat.com>
  *
@@ -27,6 +27,7 @@
 #include "structmember.h"
 
 #include <netlink/route/rtnl.h>
+#include <netlink/route/addr.h>
 #include "etherinfo_struct.h"
 #include "etherinfo.h"
 
@@ -242,11 +243,32 @@ PyObject *_ethtool_etherinfo_str(etherinfo_py *self)
                }
 	}
 
+	if( self->data->ethinfo->ipv6_addresses ) {
+	       Py_ssize_t i;
+	       for (i = 0; i < PyList_Size(self->data->ethinfo->ipv6_addresses); i++) {
+		       PyNetlinkIPv6Address *py_addr = (PyNetlinkIPv6Address *)PyList_GetItem(self->data->ethinfo->ipv6_addresses, i);
+		       PyObject *tmp = PyString_FromFormat("\tIPv6 address: [");
+		       PyString_Concat(&tmp, py_addr->ipv6_scope);
+		       PyString_ConcatAndDel(&tmp, PyString_FromString("] "));
+		       PyString_Concat(&tmp, py_addr->ipv6_address);
+		       PyString_ConcatAndDel(&tmp, PyString_FromFormat("/%d", py_addr->ipv6_netmask));
+		       PyString_ConcatAndDel(&tmp, PyString_FromString("\n"));
+		       PyString_ConcatAndDel(&ret, tmp);
+	       }
+	}
+
 	return ret;
 }
 
-static PyObject *
-_ethtool_etherinfo_get_ipv4_addresses(etherinfo_py *self, PyObject *notused) {
+/**
+ * Returns a tuple list of configured IPv4 addresses
+ *
+ * @param self
+ * @param notused
+ *
+ * @return Returns a Python tuple list of NetlinkIP4Address objects
+ */
+static PyObject *_ethtool_etherinfo_get_ipv4_addresses(etherinfo_py *self, PyObject *notused) {
 	PyObject *ret;
 
 	if( !self || !self->data ) {
@@ -265,12 +287,41 @@ _ethtool_etherinfo_get_ipv4_addresses(etherinfo_py *self, PyObject *notused) {
 
 
 /**
+ * Returns a tuple list of configured IPv4 addresses
+ *
+ * @param self
+ * @param notused
+ *
+ * @return Returns a Python tuple list of NetlinkIP6Address objects
+ */
+static PyObject *_ethtool_etherinfo_get_ipv6_addresses(etherinfo_py *self, PyObject *notused) {
+	PyObject *ret;
+
+	if( !self || !self->data ) {
+		PyErr_SetString(PyExc_AttributeError, "No data available");
+		return NULL;
+	}
+
+	get_etherinfo(self->data, NLQRY_ADDR);
+
+	/* Transfer ownership of reference: */
+	ret = self->data->ethinfo->ipv6_addresses;
+	self->data->ethinfo->ipv6_addresses = NULL;
+
+	return ret;
+}
+
+
+/**
  * Defines all available methods in the ethtool.etherinfo class
  *
  */
 static PyMethodDef _ethtool_etherinfo_methods[] = {
 	{"get_ipv4_addresses", (PyCFunction)_ethtool_etherinfo_get_ipv4_addresses, METH_NOARGS,
 	 "Retrieve configured IPv4 addresses.  Returns a list of NetlinkIP4Address objects"},
+	{"get_ipv6_addresses", (PyCFunction)_ethtool_etherinfo_get_ipv6_addresses, METH_NOARGS,
+	 "Retrieve configured IPv6 addresses.  Returns a list of NetlinkIP6Address objects"},
+
 	{NULL}  /**< No methods defined */
 };
 

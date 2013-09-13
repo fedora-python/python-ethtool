@@ -962,7 +962,9 @@ PyMODINIT_FUNC initethtool(void)
 	Py_INCREF(&ethtool_etherinfoType);
 	PyModule_AddObject(m, "etherinfo", (PyObject *)&ethtool_etherinfoType);
 
-	// Prepare the ethtool IPv4 address types
+	// Prepare the ethtool IPv6 and IPv4 address types
+	if (PyType_Ready(&ethtool_netlink_ipv6_address_Type) < 0)
+		return;
 	if (PyType_Ready(&ethtool_netlink_ipv4_address_Type))
 		return;
 

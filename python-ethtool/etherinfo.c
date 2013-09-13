@@ -78,6 +78,7 @@ void free_etherinfo(struct etherinfo *ptr)
 		free(ptr->hwaddress);
 	}
 	Py_XDECREF(ptr->ipv4_addresses);
+	Py_XDECREF(ptr->ipv6_addresses);
 
 	free(ptr);
 }
@@ -117,6 +118,7 @@ append_object_for_netlink_address(struct etherinfo *ethi,
 
 	assert(ethi);
 	assert(ethi->ipv4_addresses);
+	assert(ethi->ipv6_addresses);
 	assert(addr);
 
 	addr_obj = make_python_address_from_rtnl_addr(addr);
@@ -124,11 +126,24 @@ append_object_for_netlink_address(struct etherinfo *ethi,
 	  return -1;
 	}
 
-	if (-1 == PyList_Append(ethi->ipv4_addresses, addr_obj)) {
-	  Py_DECREF(addr_obj);
-	  return -1;
-	}
+	switch (rtnl_addr_get_family(addr)) {
+	case AF_INET:
+		if (-1 == PyList_Append(ethi->ipv4_addresses, addr_obj)) {
+			Py_DECREF(addr_obj);
+			return -1;
+		}
+		break;
 
+	case AF_INET6:
+		if (-1 == PyList_Append(ethi->ipv6_addresses, addr_obj)) {
+			Py_DECREF(addr_obj);
+			return -1;
+		}
+		break;
+
+	default:
+		return -1;
+	}
 	Py_DECREF(addr_obj);
 
 	/* Success */
@@ -153,6 +168,7 @@ static void callback_nl_address(struct nl_object *obj, void *arg)
 
 	switch( rtnl_addr_get_family(rtaddr) ) {
 	case AF_INET:
+	case AF_INET6:
                 append_object_for_netlink_address(ethi, rtaddr);
                 return;
 	default:
@@ -167,7 +183,6 @@ static void callback_nl_address(struct nl_object *obj, void *arg)
  *   Exported functions - API frontend
  *
  */
-
 
 /**
  * Query NETLINK for ethernet configuration
@@ -249,6 +264,13 @@ int get_etherinfo(struct etherinfo_obj_data *data, nlQuery query)
                 Py_XDECREF(ethinf->ipv4_addresses);
                 ethinf->ipv4_addresses = PyList_New(0);
                 if (!ethinf->ipv4_addresses) {
+                        return 0;
+                }
+
+                /* Likewise for IPv6 addresses: */
+                Py_XDECREF(ethinf->ipv6_addresses);
+                ethinf->ipv6_addresses = PyList_New(0);
+                if (!ethinf->ipv6_addresses) {
                         return 0;
                 }
 
