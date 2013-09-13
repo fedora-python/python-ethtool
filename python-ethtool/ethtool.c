@@ -80,7 +80,7 @@ static PyObject *get_active_devices(PyObject *self __unused, PyObject *args __un
 static PyObject *get_devices(PyObject *self __unused, PyObject *args __unused)
 {
 	char buffer[256];
-	char *ret;;
+	char *ret;
 	PyObject *list = PyList_New(0);
 	FILE *fd = fopen(_PATH_PROCNET_DEV, "r");
 
@@ -89,7 +89,13 @@ static PyObject *get_devices(PyObject *self __unused, PyObject *args __unused)
 		return NULL;
 	}
 	/* skip over first two lines */
-	ret = fgets(buffer, 256, fd); ret = fgets(buffer, 256, fd);
+	ret = fgets(buffer, 256, fd);
+	ret = fgets(buffer, 256, fd);
+	if( !ret ) {
+		PyErr_SetString(PyExc_OSError, strerror(errno));
+		return NULL;
+	}
+
 	while (!feof(fd)) {
 		PyObject *str;
 		char *name = buffer;
