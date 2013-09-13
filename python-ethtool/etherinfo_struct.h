@@ -35,7 +35,6 @@ struct etherinfo {
 	int index;                          /**< NETLINK index reference */
 	char *hwaddress;                    /**< HW address / MAC address of device */
 	PyObject *ipv4_addresses;        /**< list of PyNetlinkIPv4Address instances */
-	struct ipv6address *ipv6_addresses; /**< Configured IPv6 addresses (as a pointer chain) */
 };
 
 /* Python object containing data baked from a (struct rtnl_addr) */
@@ -46,18 +45,6 @@ typedef struct PyNetlinkIPv4Address {
 	PyObject *ipv4_broadcast;	/**< string: Configured IPv4 broadcast address */
 } PyNetlinkIPv4Address;
 extern PyTypeObject ethtool_netlink_ipv4_address_Type;
-
-/**
- * Pointer chain with IPv6 addresses associated with a ethernet interface.  Used
- * by struct etherinfo
- */
-struct ipv6address {
-	char *address;               /**<  Configured IPv6 address */
-	int netmask;                 /**<  Configured IPv6 netmask */
-	int scope;                   /**<  Scope for the IPv6 address */
-	struct ipv6address *next;    /**<  Pointer to next configured IPv6 address */
-};
-
 
 /**
  * Contains the internal data structure of the
@@ -80,14 +67,6 @@ typedef struct {
 	struct etherinfo_obj_data *data; /* IPv4 and IPv6 address information, only one element used */
 } etherinfo_py;
 
-/**
- * A Python object of struct ipv6address
- *
- */
-typedef struct {
-	PyObject_HEAD
-	struct ipv6address *addrdata; /**< IPv6 address, only one element is used in this case */
-} etherinfo_ipv6addr_py;
 
 /**
  * NULL safe PyString_FromString() wrapper.  If input string is NULL, None will be returned

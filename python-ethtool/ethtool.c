@@ -35,7 +35,6 @@
 static struct nl_sock *nlconnection = NULL;
 unsigned int nlconnection_users = 0;  /* How many NETLINK users are active? */
 extern PyTypeObject ethtool_etherinfoType;
-extern PyTypeObject ethtool_etherinfoIPv6Type;
 
 #ifndef IFF_DYNAMIC
 #define IFF_DYNAMIC     0x8000          /* dialup device with changing addresses*/
@@ -963,12 +962,7 @@ PyMODINIT_FUNC initethtool(void)
 	Py_INCREF(&ethtool_etherinfoType);
 	PyModule_AddObject(m, "etherinfo", (PyObject *)&ethtool_etherinfoType);
 
-	// Prepare the ethtool.etherinfo_ipv6addr class
-	if (PyType_Ready(&ethtool_etherinfoIPv6Type) < 0)
-		return;
-	Py_INCREF(&ethtool_etherinfoIPv6Type);
-	PyModule_AddObject(m, "etherinfo_ipv6addr", (PyObject *)&ethtool_etherinfoIPv6Type);
-
+	// Prepare the ethtool IPv4 address types
 	if (PyType_Ready(&ethtool_netlink_ipv4_address_Type))
 		return;
 

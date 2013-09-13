@@ -242,21 +242,6 @@ PyObject *_ethtool_etherinfo_str(etherinfo_py *self)
                }
 	}
 
-	if( self->data->ethinfo->ipv6_addresses ) {
-		struct ipv6address *ipv6 = self->data->ethinfo->ipv6_addresses;
-		PyObject *tmp = PyString_FromFormat("\tIPv6 addresses:\n");
-		PyString_Concat(&ret, tmp);
-		Py_DECREF(tmp);
-		for( ; ipv6; ipv6 = ipv6->next) {
-			char scope[66];
-
-			rtnl_scope2str(ipv6->scope, scope, 64);
-			PyObject *addr = PyString_FromFormat("\t		[%s] %s/%i\n",
-							     scope, ipv6->address, ipv6->netmask);
-			PyString_Concat(&ret, addr);
-			Py_DECREF(addr);
-		}
-	}
 	return ret;
 }
 
@@ -280,81 +265,12 @@ _ethtool_etherinfo_get_ipv4_addresses(etherinfo_py *self, PyObject *notused) {
 
 
 /**
- * Returns a tuple list of ethertool.etherinfo_ipv6addr objects, containing configured
- * IPv6 addresses
- *
- * @param self
- * @param notused
- *
- * @return Returns a Python tuple list of ethertool.etherinfo_ipv6addr objects
- */
-PyObject * _ethtool_etherinfo_get_ipv6_addresses(etherinfo_py *self, PyObject *notused) {
-	PyObject *ret;
-	struct ipv6address *ipv6 = NULL;
-	int i = 0;
-
-	if( !self || !self->data ) {
-		PyErr_SetString(PyExc_AttributeError, "No data available");
-		return NULL;
-	}
-
-	get_etherinfo(self->data, NLQRY_ADDR);
-	ipv6 = self->data->ethinfo->ipv6_addresses;
-	ret = PyTuple_New(1);
-	if( !ret ) {
-		PyErr_SetString(PyExc_MemoryError,
-				"[INTERNAL] Failed to allocate tuple list for "
-				"IPv6 address objects");
-		return NULL;
-	}
-	while( ipv6 ) {
-		PyObject *ipv6_pyobj = NULL, *ipv6_pydata = NULL, *args = NULL;
-		struct ipv6address *next = ipv6->next;
-
-		ipv6->next = NULL;
-		ipv6_pydata = PyCObject_FromVoidPtr(ipv6, NULL);
-		if( !ipv6_pydata ) {
-			PyErr_SetString(PyExc_MemoryError,
-					"[INTERNAL] Failed to create python object "
-					"containing IPv6 address");
-			return NULL;
-		}
-		args = PyTuple_New(1);
-		if( !args ) {
-			PyErr_SetString(PyExc_MemoryError,
-					"[INTERNAL] Failed to allocate argument list "
-					"a new IPv6 address object");
-			return NULL;
-		}
-		PyTuple_SetItem(args, 0, ipv6_pydata);
-		ipv6_pyobj = PyObject_CallObject((PyObject *)&ethtool_etherinfoIPv6Type, args);
-		Py_DECREF(args);
-		if( ipv6_pyobj ) {
-			PyTuple_SetItem(ret, i++, ipv6_pyobj);
-			_PyTuple_Resize(&ret, i+1);
-		} else {
-			PyErr_SetString(PyExc_RuntimeError,
-					"[INTERNAL] Failed to initialise the new "
-					"IPv6 address object");
-			return NULL;
-		}
-		ipv6 = next;
-	}
-	_PyTuple_Resize(&ret, i);
-	self->data->ethinfo->ipv6_addresses = NULL;
-	return ret;
-}
-
-
-/**
  * Defines all available methods in the ethtool.etherinfo class
  *
  */
 static PyMethodDef _ethtool_etherinfo_methods[] = {
 	{"get_ipv4_addresses", (PyCFunction)_ethtool_etherinfo_get_ipv4_addresses, METH_NOARGS,
 	 "Retrieve configured IPv4 addresses.  Returns a list of NetlinkIP4Address objects"},
-	{"get_ipv6_addresses", (PyCFunction)_ethtool_etherinfo_get_ipv6_addresses, METH_NOARGS,
-	 "Retrieve configured IPv6 addresses.  Returns a tuple list of etherinfo_ipv6addr objects"},
 	{NULL}  /**< No methods defined */
 };
 

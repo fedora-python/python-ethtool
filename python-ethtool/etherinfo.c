@@ -61,30 +61,8 @@ pthread_mutex_t nlc_counter_mtx = PTHREAD_MUTEX_INITIALIZER;
 	dst = strdup(src);	 \
 	}
 
-
 /**
- * Frees the memory used by a struct ipv6address pointer chain.  All elements are freed
- *
- * @param ptr  Pointer to a struct ipv6address chain.
- */
-void free_ipv6addresses(struct ipv6address *ptr) {
-	struct ipv6address *ipv6ptr = ptr;
-
-	while( ipv6ptr ) {
-		struct ipv6address *tmp = ipv6ptr->next;
-
-		if( ipv6ptr->address ) {
-			free(ipv6ptr->address);
-			ipv6ptr->address = NULL;
-		}
-		memset(ipv6ptr, 0, sizeof(struct ipv6address));
-		free(ipv6ptr);
-		ipv6ptr = tmp;
-	}
-}
-
-/**
- * Frees the memory used by struct etherinfo, including all struct ipv6address children.
+ * Frees the memory used by struct etherinfo
  *
  * @param ptr Pointer to a struct etherninfo element
  */
@@ -101,48 +79,7 @@ void free_etherinfo(struct etherinfo *ptr)
 	}
 	Py_XDECREF(ptr->ipv4_addresses);
 
-	if( ptr->ipv6_addresses ) {
-		free_ipv6addresses(ptr->ipv6_addresses);
-	}
 	free(ptr);
-}
-
-
-/**
- * Add a new IPv6 address record to a struct ipv6address chain
- *
- * @param addrptr    Pointer to the current IPv6 address chain.
- * @param addr       IPv6 address, represented as char * string
- * @param netmask    IPv6 netmask, as returned by libnl rtnl_addr_get_prefixlen()
- * @param scope      IPV6 address scope, as returned by libnl rtnl_addr_get_scope()
- *
- * @return Returns a new pointer to the chain containing the new element
- */
-struct ipv6address * etherinfo_add_ipv6(struct ipv6address *addrptr, struct rtnl_addr *addr) {
-	struct ipv6address *newaddr = NULL;
-	char buf[INET6_ADDRSTRLEN+2];
-	int af_family;
-
-	af_family = rtnl_addr_get_family(addr);
-        if( af_family != AF_INET && af_family != AF_INET6 ) {
-                return addrptr;
-        }
-
-	memset(&buf, 0, sizeof(buf));
-	inet_ntop(af_family, nl_addr_get_binary_addr(rtnl_addr_get_local(addr)), buf, sizeof(buf));
-
-	newaddr = calloc(1, sizeof(struct ipv6address)+2);
-	if( !newaddr ) {
-		fprintf(stderr, "** ERROR ** Could not allocate memory for a new IPv6 address record (%s/%i [%i])",
-			buf, rtnl_addr_get_prefixlen(addr), rtnl_addr_get_scope(addr));
-		return addrptr;
-	}
-
-	SET_STR_VALUE(newaddr->address, buf);
-	newaddr->netmask = rtnl_addr_get_prefixlen(addr);
-	newaddr->scope = rtnl_addr_get_scope(addr);
-	newaddr->next = addrptr;
-	return newaddr;
 }
 
 
@@ -218,9 +155,6 @@ static void callback_nl_address(struct nl_object *obj, void *arg)
 	case AF_INET:
                 append_object_for_netlink_address(ethi, rtaddr);
                 return;
-	case AF_INET6:
-                ethi->ipv6_addresses = etherinfo_add_ipv6(ethi->ipv6_addresses, rtaddr);
-		return;
 	default:
 		return;
 	}
@@ -233,48 +167,6 @@ static void callback_nl_address(struct nl_object *obj, void *arg)
  *   Exported functions - API frontend
  *
  */
-
-/**
- * Dumps the contents of a struct etherinfo element to file
- *
- * @param fp   FILE pointer where to dump
- * @param ptr  Pointer to a struct etherinfo element
- */
-void dump_etherinfo(FILE *fp, struct etherinfo *ptr)
-{
-
-	fprintf(fp, "*** Interface [%i] %s  ", ptr->index, ptr->device);
-	if( ptr->hwaddress ) {
-		fprintf(fp, "MAC address: %s", ptr->hwaddress);
-	}
-	fprintf(fp, "\n");
-	if( ptr->ipv4_addresses ) {
-		Py_ssize_t i;
-		for (i = 0; i < PyList_Size(ptr->ipv4_addresses); i++) {
-			PyNetlinkIPv4Address *addr = (PyNetlinkIPv4Address *)PyList_GetItem(ptr->ipv4_addresses, i);
-			fprintf(fp, "\tIPv4 Address: %s/%i",
-                                PyString_AsString(addr->ipv4_address),
-                                addr->ipv4_netmask);
-                        if( addr->ipv4_broadcast ) {
-                              fprintf(fp, "  -  Broadcast: %s", PyString_AsString(addr->ipv4_broadcast));
-                        }
-                        fprintf(fp, "\n");
-                }
-	}
-	if( ptr->ipv6_addresses ) {
-		struct ipv6address *ipv6 = ptr->ipv6_addresses;
-
-		fprintf(fp, "\tIPv6 addresses:\n");
-		for(; ipv6; ipv6 = ipv6->next) {
-			char scope[66];
-
-			rtnl_scope2str(ipv6->scope, scope, 64);
-			fprintf(fp, "\t		       [%s] %s/%i\n",
-				scope, ipv6->address, ipv6->netmask);
-		}
-	}
-	fprintf(fp, "\n");
-}
 
 
 /**
@@ -353,13 +245,7 @@ int get_etherinfo(struct etherinfo_obj_data *data, nlQuery query)
 		addr = rtnl_addr_alloc();
 		rtnl_addr_set_ifindex(addr, ethinf->index);
 
-                /* Make sure we don't have any old IPv6 addresses saved */
-                if( ethinf->ipv6_addresses ) {
-                        free_ipv6addresses(ethinf->ipv6_addresses);
-                        ethinf->ipv6_addresses = NULL;
-                }
-
-                /* Likewise for IPv4 addresses: */
+                /* Make sure we don't have any old IPv4 addresses saved */
                 Py_XDECREF(ethinf->ipv4_addresses);
                 ethinf->ipv4_addresses = PyList_New(0);
                 if (!ethinf->ipv4_addresses) {
