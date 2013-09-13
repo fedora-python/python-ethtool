@@ -24,135 +24,60 @@
 #include "etherinfo_struct.h"
 #include "etherinfo.h"
 
-/* IPv6 Addresses: */
+
+/* IP Address parsing: */
 static PyObject *
-PyNetlinkIPv6Address_from_rtnl_addr(struct rtnl_addr *addr)
+PyNetlinkIPaddress_from_rtnl_addr(struct rtnl_addr *addr)
 {
-	PyNetlinkIPv6Address *py_obj;
+	PyNetlinkIPaddress *py_obj;
 	char buf[INET6_ADDRSTRLEN+1];
+	struct nl_addr *peer_addr = NULL, *brdcst = NULL;
 
-	py_obj = PyObject_New(PyNetlinkIPv6Address,
-			      &ethtool_netlink_ipv6_address_Type);
+	py_obj = PyObject_New(PyNetlinkIPaddress,
+			      &ethtool_netlink_ip_address_Type);
 	if (!py_obj) {
 		return NULL;
 	}
 
-	/* Set ipv6_address: */
+	/* Set IP address family.  Only AF_INET and AF_INET6 is supported */
+	py_obj->family = rtnl_addr_get_family(addr);
+	if (py_obj->family != AF_INET && py_obj->family != AF_INET6) {
+		PyErr_SetString(PyExc_RuntimeError,
+				"Only IPv4 (AF_INET) and IPv6 (AF_INET6) address types are supported");
+		goto error;
+	}
+
+	/* Set local IP address: */
 	memset(&buf, 0, sizeof(buf));
-	if (!inet_ntop(AF_INET6, nl_addr_get_binary_addr(rtnl_addr_get_local(addr)),
+	if (!inet_ntop(py_obj->family, nl_addr_get_binary_addr(rtnl_addr_get_local(addr)),
 		       buf, sizeof(buf))) {
 		PyErr_SetFromErrno(PyExc_RuntimeError);
 		goto error;
 	}
-	py_obj->ipv6_address = PyString_FromString(buf);
-	if (!py_obj->ipv6_address) {
+	py_obj->local = PyString_FromString(buf);
+	if (!py_obj->local) {
 		goto error;
 	}
 
-	/* Set ipv6_netmask: */
-	py_obj->ipv6_netmask = rtnl_addr_get_prefixlen(addr);
-
-
-	/* Set ipv6_scope: */
+	/* Set peer IP address: */
 	memset(&buf, 0, sizeof(buf));
-	rtnl_scope2str(rtnl_addr_get_scope(addr), buf, sizeof(buf));
-	py_obj->ipv6_scope = PyString_FromString(buf);
-
-	return (PyObject*)py_obj;
-
- error:
-	Py_DECREF(py_obj);
-	return NULL;
-}
-
-static void
-netlink_ipv6_address_dealloc(PyNetlinkIPv6Address *obj)
-{
-	Py_DECREF(obj->ipv6_address);
-	Py_DECREF(obj->ipv6_scope);
-
-	/* We can call PyObject_Del directly rather than calling through
-	   tp_free since the type is not subtypable (Py_TPFLAGS_BASETYPE is
-	   not set): */
-	PyObject_Del(obj);
-}
-
-static PyObject*
-netlink_ipv6_address_repr(PyNetlinkIPv6Address *obj)
-{
-	PyObject *result = PyString_FromString("ethtool.NetlinkIPv6Address(address='");
-	PyString_Concat(&result, obj->ipv6_address);
-	PyString_ConcatAndDel(&result,
-			      PyString_FromFormat("/%d', scope=",
-						  obj->ipv6_netmask));
-	PyString_Concat(&result, obj->ipv6_scope);
-	PyString_ConcatAndDel(&result, PyString_FromString(")"));
-	return result;
-}
-
-static PyMemberDef _ethtool_netlink_ipv6_address_members[] = {
-	{"address",
-	 T_OBJECT_EX,
-	 offsetof(PyNetlinkIPv6Address, ipv6_address),
-	 0,
-	 NULL},
-	{"netmask",
-	 T_INT,
-	 offsetof(PyNetlinkIPv6Address, ipv6_netmask),
-	 0,
-	 NULL},
-	{"scope",
-	 T_OBJECT_EX,
-	 offsetof(PyNetlinkIPv6Address, ipv6_scope),
-	 0,
-	 NULL},
-	{NULL}  /* End of member list */
-};
-
-PyTypeObject ethtool_netlink_ipv6_address_Type = {
-	PyVarObject_HEAD_INIT(0, 0)
-	.tp_name = "ethtool.NetlinkIPv6Address",
-	.tp_basicsize = sizeof(PyNetlinkIPv6Address),
-	.tp_dealloc = (destructor)netlink_ipv6_address_dealloc,
-	.tp_repr = (reprfunc)netlink_ipv6_address_repr,
-	.tp_members = _ethtool_netlink_ipv6_address_members,
-};
-
-
-
-/* IPv4 Addresses: */
-static PyObject *
-PyNetlinkIPv4Address_from_rtnl_addr(struct rtnl_addr *addr)
-{
-	PyNetlinkIPv4Address *py_obj;
-	char buf[INET_ADDRSTRLEN+1];
-	struct nl_addr *brdcst;
-
-	py_obj = PyObject_New(PyNetlinkIPv4Address,
-			      &ethtool_netlink_ipv4_address_Type);
-	if (!py_obj) {
-		return NULL;
+	if ((peer_addr = rtnl_addr_get_peer(addr))) {
+		nl_addr2str(peer_addr, buf, sizeof(buf));
+		py_obj->peer = PyString_FromString(buf);
+		if (!py_obj->local) {
+			goto error;
+		}
+	} else {
+		py_obj->peer = NULL;
 	}
 
-	/* Set ipv4_address: */
-	memset(&buf, 0, sizeof(buf));
-	if (!inet_ntop(AF_INET, nl_addr_get_binary_addr(rtnl_addr_get_local(addr)),
-		       buf, sizeof(buf))) {
-		PyErr_SetFromErrno(PyExc_RuntimeError);
-		goto error;
-	}
-	py_obj->ipv4_address = PyString_FromString(buf);
-	if (!py_obj->ipv4_address) {
-		goto error;
-	}
-
-	/* Set ipv4_netmask: */
-	py_obj->ipv4_netmask = rtnl_addr_get_prefixlen(addr);
+	/* Set IP address prefix length (netmask): */
+	py_obj->prefixlen = rtnl_addr_get_prefixlen(addr);
 
 	/* Set ipv4_broadcast: */
 	py_obj->ipv4_broadcast = NULL;
 	brdcst = rtnl_addr_get_broadcast(addr);
-	if( brdcst ) {
+	if( py_obj->family == AF_INET && brdcst ) {
 		memset(&buf, 0, sizeof(buf));
 		if (!inet_ntop(AF_INET, nl_addr_get_binary_addr(brdcst),
 			       buf, sizeof(buf))) {
@@ -165,6 +90,11 @@ PyNetlinkIPv4Address_from_rtnl_addr(struct rtnl_addr *addr)
 		}
 	}
 
+	/* Set IP address scope: */
+	memset(&buf, 0, sizeof(buf));
+	rtnl_scope2str(rtnl_addr_get_scope(addr), buf, sizeof(buf));
+	py_obj->scope = PyString_FromString(buf);
+
 	return (PyObject*)py_obj;
 
  error:
@@ -173,10 +103,12 @@ PyNetlinkIPv4Address_from_rtnl_addr(struct rtnl_addr *addr)
 }
 
 static void
-netlink_ipv4_address_dealloc(PyNetlinkIPv4Address *obj)
+netlink_ip_address_dealloc(PyNetlinkIPaddress *obj)
 {
-	Py_DECREF(obj->ipv4_address);
+	Py_DECREF(obj->local);
+	Py_XDECREF(obj->peer);
 	Py_XDECREF(obj->ipv4_broadcast);
+	Py_XDECREF(obj->scope);
 
 	/* We can call PyObject_Del directly rather than calling through
 	   tp_free since the type is not subtypable (Py_TPFLAGS_BASETYPE is
@@ -185,51 +117,87 @@ netlink_ipv4_address_dealloc(PyNetlinkIPv4Address *obj)
 }
 
 static PyObject*
-netlink_ipv4_address_repr(PyNetlinkIPv4Address *obj)
+netlink_ip_address_repr(PyNetlinkIPaddress *obj)
 {
-	PyObject *result = PyString_FromString("ethtool.NetlinkIPv4Address(address='");
-	PyString_Concat(&result, obj->ipv4_address);
+	PyObject *result = PyString_FromString("ethtool.NetlinkIPaddress(family=");
+	char buf[256];
+
+	memset(&buf, 0, sizeof(buf));
+	nl_af2str(obj->family, buf, sizeof(buf));
 	PyString_ConcatAndDel(&result,
-			      PyString_FromFormat("', netmask=%d",
-						  obj->ipv4_netmask));
-	if (obj->ipv4_broadcast) {
+			      PyString_FromFormat("%s, address='", buf));
+	PyString_Concat(&result, obj->local);
+
+	if (obj->family == AF_INET) {
+		PyString_ConcatAndDel(&result,
+				      PyString_FromFormat("', netmask=%d",
+							  obj->prefixlen));
+	} else if (obj->family == AF_INET6) {
+		PyString_ConcatAndDel(&result,
+				      PyString_FromFormat("/%d'",
+							  obj->prefixlen));
+	}
+
+	if (obj->peer) {
+		PyString_ConcatAndDel(&result, PyString_FromString(", peer_address='"));
+		PyString_Concat(&result, obj->peer);
+		PyString_ConcatAndDel(&result, PyString_FromString("'"));
+	}
+
+	if (obj->family == AF_INET && obj->ipv4_broadcast) {
 		PyString_ConcatAndDel(&result, PyString_FromString(", broadcast='"));
 		PyString_Concat(&result, obj->ipv4_broadcast);
 		PyString_ConcatAndDel(&result, PyString_FromString("'"));
 	}
+
+	PyString_ConcatAndDel(&result, PyString_FromString(", scope="));
+	PyString_Concat(&result, obj->scope);
+
 	PyString_ConcatAndDel(&result, PyString_FromString(")"));
+
 	return result;
 }
 
-static PyMemberDef _ethtool_netlink_ipv4_address_members[] = {
+
+static PyMemberDef _ethtool_netlink_ip_address_members[] = {
 	{"address",
 	 T_OBJECT_EX,
-	 offsetof(PyNetlinkIPv4Address, ipv4_address),
+	 offsetof(PyNetlinkIPaddress, local),
+	 0,
+	 NULL},
+	{"peer_address",
+	 T_OBJECT_EX,
+	 offsetof(PyNetlinkIPaddress, peer),
 	 0,
 	 NULL},
 	{"netmask",
 	 T_INT,
-	 offsetof(PyNetlinkIPv4Address, ipv4_netmask),
+	 offsetof(PyNetlinkIPaddress, prefixlen),
 	 0,
 	 NULL},
 	{"broadcast",
 	 T_OBJECT, /* can be NULL */
-	 offsetof(PyNetlinkIPv4Address, ipv4_broadcast),
+	 offsetof(PyNetlinkIPaddress, ipv4_broadcast),
+	 0,
+	 NULL},
+	{"scope",
+	 T_OBJECT_EX,
+	 offsetof(PyNetlinkIPaddress, scope),
 	 0,
 	 NULL},
 	{NULL}  /* End of member list */
 };
 
-PyTypeObject ethtool_netlink_ipv4_address_Type = {
+PyTypeObject ethtool_netlink_ip_address_Type = {
 	PyVarObject_HEAD_INIT(0, 0)
-	.tp_name = "ethtool.NetlinkIPv4Address",
-	.tp_basicsize = sizeof(PyNetlinkIPv4Address),
-	.tp_dealloc = (destructor)netlink_ipv4_address_dealloc,
-	.tp_repr = (reprfunc)netlink_ipv4_address_repr,
-	.tp_members = _ethtool_netlink_ipv4_address_members,
+	.tp_name = "ethtool.NetlinkIPaddress",
+	.tp_basicsize = sizeof(PyNetlinkIPaddress),
+	.tp_dealloc = (destructor)netlink_ip_address_dealloc,
+	.tp_repr = (reprfunc)netlink_ip_address_repr,
+	.tp_members = _ethtool_netlink_ip_address_members,
 };
 
-/* Factory function, in case we want to generalize this to add IPv6 support */
+
 PyObject *
 make_python_address_from_rtnl_addr(struct rtnl_addr *addr)
 {
@@ -238,10 +206,8 @@ make_python_address_from_rtnl_addr(struct rtnl_addr *addr)
 	switch( rtnl_addr_get_family(addr) ) {
 
 	case AF_INET:
-		return PyNetlinkIPv4Address_from_rtnl_addr(addr);
-
 	case AF_INET6:
-		return PyNetlinkIPv6Address_from_rtnl_addr(addr);
+		return PyNetlinkIPaddress_from_rtnl_addr(addr);
 
 	default:
 		return PyErr_SetFromErrno(PyExc_RuntimeError);
