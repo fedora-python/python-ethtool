@@ -234,6 +234,7 @@ int get_etherinfo(struct etherinfo_obj_data *data, nlQuery query)
 		if( ethinf->index < 0 ) {
 			return 0;
 		}
+		rtnl_link_put(link);
 		nl_cache_free(link_cache);
 	}
 
