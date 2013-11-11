@@ -450,6 +450,7 @@ static PyObject *get_module(PyObject *self __unused, PyObject *args)
 
 	if (err < 0) {  /* failed? */
 		int eno = errno;
+		PyObject *err_obj;
 		FILE *file;
 		int found = 0;
 		char driver[101], dev[101];
@@ -458,8 +459,11 @@ static PyObject *get_module(PyObject *self __unused, PyObject *args)
 		/* Before bailing, maybe it is a PCMCIA/PC Card? */
 		file = fopen("/var/lib/pcmcia/stab", "r");
 		if (file == NULL) {
-			sprintf(buf, "[Errno %d] %s", eno, strerror(eno));
-			PyErr_SetString(PyExc_IOError, buf);
+			err_obj = Py_BuildValue("(is)", eno, strerror(eno));
+                        if (err_obj != NULL) {
+				PyErr_SetObject(PyExc_IOError, err_obj);
+				Py_DECREF(err_obj);
+			}
 			return NULL;
 		}
 
@@ -480,8 +484,11 @@ static PyObject *get_module(PyObject *self __unused, PyObject *args)
 		}
 		fclose(file);
 		if (!found) {
-			sprintf(buf, "[Errno %d] %s", eno, strerror(eno));
-			PyErr_SetString(PyExc_IOError, buf);
+			err_obj = Py_BuildValue("(is)", eno, strerror(eno));
+                        if (err_obj != NULL) {
+				PyErr_SetObject(PyExc_IOError, err_obj);
+				Py_DECREF(err_obj);
+			}
 			return NULL;
 		} else
 			return PyString_FromString(driver);
@@ -514,8 +521,7 @@ static PyObject *get_businfo(PyObject *self __unused, PyObject *args)
 	/* Open control socket. */
 	fd = socket(AF_INET, SOCK_DGRAM, 0);
 	if (fd < 0) {
-		PyErr_SetString(PyExc_OSError, strerror(errno));
-		return NULL;
+		return PyErr_SetFromErrno(PyExc_OSError);
 	}
 
 	/* Get current settings. */
