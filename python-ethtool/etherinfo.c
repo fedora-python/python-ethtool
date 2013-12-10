@@ -100,49 +100,6 @@ static void callback_nl_link(struct nl_object *obj, void *arg)
 	SET_STR_VALUE(ethi->hwaddress, hwaddr);
 }
 
-/**
- * For use by callback_nl_address
- * Returns 0 for success; -1 for error (though this is currently ignored)
- */
-static int
-append_object_for_netlink_address(struct etherinfo *ethi,
-                                  struct rtnl_addr *addr)
-{
-	PyObject *addr_obj;
-
-	assert(ethi);
-	assert(ethi->ipv4_addresses);
-	assert(ethi->ipv6_addresses);
-	assert(addr);
-
-	addr_obj = make_python_address_from_rtnl_addr(addr);
-	if (!addr_obj) {
-	  return -1;
-	}
-
-	switch (rtnl_addr_get_family(addr)) {
-	case AF_INET:
-		if (-1 == PyList_Append(ethi->ipv4_addresses, addr_obj)) {
-			Py_DECREF(addr_obj);
-			return -1;
-		}
-		break;
-
-	case AF_INET6:
-		if (-1 == PyList_Append(ethi->ipv6_addresses, addr_obj)) {
-			Py_DECREF(addr_obj);
-			return -1;
-		}
-		break;
-
-	default:
-		return -1;
-	}
-	Py_DECREF(addr_obj);
-
-	/* Success */
-	return 0;
-}
 
 /**
  *  libnl callback function.  Does the real parsing of a record returned by NETLINK.  This function
@@ -155,19 +112,32 @@ static void callback_nl_address(struct nl_object *obj, void *arg)
 {
 	struct etherinfo *ethi = (struct etherinfo *) arg;
 	struct rtnl_addr *rtaddr = (struct rtnl_addr *) obj;
+        PyObject *addr_obj = NULL;
+        int af_family = -1;
 
 	if( ethi == NULL ) {
 		return;
 	}
+	assert(ethi->ipv4_addresses);
+	assert(ethi->ipv6_addresses);
 
-	switch( rtnl_addr_get_family(rtaddr) ) {
-	case AF_INET:
-	case AF_INET6:
-                append_object_for_netlink_address(ethi, rtaddr);
+        /* Ensure that we're processing only known address types.
+         * Currently only IPv4 and IPv6 is handled
+         */
+        af_family = rtnl_addr_get_family(rtaddr);
+        if( af_family != AF_INET && af_family != AF_INET6 ) {
                 return;
-	default:
-		return;
+        }
+
+        /* Prepare a new Python object with the IP address */
+	addr_obj = make_python_address_from_rtnl_addr(rtaddr);
+	if (!addr_obj) {
+                return;
 	}
+        /* Append the IP address object to the proper address list */
+        PyList_Append((af_family == AF_INET6 ? ethi->ipv6_addresses : ethi->ipv4_addresses),
+                      addr_obj);
+        Py_DECREF(addr_obj);
 }
 
 
