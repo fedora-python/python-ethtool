@@ -191,11 +191,14 @@ int get_etherinfo(struct etherinfo_obj_data *data, nlQuery query)
 
                 link = rtnl_link_get_by_name(link_cache, ethinf->device);
                 if( !link ) {
+			nl_cache_free(link_cache);
                         return 0;
                 }
 
 		ethinf->index = rtnl_link_get_ifindex(link);
 		if( ethinf->index < 0 ) {
+			rtnl_link_put(link);
+			nl_cache_free(link_cache);
 			return 0;
 		}
 		rtnl_link_put(link);
@@ -220,6 +223,7 @@ int get_etherinfo(struct etherinfo_obj_data *data, nlQuery query)
 	case NLQRY_ADDR:
 		/* Extract IP address information */
 		if( rtnl_addr_alloc_cache(*data->nlc, &addr_cache) < 0) {
+			nl_cache_free(addr_cache);
                         return 0;
                 }
 		addr = rtnl_addr_alloc();
@@ -229,6 +233,8 @@ int get_etherinfo(struct etherinfo_obj_data *data, nlQuery query)
                 Py_XDECREF(ethinf->ipv4_addresses);
                 ethinf->ipv4_addresses = PyList_New(0);
                 if (!ethinf->ipv4_addresses) {
+			rtnl_addr_put(addr);
+			nl_cache_free(addr_cache);
                         return 0;
                 }
 
@@ -236,6 +242,8 @@ int get_etherinfo(struct etherinfo_obj_data *data, nlQuery query)
                 Py_XDECREF(ethinf->ipv6_addresses);
                 ethinf->ipv6_addresses = PyList_New(0);
                 if (!ethinf->ipv6_addresses) {
+			rtnl_addr_put(addr);
+			nl_cache_free(addr_cache);
                         return 0;
                 }
 
