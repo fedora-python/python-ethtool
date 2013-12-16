@@ -72,14 +72,6 @@ typedef struct {
 } etherinfo_py;
 
 
-/**
- * NULL safe PyString_FromString() wrapper.  If input string is NULL, None will be returned
- *
- * @param str Input C string (char *)
- *
- * @return Returns a PyObject with either the input string wrapped up, or a Python None value.
- */
-#define RETURN_STRING(str) (str ? PyString_FromString(str) : (Py_INCREF(Py_None), Py_None))
 
 PyObject * make_python_address_from_rtnl_addr(struct rtnl_addr *addr);
 

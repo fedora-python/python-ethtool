@@ -145,7 +145,11 @@ PyObject *_ethtool_etherinfo_getter(etherinfo_py *self, PyObject *attr_o)
 	}
 
 	if( strcmp(attr, "device") == 0 ) {
-		return RETURN_STRING(self->data->ethinfo->device);
+                if( self->data->ethinfo->device ) {
+                        return PyString_FromString(self->data->ethinfo->device);
+                } else {
+                        return Py_INCREF(Py_None), Py_None;
+                }
 	} else if( strcmp(attr, "mac_address") == 0 ) {
 		get_etherinfo(self->data, NLQRY_LINK);
                 Py_INCREF(self->data->ethinfo->hwaddress);
