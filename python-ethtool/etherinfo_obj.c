@@ -148,7 +148,8 @@ PyObject *_ethtool_etherinfo_getter(etherinfo_py *self, PyObject *attr_o)
 		return RETURN_STRING(self->data->ethinfo->device);
 	} else if( strcmp(attr, "mac_address") == 0 ) {
 		get_etherinfo(self->data, NLQRY_LINK);
-		return RETURN_STRING(self->data->ethinfo->hwaddress);
+                Py_INCREF(self->data->ethinfo->hwaddress);
+		return self->data->ethinfo->hwaddress;
 	} else if( strcmp(attr, "ipv4_address") == 0 ) {
 		get_etherinfo(self->data, NLQRY_ADDR);
 		/* For compatiblity with old approach, return last IPv4 address: */
@@ -220,9 +221,9 @@ PyObject *_ethtool_etherinfo_str(etherinfo_py *self)
 
 	ret = PyString_FromFormat("Device %s:\n", self->data->ethinfo->device);
 	if( self->data->ethinfo->hwaddress ) {
-		PyObject *tmp = PyString_FromFormat("\tMAC address: %s\n", self->data->ethinfo->hwaddress);
-		PyString_Concat(&ret, tmp);
-		Py_DECREF(tmp);
+		PyString_ConcatAndDel(&ret, PyString_FromString("\tMAC address: "));
+		PyString_Concat(&ret, self->data->ethinfo->hwaddress);
+		PyString_ConcatAndDel(&ret, PyString_FromString("\n"));
 	}
 
 	if( self->data->ethinfo->ipv4_addresses ) {

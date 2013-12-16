@@ -42,20 +42,6 @@
  */
 
 /**
- * Simple macro which makes sure the destination string is freed if used earlier.
- *
- * @param dst Destination pointer
- * @param src Source pointer
- *
- */
-#define SET_STR_VALUE(dst, src) {	 \
-	if( dst ) {		 \
-		free(dst);	 \
-	};			 \
-	dst = strdup(src);	 \
-	}
-
-/**
  * Frees the memory used by struct etherinfo
  *
  * @param ptr Pointer to a struct etherninfo element
@@ -68,9 +54,7 @@ void free_etherinfo(struct etherinfo *ptr)
 
 	free(ptr->device);
 
-	if( ptr->hwaddress ) {
-		free(ptr->hwaddress);
-	}
+        Py_XDECREF(ptr->hwaddress);
 	Py_XDECREF(ptr->ipv4_addresses);
 	Py_XDECREF(ptr->ipv6_addresses);
 
@@ -97,7 +81,10 @@ static void callback_nl_link(struct nl_object *obj, void *arg)
 
 	memset(&hwaddr, 0, 130);
 	nl_addr2str(rtnl_link_get_addr(link), hwaddr, sizeof(hwaddr));
-	SET_STR_VALUE(ethi->hwaddress, hwaddr);
+        if( ethi->hwaddress ) {
+                Py_XDECREF(ethi->hwaddress);
+        }
+        ethi->hwaddress = PyString_FromFormat("%s", hwaddr);
 }
 
 

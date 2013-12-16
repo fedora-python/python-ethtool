@@ -33,7 +33,7 @@
 struct etherinfo {
 	char *device;                       /**< Device name */
 	int index;                          /**< NETLINK index reference */
-	char *hwaddress;                    /**< HW address / MAC address of device */
+	PyObject *hwaddress;             /**< string: HW address / MAC address of device */
 	PyObject *ipv4_addresses;        /**< list of PyNetlinkIPv4Address instances */
 	PyObject *ipv6_addresses;        /**< list of PyNetlinkIPv6Addresses instances */
 };
