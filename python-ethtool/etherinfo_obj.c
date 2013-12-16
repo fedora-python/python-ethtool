@@ -155,7 +155,7 @@ PyObject *_ethtool_etherinfo_getter(etherinfo_py *self, PyObject *attr_o)
                 Py_INCREF(self->data->ethinfo->hwaddress);
 		return self->data->ethinfo->hwaddress;
 	} else if( strcmp(attr, "ipv4_address") == 0 ) {
-		get_etherinfo(self->data, NLQRY_ADDR);
+		get_etherinfo(self->data, NLQRY_ADDR4);
 		/* For compatiblity with old approach, return last IPv4 address: */
 		py_addr = get_last_ipv4_address(self);
 		if (py_addr) {
@@ -166,14 +166,14 @@ PyObject *_ethtool_etherinfo_getter(etherinfo_py *self, PyObject *attr_o)
 		}
 		Py_RETURN_NONE;
 	} else if( strcmp(attr, "ipv4_netmask") == 0 ) {
-		get_etherinfo(self->data, NLQRY_ADDR);
+		get_etherinfo(self->data, NLQRY_ADDR4);
 		py_addr = get_last_ipv4_address(self);
 		if (py_addr) {
 		  return PyInt_FromLong(py_addr->prefixlen);
 		}
 		return PyInt_FromLong(0);
 	} else if( strcmp(attr, "ipv4_broadcast") == 0 ) {
-		get_etherinfo(self->data, NLQRY_ADDR);
+		get_etherinfo(self->data, NLQRY_ADDR4);
 		py_addr = get_last_ipv4_address(self);
 		if (py_addr) {
 		  if (py_addr->ipv4_broadcast) {
@@ -221,7 +221,8 @@ PyObject *_ethtool_etherinfo_str(etherinfo_py *self)
 	}
 
 	get_etherinfo(self->data, NLQRY_LINK);
-	get_etherinfo(self->data, NLQRY_ADDR);
+	get_etherinfo(self->data, NLQRY_ADDR4);
+	get_etherinfo(self->data, NLQRY_ADDR6);
 
 	ret = PyString_FromFormat("Device %s:\n", self->data->ethinfo->device);
 	if( self->data->ethinfo->hwaddress ) {
@@ -280,7 +281,7 @@ static PyObject *_ethtool_etherinfo_get_ipv4_addresses(etherinfo_py *self, PyObj
 		return NULL;
 	}
 
-	get_etherinfo(self->data, NLQRY_ADDR);
+	get_etherinfo(self->data, NLQRY_ADDR4);
 
 	/* Transfer ownership of reference: */
 	ret = self->data->ethinfo->ipv4_addresses;
@@ -306,7 +307,7 @@ static PyObject *_ethtool_etherinfo_get_ipv6_addresses(etherinfo_py *self, PyObj
 		return NULL;
 	}
 
-	get_etherinfo(self->data, NLQRY_ADDR);
+	get_etherinfo(self->data, NLQRY_ADDR6);
 
 	/* Transfer ownership of reference: */
 	ret = self->data->ethinfo->ipv6_addresses;

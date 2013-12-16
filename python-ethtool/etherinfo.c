@@ -97,16 +97,14 @@ static void callback_nl_link(struct nl_object *obj, void *arg)
  */
 static void callback_nl_address(struct nl_object *obj, void *arg)
 {
-	struct etherinfo *ethi = (struct etherinfo *) arg;
+	PyObject *py_addrlist = (PyObject *) arg;
 	struct rtnl_addr *rtaddr = (struct rtnl_addr *) obj;
         PyObject *addr_obj = NULL;
         int af_family = -1;
 
-	if( ethi == NULL ) {
+	if( py_addrlist == NULL ) {
 		return;
 	}
-	assert(ethi->ipv4_addresses);
-	assert(ethi->ipv6_addresses);
 
         /* Ensure that we're processing only known address types.
          * Currently only IPv4 and IPv6 is handled
@@ -121,9 +119,8 @@ static void callback_nl_address(struct nl_object *obj, void *arg)
 	if (!addr_obj) {
                 return;
 	}
-        /* Append the IP address object to the proper address list */
-        PyList_Append((af_family == AF_INET6 ? ethi->ipv6_addresses : ethi->ipv4_addresses),
-                      addr_obj);
+        /* Append the IP address object to the address list */
+        PyList_Append(py_addrlist, addr_obj);
         Py_DECREF(addr_obj);
 }
 
@@ -152,6 +149,8 @@ int get_etherinfo(struct etherinfo_obj_data *data, nlQuery query)
 	struct rtnl_addr *addr;
 	struct rtnl_link *link;
 	struct etherinfo *ethinf = NULL;
+        PyObject *addrlist = NULL;
+
 	int ret = 0;
 
 	if( !data || !data->ethinfo ) {
@@ -207,7 +206,8 @@ int get_etherinfo(struct etherinfo_obj_data *data, nlQuery query)
 		ret = 1;
 		break;
 
-	case NLQRY_ADDR:
+        case NLQRY_ADDR4:
+        case NLQRY_ADDR6:
 		/* Extract IP address information */
 		if( rtnl_addr_alloc_cache(*data->nlc, &addr_cache) < 0) {
 			nl_cache_free(addr_cache);
@@ -216,26 +216,35 @@ int get_etherinfo(struct etherinfo_obj_data *data, nlQuery query)
 		addr = rtnl_addr_alloc();
 		rtnl_addr_set_ifindex(addr, ethinf->index);
 
-                /* Make sure we don't have any old IPv4 addresses saved */
-                Py_XDECREF(ethinf->ipv4_addresses);
-                ethinf->ipv4_addresses = PyList_New(0);
-                if (!ethinf->ipv4_addresses) {
-			rtnl_addr_put(addr);
-			nl_cache_free(addr_cache);
-                        return 0;
-                }
+                if( query == NLQRY_ADDR4 ) {
+                        rtnl_addr_set_family(addr, AF_INET);
 
-                /* Likewise for IPv6 addresses: */
-                Py_XDECREF(ethinf->ipv6_addresses);
-                ethinf->ipv6_addresses = PyList_New(0);
-                if (!ethinf->ipv6_addresses) {
-			rtnl_addr_put(addr);
-			nl_cache_free(addr_cache);
-                        return 0;
-                }
+                        /* Make sure we don't have any old IPv4 addresses saved */
+                        Py_XDECREF(ethinf->ipv4_addresses);
+                        ethinf->ipv4_addresses = PyList_New(0);
+                        if (!ethinf->ipv4_addresses) {
+                                rtnl_addr_put(addr);
+                                nl_cache_free(addr_cache);
+                                return 0;
+                        }
+                        assert(ethinf->ipv4_addresses);
+                        addrlist = ethinf->ipv4_addresses;
+                } else if( query == NLQRY_ADDR6 ) {
+                        rtnl_addr_set_family(addr, AF_INET6);
 
-                /* Retrieve all address information */
-		nl_cache_foreach_filter(addr_cache, OBJ_CAST(addr), callback_nl_address, ethinf);
+                        /* Likewise for IPv6 addresses: */
+                        Py_XDECREF(ethinf->ipv6_addresses);
+                        ethinf->ipv6_addresses = PyList_New(0);
+                        if (!ethinf->ipv6_addresses) {
+                                rtnl_addr_put(addr);
+                                nl_cache_free(addr_cache);
+                                return 0;
+                        }
+                        assert(ethinf->ipv6_addresses);
+                        addrlist = ethinf->ipv6_addresses;
+                }
+                /* Retrieve all address information - common code for NLQRY_ADDR4 and NLQRY_ADDR6*/
+		nl_cache_foreach_filter(addr_cache, OBJ_CAST(addr), callback_nl_address, addrlist);
 		rtnl_addr_put(addr);
 		nl_cache_free(addr_cache);
 		ret = 1;

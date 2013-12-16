@@ -17,7 +17,7 @@
 #ifndef _ETHERINFO_H
 #define _ETHERINFO_H
 
-typedef enum {NLQRY_LINK, NLQRY_ADDR} nlQuery; /**<  Supported query types in the etherinfo code */
+typedef enum {NLQRY_LINK, NLQRY_ADDR4, NLQRY_ADDR6} nlQuery; /**<  Supported query types in the etherinfo code */
 
 int get_etherinfo(struct etherinfo_obj_data *data, nlQuery query);
 void free_etherinfo(struct etherinfo *ptr);
