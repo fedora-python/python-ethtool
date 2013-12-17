@@ -32,8 +32,6 @@
 #include "etherinfo_obj.h"
 #include "etherinfo.h"
 
-static struct nl_sock *nlconnection = NULL;
-unsigned int nlconnection_users = 0;  /* How many NETLINK users are active? */
 extern PyTypeObject ethtool_etherinfoType;
 
 #ifndef IFF_DYNAMIC
@@ -292,8 +290,6 @@ static PyObject *get_interfaces_info(PyObject *self __unused, PyObject *args) {
 		 */
 		objdata->ethinfo->device = strdup(fetch_devs[i]);
 		objdata->ethinfo->index = -1;
-		objdata->nlc = &nlconnection;
-		objdata->nlc_users = &nlconnection_users;
 
 		/* Instantiate a new etherinfo object with the device information */
 		ethinf_py = PyCObject_FromVoidPtr(objdata, NULL);

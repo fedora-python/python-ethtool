@@ -56,9 +56,6 @@ extern PyTypeObject ethtool_netlink_ip_address_Type;
  *
  */
 struct etherinfo_obj_data {
-	struct nl_sock **nlc;           /**< Contains NETLINK connection info (global) */
-	unsigned int *nlc_users;	/**< Resource counter for the NETLINK connection (global) */
-	unsigned short nlc_active;	/**< Is this instance using NETLINK? */
 	struct etherinfo *ethinfo;      /**< Contains info about our current interface */
 };
 
@@ -69,6 +66,7 @@ struct etherinfo_obj_data {
 typedef struct {
 	PyObject_HEAD
 	struct etherinfo_obj_data *data; /* IPv4 and IPv6 address information, only one element used */
+	unsigned short nlc_active;	/**< Is this instance using NETLINK? */
 } etherinfo_py;
 
 

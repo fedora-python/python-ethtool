@@ -142,7 +142,7 @@ static void callback_nl_address(struct nl_object *obj, void *arg)
  *
  * @return Returns 1 on success, otherwise 0.
  */
-int get_etherinfo(struct etherinfo_obj_data *data, nlQuery query)
+int get_etherinfo(etherinfo_py *self, nlQuery query)
 {
 	struct nl_cache *link_cache;
 	struct nl_cache *addr_cache;
@@ -153,13 +153,13 @@ int get_etherinfo(struct etherinfo_obj_data *data, nlQuery query)
 
 	int ret = 0;
 
-	if( !data || !data->ethinfo ) {
+	if( !self || !self->data || !self->data->ethinfo ) {
 		return 0;
 	}
-	ethinf = data->ethinfo;
+	ethinf = self->data->ethinfo;
 
 	/* Open a NETLINK connection on-the-fly */
-	if( !open_netlink(data) ) {
+	if( !open_netlink(self) ) {
 		PyErr_Format(PyExc_RuntimeError,
 			     "Could not open a NETLINK connection for %s",
 			     ethinf->device);
@@ -171,7 +171,7 @@ int get_etherinfo(struct etherinfo_obj_data *data, nlQuery query)
 	 * interface index if we have that
 	 */
 	if( ethinf->index < 0 ) {
-		if( rtnl_link_alloc_cache(*data->nlc, AF_UNSPEC, &link_cache) < 0) {
+		if( rtnl_link_alloc_cache(get_nlc(), AF_UNSPEC, &link_cache) < 0) {
                         return 0;
                 }
 
@@ -195,7 +195,7 @@ int get_etherinfo(struct etherinfo_obj_data *data, nlQuery query)
 	switch( query ) {
 	case NLQRY_LINK:
 		/* Extract MAC/hardware address of the interface */
-		if( rtnl_link_alloc_cache(*data->nlc, AF_UNSPEC, &link_cache) < 0) {
+		if( rtnl_link_alloc_cache(get_nlc(), AF_UNSPEC, &link_cache) < 0) {
                         return 0;
                 }
 		link = rtnl_link_alloc();
@@ -209,7 +209,7 @@ int get_etherinfo(struct etherinfo_obj_data *data, nlQuery query)
         case NLQRY_ADDR4:
         case NLQRY_ADDR6:
 		/* Extract IP address information */
-		if( rtnl_addr_alloc_cache(*data->nlc, &addr_cache) < 0) {
+		if( rtnl_addr_alloc_cache(get_nlc(), &addr_cache) < 0) {
 			nl_cache_free(addr_cache);
                         return 0;
                 }

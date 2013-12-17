@@ -24,6 +24,8 @@
 #include "etherinfo_struct.h"
 
 pthread_mutex_t nlc_counter_mtx = PTHREAD_MUTEX_INITIALIZER;
+static struct nl_sock *nlconnection = NULL;
+static unsigned int nlconnection_users = 0;  /* How many NETLINK users are active? */
 
 
 /**
@@ -31,34 +33,34 @@ pthread_mutex_t nlc_counter_mtx = PTHREAD_MUTEX_INITIALIZER;
  * for each etherinfo object being generated, and it will
  * keep a separate file descriptor open for each object
  *
- * @param data etherinfo_obj_data structure
+ * @param ethi etherinfo_py structure (basically the "self" object)
  *
  * @return Returns 1 on success, otherwise 0.
  */
-int open_netlink(struct etherinfo_obj_data *data)
+int open_netlink(etherinfo_py *ethi)
 {
-	if( !data ) {
+	if( !ethi ) {
 		return 0;
 	}
 
 	/* Reuse already established NETLINK connection, if a connection exists */
-	if( *data->nlc ) {
+	if( nlconnection ) {
 		/* If this object has not used NETLINK earlier, tag it as a user */
-		if( !data->nlc_active ) {
+		if( !ethi->nlc_active ) {
 			pthread_mutex_lock(&nlc_counter_mtx);
-			(*data->nlc_users)++;
+			nlconnection_users++;
 			pthread_mutex_unlock(&nlc_counter_mtx);
 		}
-		data->nlc_active = 1;
+		ethi->nlc_active = 1;
 		return 1;
 	}
 
 	/* No earlier connections exists, establish a new one */
-	*data->nlc = nl_socket_alloc();
-	nl_connect(*data->nlc, NETLINK_ROUTE);
-	if( (*data->nlc != NULL) ) {
+	nlconnection = nl_socket_alloc();
+	nl_connect(nlconnection, NETLINK_ROUTE);
+	if( (nlconnection != NULL) ) {
 		/* Force O_CLOEXEC flag on the NETLINK socket */
-		if( fcntl(nl_socket_get_fd(*data->nlc), F_SETFD, FD_CLOEXEC) == -1 ) {
+		if( fcntl(nl_socket_get_fd(nlconnection), F_SETFD, FD_CLOEXEC) == -1 ) {
 			fprintf(stderr,
 				"**WARNING** Failed to set O_CLOEXEC on NETLINK socket: %s\n",
 				strerror(errno));
@@ -66,9 +68,9 @@ int open_netlink(struct etherinfo_obj_data *data)
 
 		/* Tag this object as an active user */
 		pthread_mutex_lock(&nlc_counter_mtx);
-		(*data->nlc_users)++;
+		nlconnection_users++;
 		pthread_mutex_unlock(&nlc_counter_mtx);
-		data->nlc_active = 1;
+		ethi->nlc_active = 1;
 		return 1;
 	} else {
 		return 0;
@@ -77,32 +79,43 @@ int open_netlink(struct etherinfo_obj_data *data)
 
 
 /**
+ * Return a reference to the global netlink connection
+ *
+ * @returns Returns a pointer to a NETLINK connection libnl functions can use
+ */
+struct nl_sock * get_nlc()
+{
+	assert(nlconnection);
+	return nlconnection;
+}
+
+/**
  * Closes the NETLINK connection.  This should be called automatically whenever
  * the corresponding etherinfo object is deleted.
  *
- * @param ptr  Pointer to the pointer of struct nl_handle, which contains the NETLINK connection
+ * @param ethi etherinfo_py structure (basically the "self" object)
  */
-void close_netlink(struct etherinfo_obj_data *data)
+void close_netlink(etherinfo_py *ethi)
 {
-	if( !data || !(*data->nlc) ) {
+	if( !ethi || !nlconnection ) {
 		return;
 	}
 
 	/* Untag this object as a NETLINK user */
-	data->nlc_active = 0;
+	ethi->nlc_active = 0;
 	pthread_mutex_lock(&nlc_counter_mtx);
-	(*data->nlc_users)--;
+	nlconnection_users--;
 	pthread_mutex_unlock(&nlc_counter_mtx);
 
 	/* Don't close the connection if there are more users */
-	if( *data->nlc_users > 0) {
+	if( nlconnection_users > 0) {
 		return;
 	}
 
 	/* Close NETLINK connection */
-	nl_close(*data->nlc);
-	nl_socket_free(*data->nlc);
-	*data->nlc = NULL;
+	nl_close(nlconnection);
+	nl_socket_free(nlconnection);
+	nlconnection = NULL;
 }
 
 /*

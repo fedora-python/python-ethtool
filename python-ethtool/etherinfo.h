@@ -19,10 +19,11 @@
 
 typedef enum {NLQRY_LINK, NLQRY_ADDR4, NLQRY_ADDR6} nlQuery; /**<  Supported query types in the etherinfo code */
 
-int get_etherinfo(struct etherinfo_obj_data *data, nlQuery query);
+int get_etherinfo(etherinfo_py *data, nlQuery query);
 void free_etherinfo(struct etherinfo *ptr);
 
-int open_netlink(struct etherinfo_obj_data *);
-void close_netlink(struct etherinfo_obj_data *);
+int open_netlink(etherinfo_py *);
+struct nl_sock * get_nlc();
+void close_netlink(etherinfo_py *);
 
 #endif
