@@ -40,13 +40,9 @@ extern PyTypeObject ethtool_etherinfoIPv6Type;
  */
 void _ethtool_etherinfo_dealloc(etherinfo_py *self)
 {
-	if( self->data ) {
-		close_netlink(self);
-
-		if( self->data->ethinfo ) {
-			free_etherinfo(self->data->ethinfo);
-		}
-		free(self->data);
+	close_netlink(self);
+	if( self->ethinfo ) {
+                free_etherinfo(self->ethinfo);
 	}
 	self->ob_type->tp_free((PyObject*)self);
 }
@@ -88,7 +84,7 @@ int _ethtool_etherinfo_init(etherinfo_py *self, PyObject *args, PyObject *kwds)
 		PyErr_SetString(PyExc_AttributeError, "Invalid data pointer to constructor");
 		return -1;
 	}
-	self->data = (struct etherinfo_obj_data *) PyCObject_AsVoidPtr(ethinf_ptr);
+	self->ethinfo = (struct etherinfo *) PyCObject_AsVoidPtr(ethinf_ptr);
 	return 0;
 }
 
@@ -106,7 +102,7 @@ static PyNetlinkIPaddress * get_last_ipv4_address(etherinfo_py *self)
 	PyObject *list;
 
 	assert(self);
-	list = self->data->ethinfo->ipv4_addresses;
+	list = self->ethinfo->ipv4_addresses;
 	if (!list) {
 		return NULL;
 	}
@@ -139,21 +135,21 @@ PyObject *_ethtool_etherinfo_getter(etherinfo_py *self, PyObject *attr_o)
 	char *attr = PyString_AsString(attr_o);
 	PyNetlinkIPaddress *py_addr;
 
-	if( !self || !self->data ) {
+	if( !self || !self->ethinfo ) {
 		PyErr_SetString(PyExc_AttributeError, "No data available");
 		return NULL;
 	}
 
 	if( strcmp(attr, "device") == 0 ) {
-                if( self->data->ethinfo->device ) {
-                        return PyString_FromString(self->data->ethinfo->device);
+                if( self->ethinfo->device ) {
+                        return PyString_FromString(self->ethinfo->device);
                 } else {
                         return Py_INCREF(Py_None), Py_None;
                 }
 	} else if( strcmp(attr, "mac_address") == 0 ) {
 		get_etherinfo(self, NLQRY_LINK);
-                Py_INCREF(self->data->ethinfo->hwaddress);
-		return self->data->ethinfo->hwaddress;
+		Py_INCREF(self->ethinfo->hwaddress);
+		return self->ethinfo->hwaddress;
 	} else if( strcmp(attr, "ipv4_address") == 0 ) {
 		get_etherinfo(self, NLQRY_ADDR4);
 		/* For compatiblity with old approach, return last IPv4 address: */
@@ -215,7 +211,7 @@ PyObject *_ethtool_etherinfo_str(etherinfo_py *self)
 {
 	PyObject *ret = NULL;
 
-	if( !self || !self->data || !self->data->ethinfo ) {
+	if( !self || !self->ethinfo ) {
 		PyErr_SetString(PyExc_AttributeError, "No data available");
 		return NULL;
 	}
@@ -224,17 +220,17 @@ PyObject *_ethtool_etherinfo_str(etherinfo_py *self)
 	get_etherinfo(self, NLQRY_ADDR4);
 	get_etherinfo(self, NLQRY_ADDR6);
 
-	ret = PyString_FromFormat("Device %s:\n", self->data->ethinfo->device);
-	if( self->data->ethinfo->hwaddress ) {
+	ret = PyString_FromFormat("Device %s:\n", self->ethinfo->device);
+	if( self->ethinfo->hwaddress ) {
 		PyString_ConcatAndDel(&ret, PyString_FromString("\tMAC address: "));
-		PyString_Concat(&ret, self->data->ethinfo->hwaddress);
+		PyString_Concat(&ret, self->ethinfo->hwaddress);
 		PyString_ConcatAndDel(&ret, PyString_FromString("\n"));
 	}
 
-	if( self->data->ethinfo->ipv4_addresses ) {
+	if( self->ethinfo->ipv4_addresses ) {
                Py_ssize_t i;
-               for (i = 0; i < PyList_Size(self->data->ethinfo->ipv4_addresses); i++) {
-                       PyNetlinkIPaddress *py_addr = (PyNetlinkIPaddress *)PyList_GetItem(self->data->ethinfo->ipv4_addresses, i);
+               for (i = 0; i < PyList_Size(self->ethinfo->ipv4_addresses); i++) {
+                       PyNetlinkIPaddress *py_addr = (PyNetlinkIPaddress *)PyList_GetItem(self->ethinfo->ipv4_addresses, i);
                        PyObject *tmp = PyString_FromFormat("\tIPv4 address: ");
                        PyString_Concat(&tmp, py_addr->local);
                        PyString_ConcatAndDel(&tmp, PyString_FromFormat("/%d", py_addr->prefixlen));
@@ -248,10 +244,10 @@ PyObject *_ethtool_etherinfo_str(etherinfo_py *self)
                }
 	}
 
-	if( self->data->ethinfo->ipv6_addresses ) {
+	if( self->ethinfo->ipv6_addresses ) {
 	       Py_ssize_t i;
-	       for (i = 0; i < PyList_Size(self->data->ethinfo->ipv6_addresses); i++) {
-		       PyNetlinkIPaddress *py_addr = (PyNetlinkIPaddress *)PyList_GetItem(self->data->ethinfo->ipv6_addresses, i);
+	       for (i = 0; i < PyList_Size(self->ethinfo->ipv6_addresses); i++) {
+		       PyNetlinkIPaddress *py_addr = (PyNetlinkIPaddress *)PyList_GetItem(self->ethinfo->ipv6_addresses, i);
 		       PyObject *tmp = PyString_FromFormat("\tIPv6 address: [");
 		       PyString_Concat(&tmp, py_addr->scope);
 		       PyString_ConcatAndDel(&tmp, PyString_FromString("] "));
@@ -276,7 +272,7 @@ PyObject *_ethtool_etherinfo_str(etherinfo_py *self)
 static PyObject *_ethtool_etherinfo_get_ipv4_addresses(etherinfo_py *self, PyObject *notused) {
 	PyObject *ret;
 
-	if( !self || !self->data ) {
+	if( !self || !self->ethinfo ) {
 		PyErr_SetString(PyExc_AttributeError, "No data available");
 		return NULL;
 	}
@@ -284,8 +280,8 @@ static PyObject *_ethtool_etherinfo_get_ipv4_addresses(etherinfo_py *self, PyObj
 	get_etherinfo(self, NLQRY_ADDR4);
 
 	/* Transfer ownership of reference: */
-	ret = self->data->ethinfo->ipv4_addresses;
-	self->data->ethinfo->ipv4_addresses = NULL;
+	ret = self->ethinfo->ipv4_addresses;
+	self->ethinfo->ipv4_addresses = NULL;
 
 	return ret;
 }
@@ -302,7 +298,7 @@ static PyObject *_ethtool_etherinfo_get_ipv4_addresses(etherinfo_py *self, PyObj
 static PyObject *_ethtool_etherinfo_get_ipv6_addresses(etherinfo_py *self, PyObject *notused) {
 	PyObject *ret;
 
-	if( !self || !self->data ) {
+	if( !self || !self->ethinfo ) {
 		PyErr_SetString(PyExc_AttributeError, "No data available");
 		return NULL;
 	}
@@ -310,8 +306,8 @@ static PyObject *_ethtool_etherinfo_get_ipv6_addresses(etherinfo_py *self, PyObj
 	get_etherinfo(self, NLQRY_ADDR6);
 
 	/* Transfer ownership of reference: */
-	ret = self->data->ethinfo->ipv6_addresses;
-	self->data->ethinfo->ipv6_addresses = NULL;
+	ret = self->ethinfo->ipv6_addresses;
+	self->ethinfo->ipv6_addresses = NULL;
 
 	return ret;
 }

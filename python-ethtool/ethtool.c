@@ -268,18 +268,11 @@ static PyObject *get_interfaces_info(PyObject *self __unused, PyObject *args) {
 
 	devlist = PyList_New(0);
 	for( i = 0; i < fetch_devs_len; i++ ) {
-		struct etherinfo_obj_data *objdata = NULL;
+		struct etherinfo *ethinfo = NULL;
 
-		/* Allocate memory for data structures for each device */
-		objdata = calloc(1, sizeof(struct etherinfo_obj_data));
-		if( !objdata ) {
-			PyErr_SetString(PyExc_OSError, strerror(errno));
-			free(fetch_devs);
-			return NULL;
-		}
-
-		objdata->ethinfo = calloc(1, sizeof(struct etherinfo));
-		if( !objdata->ethinfo ) {
+		/* Allocate memory for data structures for each interface */
+		ethinfo = calloc(1, sizeof(struct etherinfo));
+		if( !ethinfo ) {
 			PyErr_SetString(PyExc_OSError, strerror(errno));
 			free(fetch_devs);
 			return NULL;
@@ -288,11 +281,11 @@ static PyObject *get_interfaces_info(PyObject *self __unused, PyObject *args) {
 		/* Store the device name and a reference to the NETLINK connection for
 		 * objects to use when quering for device info
 		 */
-		objdata->ethinfo->device = strdup(fetch_devs[i]);
-		objdata->ethinfo->index = -1;
+		ethinfo->device = strdup(fetch_devs[i]);
+		ethinfo->index = -1;
 
 		/* Instantiate a new etherinfo object with the device information */
-		ethinf_py = PyCObject_FromVoidPtr(objdata, NULL);
+		ethinf_py = PyCObject_FromVoidPtr(ethinfo, NULL);
 		if( ethinf_py ) {
 			/* Prepare the argument list for the object constructor */
 			PyObject *args = PyTuple_New(1);
@@ -307,7 +300,6 @@ static PyObject *get_interfaces_info(PyObject *self __unused, PyObject *args) {
 			Py_DECREF(args);
 		}
 	}
-
 	free(fetch_devs);
 
 	return devlist;

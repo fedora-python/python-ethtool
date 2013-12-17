@@ -51,21 +51,12 @@ typedef struct PyNetlinkIPaddress {
 extern PyTypeObject ethtool_netlink_ip_address_Type;
 
 /**
- * Contains the internal data structure of the
- * ethtool.etherinfo object.
- *
- */
-struct etherinfo_obj_data {
-	struct etherinfo *ethinfo;      /**< Contains info about our current interface */
-};
-
-/**
- * A Python object of struct etherinfo_obj_data
+ * The Python object containing information about a single interface
  *
  */
 typedef struct {
 	PyObject_HEAD
-	struct etherinfo_obj_data *data; /* IPv4 and IPv6 address information, only one element used */
+	struct etherinfo *ethinfo;      /**< Information about the interface configuration */
 	unsigned short nlc_active;	/**< Is this instance using NETLINK? */
 } etherinfo_py;
 

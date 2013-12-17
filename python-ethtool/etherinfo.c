@@ -153,10 +153,10 @@ int get_etherinfo(etherinfo_py *self, nlQuery query)
 
 	int ret = 0;
 
-	if( !self || !self->data || !self->data->ethinfo ) {
+	if( !self || !self->ethinfo ) {
 		return 0;
 	}
-	ethinf = self->data->ethinfo;
+	ethinf = self->ethinfo;
 
 	/* Open a NETLINK connection on-the-fly */
 	if( !open_netlink(self) ) {
