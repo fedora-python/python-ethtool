@@ -17,10 +17,10 @@
 #ifndef _ETHERINFO_H
 #define _ETHERINFO_H
 
-typedef enum {NLQRY_LINK, NLQRY_ADDR4, NLQRY_ADDR6} nlQuery; /**<  Supported query types in the etherinfo code */
+typedef enum {NLQRY_ADDR4, NLQRY_ADDR6} nlQuery; /**<  Supported query types in the etherinfo code */
 
 int get_etherinfo_link(etherinfo_py *data);
-int get_etherinfo(etherinfo_py *data, nlQuery query);
+int get_etherinfo_address(etherinfo_py *data, nlQuery query);
 void free_etherinfo(struct etherinfo *ptr);
 
 int open_netlink(etherinfo_py *);
