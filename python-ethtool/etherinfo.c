@@ -125,46 +125,18 @@ static void callback_nl_address(struct nl_object *obj, void *arg)
 }
 
 
-
-/*
- *
- *   Exported functions - API frontend
- *
- */
-
 /**
- * Query NETLINK for ethernet configuration
+ * Sets the etherinfo.index member to the corresponding device set in etherinfo.device
  *
- * @param ethinf Pointer to an available struct etherinfo element.  The 'device' member
- *               must contain a valid string to the device to query for information
- * @param nlc    Pointer to the libnl handle, which is used for the query against NETLINK
- * @param query  What to query for.  Must be NLQRY_LINK or NLQRY_ADDR.
+ * @param ethinf A pointer a struct etherinfo element which contains the device name
+ *               and a place to save the corresponding index value.
  *
  * @return Returns 1 on success, otherwise 0.
  */
-int get_etherinfo(etherinfo_py *self, nlQuery query)
+static int _set_device_index(struct etherinfo *ethinf)
 {
 	struct nl_cache *link_cache;
-	struct nl_cache *addr_cache;
-	struct rtnl_addr *addr;
 	struct rtnl_link *link;
-	struct etherinfo *ethinf = NULL;
-        PyObject *addrlist = NULL;
-
-	int ret = 0;
-
-	if( !self || !self->ethinfo ) {
-		return 0;
-	}
-	ethinf = self->ethinfo;
-
-	/* Open a NETLINK connection on-the-fly */
-	if( !open_netlink(self) ) {
-		PyErr_Format(PyExc_RuntimeError,
-			     "Could not open a NETLINK connection for %s",
-			     ethinf->device);
-		return 0;
-	}
 
 	/* Find the interface index we're looking up.
 	 * As we don't expect it to change, we're reusing a "cached"
@@ -190,22 +162,92 @@ int get_etherinfo(etherinfo_py *self, nlQuery query)
 		rtnl_link_put(link);
 		nl_cache_free(link_cache);
 	}
+        return 1;
+}
+
+
+/*
+ *
+ *   Exported functions - API frontend
+ *
+ */
+
+int get_etherinfo_link(etherinfo_py *self)
+{
+	struct nl_cache *link_cache;
+	struct rtnl_link *link;
+	struct etherinfo *ethinf = NULL;
+
+	if( !self || !self->ethinfo ) {
+		return 0;
+	}
+	ethinf = self->ethinfo;
+
+	/* Open a NETLINK connection on-the-fly */
+	if( !open_netlink(self) ) {
+		PyErr_Format(PyExc_RuntimeError,
+			     "Could not open a NETLINK connection for %s",
+			     ethinf->device);
+		return 0;
+	}
+
+        if( _set_device_index(ethinf) != 1) {
+                return 0;
+        }
+
+        /* Extract MAC/hardware address of the interface */
+        if( rtnl_link_alloc_cache(get_nlc(), AF_UNSPEC, &link_cache) < 0) {
+                return 0;
+        }
+        link = rtnl_link_alloc();
+        /* FIXME: Error handling? */
+        rtnl_link_set_ifindex(link, ethinf->index);
+        nl_cache_foreach_filter(link_cache, OBJ_CAST(link), callback_nl_link, ethinf);
+        rtnl_link_put(link);
+        nl_cache_free(link_cache);
+
+        return 1;
+}
+
+
+
+/**
+ * Query NETLINK for device IP address configuration
+ *
+ * @param ethinf Pointer to an available struct etherinfo element.  The 'device' member
+ *               must contain a valid string to the device to query for information
+ * @param nlc    Pointer to the libnl handle, which is used for the query against NETLINK
+ * @param query  What to query for.  Must be NLQRY_ADDR4 or NLQRY_ADDR6.
+ *
+ * @return Returns 1 on success, otherwise 0.
+ */
+int get_etherinfo(etherinfo_py *self, nlQuery query)
+{
+	struct nl_cache *addr_cache;
+	struct rtnl_addr *addr;
+	struct etherinfo *ethinf = NULL;
+        PyObject *addrlist = NULL;
+	int ret = 0;
+
+	if( !self || !self->ethinfo ) {
+		return 0;
+	}
+	ethinf = self->ethinfo;
+
+	/* Open a NETLINK connection on-the-fly */
+	if( !open_netlink(self) ) {
+		PyErr_Format(PyExc_RuntimeError,
+			     "Could not open a NETLINK connection for %s",
+			     ethinf->device);
+		return 0;
+	}
+
+        if( _set_device_index(ethinf) != 1) {
+                return 0;
+        }
 
 	/* Query the for requested info vai NETLINK */
 	switch( query ) {
-	case NLQRY_LINK:
-		/* Extract MAC/hardware address of the interface */
-		if( rtnl_link_alloc_cache(get_nlc(), AF_UNSPEC, &link_cache) < 0) {
-                        return 0;
-                }
-		link = rtnl_link_alloc();
-		rtnl_link_set_ifindex(link, ethinf->index);
-		nl_cache_foreach_filter(link_cache, OBJ_CAST(link), callback_nl_link, ethinf);
-		rtnl_link_put(link);
-		nl_cache_free(link_cache);
-		ret = 1;
-		break;
-
         case NLQRY_ADDR4:
         case NLQRY_ADDR6:
 		/* Extract IP address information */

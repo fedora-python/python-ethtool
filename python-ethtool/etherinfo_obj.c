@@ -147,7 +147,7 @@ PyObject *_ethtool_etherinfo_getter(etherinfo_py *self, PyObject *attr_o)
                         return Py_INCREF(Py_None), Py_None;
                 }
 	} else if( strcmp(attr, "mac_address") == 0 ) {
-		get_etherinfo(self, NLQRY_LINK);
+		get_etherinfo_link(self);
 		Py_INCREF(self->ethinfo->hwaddress);
 		return self->ethinfo->hwaddress;
 	} else if( strcmp(attr, "ipv4_address") == 0 ) {
@@ -216,7 +216,7 @@ PyObject *_ethtool_etherinfo_str(etherinfo_py *self)
 		return NULL;
 	}
 
-	get_etherinfo(self, NLQRY_LINK);
+	get_etherinfo_link(self);
 	get_etherinfo(self, NLQRY_ADDR4);
 	get_etherinfo(self, NLQRY_ADDR6);
 
