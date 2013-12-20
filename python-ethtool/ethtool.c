@@ -281,7 +281,7 @@ static PyObject *get_interfaces_info(PyObject *self __unused, PyObject *args) {
 		/* Store the device name and a reference to the NETLINK connection for
 		 * objects to use when quering for device info
 		 */
-		ethinfo->device = strdup(fetch_devs[i]);
+		ethinfo->device = PyString_FromString(fetch_devs[i]);
 		ethinfo->index = -1;
 
 		/* Instantiate a new etherinfo object with the device information */

@@ -52,8 +52,7 @@ void free_etherinfo(struct etherinfo *ptr)
 		return;
 	}
 
-	free(ptr->device);
-
+        Py_XDECREF(ptr->device);
         Py_XDECREF(ptr->hwaddress);
 
 	free(ptr);
@@ -145,7 +144,7 @@ static int _set_device_index(struct etherinfo *ethinf)
                         return 0;
                 }
 
-                link = rtnl_link_get_by_name(link_cache, ethinf->device);
+                link = rtnl_link_get_by_name(link_cache, PyString_AsString(ethinf->device));
                 if( !link ) {
 			nl_cache_free(link_cache);
                         return 0;
@@ -185,7 +184,7 @@ int get_etherinfo_link(etherinfo_py *self)
 	if( !open_netlink(self) ) {
 		PyErr_Format(PyExc_RuntimeError,
 			     "Could not open a NETLINK connection for %s",
-			     ethinf->device);
+			     PyString_AsString(ethinf->device));
 		return 0;
 	}
 
@@ -235,7 +234,7 @@ PyObject * get_etherinfo_address(etherinfo_py *self, nlQuery query)
 	if( !open_netlink(self) ) {
 		PyErr_Format(PyExc_RuntimeError,
 			     "Could not open a NETLINK connection for %s",
-			     ethinf->device);
+			     PyString_AsString(ethinf->device));
 		return NULL;
 	}
 

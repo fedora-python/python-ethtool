@@ -138,7 +138,8 @@ PyObject *_ethtool_etherinfo_getter(etherinfo_py *self, PyObject *attr_o)
 
 	if( strcmp(attr, "device") == 0 ) {
                 if( self->ethinfo->device ) {
-                        return PyString_FromString(self->ethinfo->device);
+                        Py_INCREF(self->ethinfo->device);
+                        return self->ethinfo->device;
                 } else {
                         return Py_INCREF(Py_None), Py_None;
                 }
@@ -215,7 +216,10 @@ PyObject *_ethtool_etherinfo_str(etherinfo_py *self)
 
 	get_etherinfo_link(self);
 
-	ret = PyString_FromFormat("Device %s:\n", self->ethinfo->device);
+	ret = PyString_FromFormat("Device ");
+	PyString_Concat(&ret, self->ethinfo->device);
+	PyString_ConcatAndDel(&ret, PyString_FromString(":\n"));
+
 	if( self->ethinfo->hwaddress ) {
 		PyString_ConcatAndDel(&ret, PyString_FromString("\tMAC address: "));
 		PyString_Concat(&ret, self->ethinfo->hwaddress);
