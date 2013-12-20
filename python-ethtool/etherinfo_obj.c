@@ -31,8 +31,6 @@
 #include "etherinfo_struct.h"
 #include "etherinfo.h"
 
-extern PyTypeObject ethtool_etherinfoIPv6Type;
-
 /**
  * ethtool.etherinfo deallocator - cleans up when a object is deleted
  *
