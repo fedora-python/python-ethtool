@@ -275,43 +275,14 @@ static PyMethodDef _ethtool_etherinfo_methods[] = {
  */
 PyTypeObject ethtool_etherinfoType = {
     PyObject_HEAD_INIT(NULL)
-    0,                         /*ob_size*/
-    "ethtool.etherinfo",       /*tp_name*/
-    sizeof(etherinfo_py),      /*tp_basicsize*/
-    0,                         /*tp_itemsize*/
-    (destructor)_ethtool_etherinfo_dealloc,/*tp_dealloc*/
-    0,                         /*tp_print*/
-    0,                         /*tp_getattr*/
-    0,                         /*tp_setattr*/
-    0,                         /*tp_compare*/
-    0,                         /*tp_repr*/
-    0,                         /*tp_as_number*/
-    0,                         /*tp_as_sequence*/
-    0,                         /*tp_as_mapping*/
-    0,                         /*tp_hash */
-    0,                         /*tp_call*/
-    (reprfunc)_ethtool_etherinfo_str,        /*tp_str*/
-    (getattrofunc)_ethtool_etherinfo_getter, /*tp_getattro*/
-    (setattrofunc)_ethtool_etherinfo_setter, /*tp_setattro*/
-    0,                         /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /*tp_flags*/
-    "Contains information about a specific ethernet device", /* tp_doc */
-    0,		               /* tp_traverse */
-    0,		               /* tp_clear */
-    0,		               /* tp_richcompare */
-    0,		               /* tp_weaklistoffset */
-    0,		               /* tp_iter */
-    0,		               /* tp_iternext */
-    _ethtool_etherinfo_methods,            /* tp_methods */
-    0,                         /* tp_members */
-    0,                         /* tp_getset */
-    0,                         /* tp_base */
-    0,                         /* tp_dict */
-    0,                         /* tp_descr_get */
-    0,                         /* tp_descr_set */
-    0,                         /* tp_dictoffset */
-    0,     /* tp_init */
-    0,                         /* tp_alloc */
-    0,                /* tp_new */
+    .tp_name = "ethtool.etherinfo",
+    .tp_basicsize = sizeof(etherinfo_py),
+    .tp_flags = Py_TPFLAGS_HAVE_CLASS,
+    .tp_dealloc = (destructor)_ethtool_etherinfo_dealloc,
+    .tp_str = (reprfunc)_ethtool_etherinfo_str,
+    .tp_getattro = (getattrofunc)_ethtool_etherinfo_getter,
+    .tp_setattro = (setattrofunc)_ethtool_etherinfo_setter,
+    .tp_methods = _ethtool_etherinfo_methods,
+    .tp_doc = "Contains information about a specific ethernet device"
 };
 
