@@ -28,16 +28,6 @@
 
 #include <netlink/route/addr.h>
 
-/**
- * Contains IP address information about a particular ethernet device
- *
- */
-struct etherinfo {
-	PyObject *device;                   /**< Device name */
-	int index;                          /**< NETLINK index reference */
-	PyObject *hwaddress;             /**< string: HW address / MAC address of device */
-};
-
 /* Python object containing data baked from a (struct rtnl_addr) */
 typedef struct PyNetlinkIPaddress {
 	PyObject_HEAD
@@ -56,8 +46,10 @@ extern PyTypeObject ethtool_netlink_ip_address_Type;
  */
 typedef struct {
 	PyObject_HEAD
-	struct etherinfo *ethinfo;      /**< Information about the interface configuration */
-	unsigned short nlc_active;	/**< Is this instance using NETLINK? */
+	PyObject *device;                   /**< Device name */
+	int index;                          /**< NETLINK index reference */
+	PyObject *hwaddress;                /**< string: HW address / MAC address of device */
+	unsigned short nlc_active;	    /**< Is this instance using NETLINK? */
 } etherinfo_py;
 
 

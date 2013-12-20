@@ -213,12 +213,12 @@ static PyObject *get_ipaddress(PyObject *self __unused, PyObject *args)
  * returned as a list of objects per interface.
  *
  * @param self Not used
- * @param args Python arguments
+ * @param args Python arguments - device name(s) as either a string or a list
  *
  * @return Python list of objects on success, otherwise NULL.
  */
 static PyObject *get_interfaces_info(PyObject *self __unused, PyObject *args) {
-	PyObject *devlist = NULL, *ethinf_py = NULL;
+	PyObject *devlist = NULL;
 	PyObject *inargs = NULL;
 	char **fetch_devs = NULL;
 	int i = 0, fetch_devs_len = 0;
@@ -268,37 +268,25 @@ static PyObject *get_interfaces_info(PyObject *self __unused, PyObject *args) {
 
 	devlist = PyList_New(0);
 	for( i = 0; i < fetch_devs_len; i++ ) {
-		struct etherinfo *ethinfo = NULL;
-
-		/* Allocate memory for data structures for each interface */
-		ethinfo = calloc(1, sizeof(struct etherinfo));
-		if( !ethinfo ) {
-			PyErr_SetString(PyExc_OSError, strerror(errno));
-			free(fetch_devs);
-			return NULL;
-		}
+                etherinfo_py *dev = NULL;
 
 		/* Store the device name and a reference to the NETLINK connection for
 		 * objects to use when quering for device info
 		 */
-		ethinfo->device = PyString_FromString(fetch_devs[i]);
-		ethinfo->index = -1;
 
-		/* Instantiate a new etherinfo object with the device information */
-		ethinf_py = PyCObject_FromVoidPtr(ethinfo, NULL);
-		if( ethinf_py ) {
-			/* Prepare the argument list for the object constructor */
-			PyObject *args = PyTuple_New(1);
-			PyTuple_SetItem(args, 0, ethinf_py);
+                dev = PyObject_New(etherinfo_py, &ethtool_etherinfoType);
+                if( !dev ) {
+			PyErr_SetString(PyExc_OSError, strerror(errno));
+			free(fetch_devs);
+			return NULL;
+                }
+		dev->device = PyString_FromString(fetch_devs[i]);
+		dev->hwaddress = NULL;
+		dev->index = -1;
 
-			/* Create the object */
-			PyObject *dev = PyObject_CallObject((PyObject *)&ethtool_etherinfoType, args);
-			if( dev ) {
-				PyList_Append(devlist, dev);
-				Py_DECREF(dev);
-			}
-			Py_DECREF(args);
-		}
+		/* Append device object to the device list */
+		PyList_Append(devlist, (PyObject *)dev);
+		Py_DECREF(dev);
 	}
 	free(fetch_devs);
 
@@ -981,4 +969,12 @@ PyMODINIT_FUNC initethtool(void)
 	PyModule_AddIntConstant(m, "AF_INET6", AF_INET6);               /* IPv6 interface */
 	PyModule_AddStringConstant(m, "version", "python-ethtool v" VERSION);
 }
+
+
+/*
+Local variables:
+c-basic-offset: 8
+indent-tabs-mode: y
+End:
+*/
 

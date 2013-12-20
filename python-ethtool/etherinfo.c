@@ -41,23 +41,6 @@
  *
  */
 
-/**
- * Frees the memory used by struct etherinfo
- *
- * @param ptr Pointer to a struct etherninfo element
- */
-void free_etherinfo(struct etherinfo *ptr)
-{
-	if( ptr == NULL ) { // Just for safety
-		return;
-	}
-
-        Py_XDECREF(ptr->device);
-        Py_XDECREF(ptr->hwaddress);
-
-	free(ptr);
-}
-
 
 /**
  *  libnl callback function.  Does the real parsing of a record returned by NETLINK.  This function
@@ -68,7 +51,7 @@ void free_etherinfo(struct etherinfo *ptr)
  */
 static void callback_nl_link(struct nl_object *obj, void *arg)
 {
-	struct etherinfo *ethi = (struct etherinfo *) arg;
+	etherinfo_py *ethi = (etherinfo_py *) arg;
 	struct rtnl_link *link = (struct rtnl_link *) obj;
 	char hwaddr[130];
 
@@ -125,12 +108,12 @@ static void callback_nl_address(struct nl_object *obj, void *arg)
 /**
  * Sets the etherinfo.index member to the corresponding device set in etherinfo.device
  *
- * @param ethinf A pointer a struct etherinfo element which contains the device name
- *               and a place to save the corresponding index value.
+ * @param self A pointer the current etherinfo_py Python object which contains the device name
+ *               and the place where to save the corresponding index value.
  *
  * @return Returns 1 on success, otherwise 0.
  */
-static int _set_device_index(struct etherinfo *ethinf)
+static int _set_device_index(etherinfo_py *self)
 {
 	struct nl_cache *link_cache;
 	struct rtnl_link *link;
@@ -139,19 +122,19 @@ static int _set_device_index(struct etherinfo *ethinf)
 	 * As we don't expect it to change, we're reusing a "cached"
 	 * interface index if we have that
 	 */
-	if( ethinf->index < 0 ) {
+	if( self->index < 0 ) {
 		if( rtnl_link_alloc_cache(get_nlc(), AF_UNSPEC, &link_cache) < 0) {
                         return 0;
                 }
 
-                link = rtnl_link_get_by_name(link_cache, PyString_AsString(ethinf->device));
+                link = rtnl_link_get_by_name(link_cache, PyString_AsString(self->device));
                 if( !link ) {
 			nl_cache_free(link_cache);
                         return 0;
                 }
 
-		ethinf->index = rtnl_link_get_ifindex(link);
-		if( ethinf->index < 0 ) {
+		self->index = rtnl_link_get_ifindex(link);
+		if( self->index < 0 ) {
 			rtnl_link_put(link);
 			nl_cache_free(link_cache);
 			return 0;
@@ -169,26 +152,31 @@ static int _set_device_index(struct etherinfo *ethinf)
  *
  */
 
+/**
+ * Populate the etherinfo_py Python object with link information for the current device
+ *
+ * @param self  Pointer to the device object, a etherinfo_py Python object
+ *
+ * @return Returns 1 on success, otherwise 0
+ */
 int get_etherinfo_link(etherinfo_py *self)
 {
 	struct nl_cache *link_cache;
 	struct rtnl_link *link;
-	struct etherinfo *ethinf = NULL;
 
-	if( !self || !self->ethinfo ) {
+	if( !self ) {
 		return 0;
 	}
-	ethinf = self->ethinfo;
 
 	/* Open a NETLINK connection on-the-fly */
 	if( !open_netlink(self) ) {
 		PyErr_Format(PyExc_RuntimeError,
 			     "Could not open a NETLINK connection for %s",
-			     PyString_AsString(ethinf->device));
+			     PyString_AsString(self->device));
 		return 0;
 	}
 
-        if( _set_device_index(ethinf) != 1) {
+        if( _set_device_index(self) != 1) {
                 return 0;
         }
 
@@ -198,8 +186,8 @@ int get_etherinfo_link(etherinfo_py *self)
         }
         link = rtnl_link_alloc();
         /* FIXME: Error handling? */
-        rtnl_link_set_ifindex(link, ethinf->index);
-        nl_cache_foreach_filter(link_cache, OBJ_CAST(link), callback_nl_link, ethinf);
+        rtnl_link_set_ifindex(link, self->index);
+        nl_cache_foreach_filter(link_cache, OBJ_CAST(link), callback_nl_link, self);
         rtnl_link_put(link);
         nl_cache_free(link_cache);
 
@@ -211,10 +199,10 @@ int get_etherinfo_link(etherinfo_py *self)
 /**
  * Query NETLINK for device IP address configuration
  *
- * @param ethinf Pointer to an available struct etherinfo element.  The 'device' member
- *               must contain a valid string to the device to query for information
- * @param nlc    Pointer to the libnl handle, which is used for the query against NETLINK
- * @param query  What to query for.  Must be NLQRY_ADDR4 or NLQRY_ADDR6.
+ * @param self   A etherinfo_py Python object for the current device to retrieve IP address
+ *               configuration data from
+ * @param query  What to query for.  Must be NLQRY_ADDR4 for IPv4 addresses or NLQRY_ADDR6
+ *               for IPv6 addresses.
  *
  * @return Returns a Python list containing PyNetlinkIPaddress objects on success, otherwise NULL
  */
@@ -222,23 +210,21 @@ PyObject * get_etherinfo_address(etherinfo_py *self, nlQuery query)
 {
 	struct nl_cache *addr_cache;
 	struct rtnl_addr *addr;
-	struct etherinfo *ethinf = NULL;
         PyObject *addrlist = NULL;
 
-	if( !self || !self->ethinfo ) {
+	if( !self ) {
 		return NULL;
 	}
-	ethinf = self->ethinfo;
 
 	/* Open a NETLINK connection on-the-fly */
 	if( !open_netlink(self) ) {
 		PyErr_Format(PyExc_RuntimeError,
 			     "Could not open a NETLINK connection for %s",
-			     PyString_AsString(ethinf->device));
+			     PyString_AsString(self->device));
 		return NULL;
 	}
 
-        if( _set_device_index(ethinf) != 1) {
+        if( _set_device_index(self) != 1) {
                 return NULL;
         }
 
@@ -251,7 +237,7 @@ PyObject * get_etherinfo_address(etherinfo_py *self, nlQuery query)
         }
         addr = rtnl_addr_alloc();
         /* FIXME: Error handling? */
-        rtnl_addr_set_ifindex(addr, ethinf->index);
+        rtnl_addr_set_ifindex(addr, self->index);
 
 	switch( query ) {
         case NLQRY_ADDR4:

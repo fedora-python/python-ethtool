@@ -21,7 +21,6 @@ typedef enum {NLQRY_ADDR4, NLQRY_ADDR6} nlQuery; /**<  Supported query types in 
 
 int get_etherinfo_link(etherinfo_py *data);
 PyObject * get_etherinfo_address(etherinfo_py *self, nlQuery query);
-void free_etherinfo(struct etherinfo *ptr);
 
 int open_netlink(etherinfo_py *);
 struct nl_sock * get_nlc();

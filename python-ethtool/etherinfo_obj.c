@@ -34,57 +34,16 @@
 /**
  * ethtool.etherinfo deallocator - cleans up when a object is deleted
  *
- * @param self etherinfo_py object structure
+ * @param self etherinfo_py Python object to deallocate
  */
-void _ethtool_etherinfo_dealloc(etherinfo_py *self)
+static void _ethtool_etherinfo_dealloc(etherinfo_py *self)
 {
 	close_netlink(self);
-	if( self->ethinfo ) {
-                free_etherinfo(self->ethinfo);
-	}
+        Py_XDECREF(self->device);    self->device = NULL;
+        Py_XDECREF(self->hwaddress); self->hwaddress = NULL;
 	self->ob_type->tp_free((PyObject*)self);
 }
 
-
-/**
- * ethtool.etherinfo function, creating a new etherinfo object
- *
- * @param type
- * @param args
- * @param kwds
- *
- * @return Returns in PyObject with the new object on success, otherwise NULL
- */
-PyObject *_ethtool_etherinfo_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
-{
-	etherinfo_py *self;
-
-	self = (etherinfo_py *)type->tp_alloc(type, 0);
-	return (PyObject *)self;
-}
-
-
-/**
- * ethtool.etherinfo init (constructor) method.  Makes sure the object is initialised correctly.
- *
- * @param self
- * @param args
- * @param kwds
- *
- * @return Returns 0 on success.
- */
-int _ethtool_etherinfo_init(etherinfo_py *self, PyObject *args, PyObject *kwds)
-{
-	static char *etherinfo_kwlist[] = {"etherinfo_ptr", NULL};
-	PyObject *ethinf_ptr = NULL;
-
-	if( !PyArg_ParseTupleAndKeywords(args, kwds, "O", etherinfo_kwlist, &ethinf_ptr)) {
-		PyErr_SetString(PyExc_AttributeError, "Invalid data pointer to constructor");
-		return -1;
-	}
-	self->ethinfo = (struct etherinfo *) PyCObject_AsVoidPtr(ethinf_ptr);
-	return 0;
-}
 
 /*
   The old approach of having a single IPv4 address per device meant each result
@@ -120,7 +79,7 @@ static PyNetlinkIPaddress * get_last_ipv4_address(PyObject *addrlist)
 /**
  * ethtool.etherinfo function for retrieving data from a Python object.
  *
- * @param self
+ * @param self    Pointer to the current etherinfo_py device object
  * @param attr_o  contains the object member request (which element to return)
  *
  * @return Returns a PyObject with the value requested on success, otherwise NULL
@@ -131,22 +90,22 @@ PyObject *_ethtool_etherinfo_getter(etherinfo_py *self, PyObject *attr_o)
 	PyNetlinkIPaddress *py_addr;
         PyObject *addrlist = NULL;
 
-	if( !self || !self->ethinfo ) {
+	if( !self ) {
 		PyErr_SetString(PyExc_AttributeError, "No data available");
 		return NULL;
 	}
 
 	if( strcmp(attr, "device") == 0 ) {
-                if( self->ethinfo->device ) {
-                        Py_INCREF(self->ethinfo->device);
-                        return self->ethinfo->device;
+                if( self->device ) {
+                        Py_INCREF(self->device);
+                        return self->device;
                 } else {
                         return Py_INCREF(Py_None), Py_None;
                 }
 	} else if( strcmp(attr, "mac_address") == 0 ) {
 		get_etherinfo_link(self);
-		Py_INCREF(self->ethinfo->hwaddress);
-		return self->ethinfo->hwaddress;
+		Py_INCREF(self->hwaddress);
+		return self->hwaddress;
 	} else if( strcmp(attr, "ipv4_address") == 0 ) {
 		addrlist = get_etherinfo_address(self, NLQRY_ADDR4);
 		/* For compatiblity with old approach, return last IPv4 address: */
@@ -200,7 +159,7 @@ int _ethtool_etherinfo_setter(etherinfo_py *self, PyObject *attr_o, PyObject *va
 /**
  * Creates a human readable format of the information when object is being treated as a string
  *
- * @param self
+ * @param self  Pointer to the current etherinfo_py device object
  *
  * @return Returns a PyObject with a string with all of the information
  */
@@ -209,7 +168,7 @@ PyObject *_ethtool_etherinfo_str(etherinfo_py *self)
 	PyObject *ret = NULL;
         PyObject *ipv4addrs = NULL, *ipv6addrs = NULL;
 
-	if( !self || !self->ethinfo ) {
+	if( !self ) {
 		PyErr_SetString(PyExc_AttributeError, "No data available");
 		return NULL;
 	}
@@ -217,12 +176,12 @@ PyObject *_ethtool_etherinfo_str(etherinfo_py *self)
 	get_etherinfo_link(self);
 
 	ret = PyString_FromFormat("Device ");
-	PyString_Concat(&ret, self->ethinfo->device);
+	PyString_Concat(&ret, self->device);
 	PyString_ConcatAndDel(&ret, PyString_FromString(":\n"));
 
-	if( self->ethinfo->hwaddress ) {
+	if( self->hwaddress ) {
 		PyString_ConcatAndDel(&ret, PyString_FromString("\tMAC address: "));
-		PyString_Concat(&ret, self->ethinfo->hwaddress);
+		PyString_Concat(&ret, self->hwaddress);
 		PyString_ConcatAndDel(&ret, PyString_FromString("\n"));
 	}
 
@@ -265,13 +224,13 @@ PyObject *_ethtool_etherinfo_str(etherinfo_py *self)
 /**
  * Returns a tuple list of configured IPv4 addresses
  *
- * @param self
+ * @param self     Pointer to the current etherinfo_py device object to extract IPv4 info from
  * @param notused
  *
  * @return Returns a Python tuple list of NetlinkIP4Address objects
  */
 static PyObject *_ethtool_etherinfo_get_ipv4_addresses(etherinfo_py *self, PyObject *notused) {
-	if( !self || !self->ethinfo ) {
+	if( !self ) {
 		PyErr_SetString(PyExc_AttributeError, "No data available");
 		return NULL;
 	}
@@ -281,15 +240,15 @@ static PyObject *_ethtool_etherinfo_get_ipv4_addresses(etherinfo_py *self, PyObj
 
 
 /**
- * Returns a tuple list of configured IPv4 addresses
+ * Returns a tuple list of configured IPv6 addresses
  *
- * @param self
+ * @param self     Pointer to the current etherinfo_py device object to extract IPv6 info from
  * @param notused
  *
  * @return Returns a Python tuple list of NetlinkIP6Address objects
  */
 static PyObject *_ethtool_etherinfo_get_ipv6_addresses(etherinfo_py *self, PyObject *notused) {
-	if( !self || !self->ethinfo ) {
+	if( !self ) {
 		PyErr_SetString(PyExc_AttributeError, "No data available");
 		return NULL;
 	}
@@ -351,8 +310,8 @@ PyTypeObject ethtool_etherinfoType = {
     0,                         /* tp_descr_get */
     0,                         /* tp_descr_set */
     0,                         /* tp_dictoffset */
-    (initproc)_ethtool_etherinfo_init,     /* tp_init */
+    0,     /* tp_init */
     0,                         /* tp_alloc */
-    _ethtool_etherinfo_new,                /* tp_new */
+    0,                /* tp_new */
 };
 
