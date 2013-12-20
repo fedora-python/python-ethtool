@@ -26,6 +26,8 @@
 #ifndef _ETHERINFO_STRUCT_H
 #define _ETHERINFO_STRUCT_H
 
+#include <netlink/route/addr.h>
+
 /**
  * Contains IP address information about a particular ethernet device
  *
