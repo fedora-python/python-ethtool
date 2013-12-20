@@ -55,8 +55,6 @@ void free_etherinfo(struct etherinfo *ptr)
 	free(ptr->device);
 
         Py_XDECREF(ptr->hwaddress);
-	Py_XDECREF(ptr->ipv4_addresses);
-	Py_XDECREF(ptr->ipv6_addresses);
 
 	free(ptr);
 }
@@ -219,18 +217,17 @@ int get_etherinfo_link(etherinfo_py *self)
  * @param nlc    Pointer to the libnl handle, which is used for the query against NETLINK
  * @param query  What to query for.  Must be NLQRY_ADDR4 or NLQRY_ADDR6.
  *
- * @return Returns 1 on success, otherwise 0.
+ * @return Returns a Python list containing PyNetlinkIPaddress objects on success, otherwise NULL
  */
-int get_etherinfo_address(etherinfo_py *self, nlQuery query)
+PyObject * get_etherinfo_address(etherinfo_py *self, nlQuery query)
 {
 	struct nl_cache *addr_cache;
 	struct rtnl_addr *addr;
 	struct etherinfo *ethinf = NULL;
         PyObject *addrlist = NULL;
-	int ret = 0;
 
 	if( !self || !self->ethinfo ) {
-		return 0;
+		return NULL;
 	}
 	ethinf = self->ethinfo;
 
@@ -239,11 +236,11 @@ int get_etherinfo_address(etherinfo_py *self, nlQuery query)
 		PyErr_Format(PyExc_RuntimeError,
 			     "Could not open a NETLINK connection for %s",
 			     ethinf->device);
-		return 0;
+		return NULL;
 	}
 
         if( _set_device_index(ethinf) != 1) {
-                return 0;
+                return NULL;
         }
 
 	/* Query the for requested info via NETLINK */
@@ -251,7 +248,7 @@ int get_etherinfo_address(etherinfo_py *self, nlQuery query)
         /* Extract IP address information */
         if( rtnl_addr_alloc_cache(get_nlc(), &addr_cache) < 0) {
                 nl_cache_free(addr_cache);
-                return 0;
+                return NULL;
         }
         addr = rtnl_addr_alloc();
         /* FIXME: Error handling? */
@@ -260,46 +257,24 @@ int get_etherinfo_address(etherinfo_py *self, nlQuery query)
 	switch( query ) {
         case NLQRY_ADDR4:
                 rtnl_addr_set_family(addr, AF_INET);
-
-                /* Make sure we don't have any old IPv4 addresses saved */
-                Py_XDECREF(ethinf->ipv4_addresses);
-                ethinf->ipv4_addresses = PyList_New(0);
-                if (!ethinf->ipv4_addresses) {
-                        rtnl_addr_put(addr);
-                        nl_cache_free(addr_cache);
-                        return 0;
-                }
-                assert(ethinf->ipv4_addresses);
-                addrlist = ethinf->ipv4_addresses;
-                ret = 1;
                 break;
 
         case NLQRY_ADDR6:
                 rtnl_addr_set_family(addr, AF_INET6);
-
-                /* Likewise for IPv6 addresses: */
-                Py_XDECREF(ethinf->ipv6_addresses);
-                ethinf->ipv6_addresses = PyList_New(0);
-                if (!ethinf->ipv6_addresses) {
-                        rtnl_addr_put(addr);
-                        nl_cache_free(addr_cache);
-                        return 0;
-                }
-                assert(ethinf->ipv6_addresses);
-                addrlist = ethinf->ipv6_addresses;
-                ret = 1;
                 break;
 
 	default:
-		ret = 0;
+		return NULL;
 	}
 
-        if( ret == 1 ) {
-                /* Retrieve all address information - common code for NLQRY_ADDR4 and NLQRY_ADDR6*/
-                nl_cache_foreach_filter(addr_cache, OBJ_CAST(addr), callback_nl_address, addrlist);
-                rtnl_addr_put(addr);
-                nl_cache_free(addr_cache);
-        }
+        /* Retrieve all address information */
+        addrlist = PyList_New(0); /* The list where to put the address object */
+        assert(addrlist);
 
-	return ret;
+        /* Loop through all configured addresses */
+        nl_cache_foreach_filter(addr_cache, OBJ_CAST(addr), callback_nl_address, addrlist);
+        rtnl_addr_put(addr);
+        nl_cache_free(addr_cache);
+
+	return addrlist;
 }
