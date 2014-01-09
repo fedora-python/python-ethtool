@@ -28,11 +28,11 @@
 #include <Python.h>
 #include "etherinfo_struct.h"
 
-void _ethtool_etherinfo_dealloc(etherinfo_py *);
+void _ethtool_etherinfo_dealloc(PyEtherInfo *);
 PyObject *_ethtool_etherinfo_new(PyTypeObject *, PyObject *, PyObject *);
-int _ethtool_etherinfo_init(etherinfo_py *, PyObject *, PyObject *);
-PyObject *_ethtool_etherinfo_getter(etherinfo_py *, PyObject *);
-int _ethtool_etherinfo_setter(etherinfo_py *, PyObject *, PyObject *);
-PyObject *_ethtool_etherinfo_str(etherinfo_py *self);
+int _ethtool_etherinfo_init(PyEtherInfo *, PyObject *, PyObject *);
+PyObject *_ethtool_etherinfo_getter(PyEtherInfo *, PyObject *);
+int _ethtool_etherinfo_setter(PyEtherInfo *, PyObject *, PyObject *);
+PyObject *_ethtool_etherinfo_str(PyEtherInfo *self);
 
 #endif

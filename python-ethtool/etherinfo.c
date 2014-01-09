@@ -51,7 +51,7 @@
  */
 static void callback_nl_link(struct nl_object *obj, void *arg)
 {
-	etherinfo_py *ethi = (etherinfo_py *) arg;
+	PyEtherInfo *ethi = (PyEtherInfo *) arg;
 	struct rtnl_link *link = (struct rtnl_link *) obj;
 	char hwaddr[130];
 
@@ -108,12 +108,12 @@ static void callback_nl_address(struct nl_object *obj, void *arg)
 /**
  * Sets the etherinfo.index member to the corresponding device set in etherinfo.device
  *
- * @param self A pointer the current etherinfo_py Python object which contains the device name
+ * @param self A pointer the current PyEtherInfo Python object which contains the device name
  *               and the place where to save the corresponding index value.
  *
  * @return Returns 1 on success, otherwise 0.
  */
-static int _set_device_index(etherinfo_py *self)
+static int _set_device_index(PyEtherInfo *self)
 {
 	struct nl_cache *link_cache;
 	struct rtnl_link *link;
@@ -153,13 +153,13 @@ static int _set_device_index(etherinfo_py *self)
  */
 
 /**
- * Populate the etherinfo_py Python object with link information for the current device
+ * Populate the PyEtherInfo Python object with link information for the current device
  *
- * @param self  Pointer to the device object, a etherinfo_py Python object
+ * @param self  Pointer to the device object, a PyEtherInfo Python object
  *
  * @return Returns 1 on success, otherwise 0
  */
-int get_etherinfo_link(etherinfo_py *self)
+int get_etherinfo_link(PyEtherInfo *self)
 {
 	struct nl_cache *link_cache;
 	struct rtnl_link *link;
@@ -199,14 +199,14 @@ int get_etherinfo_link(etherinfo_py *self)
 /**
  * Query NETLINK for device IP address configuration
  *
- * @param self   A etherinfo_py Python object for the current device to retrieve IP address
+ * @param self   A PyEtherInfo Python object for the current device to retrieve IP address
  *               configuration data from
  * @param query  What to query for.  Must be NLQRY_ADDR4 for IPv4 addresses or NLQRY_ADDR6
  *               for IPv6 addresses.
  *
  * @return Returns a Python list containing PyNetlinkIPaddress objects on success, otherwise NULL
  */
-PyObject * get_etherinfo_address(etherinfo_py *self, nlQuery query)
+PyObject * get_etherinfo_address(PyEtherInfo *self, nlQuery query)
 {
 	struct nl_cache *addr_cache;
 	struct rtnl_addr *addr;

@@ -33,11 +33,11 @@ static unsigned int nlconnection_users = 0;  /* How many NETLINK users are activ
  * for each etherinfo object being generated, and it will
  * keep a separate file descriptor open for each object
  *
- * @param ethi etherinfo_py structure (basically the "self" object)
+ * @param ethi PyEtherInfo structure (basically the "self" object)
  *
  * @return Returns 1 on success, otherwise 0.
  */
-int open_netlink(etherinfo_py *ethi)
+int open_netlink(PyEtherInfo *ethi)
 {
 	if( !ethi ) {
 		return 0;
@@ -93,9 +93,9 @@ struct nl_sock * get_nlc()
  * Closes the NETLINK connection.  This should be called automatically whenever
  * the corresponding etherinfo object is deleted.
  *
- * @param ethi etherinfo_py structure (basically the "self" object)
+ * @param ethi PyEtherInfo structure (basically the "self" object)
  */
-void close_netlink(etherinfo_py *ethi)
+void close_netlink(PyEtherInfo *ethi)
 {
 	if( !ethi || !nlconnection ) {
 		return;

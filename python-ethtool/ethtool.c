@@ -32,7 +32,7 @@
 #include "etherinfo_obj.h"
 #include "etherinfo.h"
 
-extern PyTypeObject ethtool_etherinfoType;
+extern PyTypeObject PyEtherInfo_Type;
 
 #ifndef IFF_DYNAMIC
 #define IFF_DYNAMIC     0x8000          /* dialup device with changing addresses*/
@@ -268,13 +268,13 @@ static PyObject *get_interfaces_info(PyObject *self __unused, PyObject *args) {
 
 	devlist = PyList_New(0);
 	for( i = 0; i < fetch_devs_len; i++ ) {
-                etherinfo_py *dev = NULL;
+                PyEtherInfo *dev = NULL;
 
 		/* Store the device name and a reference to the NETLINK connection for
 		 * objects to use when quering for device info
 		 */
 
-                dev = PyObject_New(etherinfo_py, &ethtool_etherinfoType);
+                dev = PyObject_New(PyEtherInfo, &PyEtherInfo_Type);
                 if( !dev ) {
 			PyErr_SetString(PyExc_OSError, strerror(errno));
 			free(fetch_devs);
@@ -939,10 +939,8 @@ PyMODINIT_FUNC initethtool(void)
 	m = Py_InitModule3("ethtool", PyEthModuleMethods, "Python ethtool module");
 
 	// Prepare the ethtool.etherinfo class
-	if (PyType_Ready(&ethtool_etherinfoType) < 0)
+	if (PyType_Ready(&PyEtherInfo_Type) < 0)
 		return;
-	Py_INCREF(&ethtool_etherinfoType);
-	PyModule_AddObject(m, "etherinfo", (PyObject *)&ethtool_etherinfoType);
 
 	// Prepare the ethtool IPv6 and IPv4 address types
 	if (PyType_Ready(&ethtool_netlink_ip_address_Type))

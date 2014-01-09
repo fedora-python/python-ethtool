@@ -34,9 +34,9 @@
 /**
  * ethtool.etherinfo deallocator - cleans up when a object is deleted
  *
- * @param self etherinfo_py Python object to deallocate
+ * @param self PyEtherInfo Python object to deallocate
  */
-static void _ethtool_etherinfo_dealloc(etherinfo_py *self)
+static void _ethtool_etherinfo_dealloc(PyEtherInfo *self)
 {
 	close_netlink(self);
         Py_XDECREF(self->device);    self->device = NULL;
@@ -79,12 +79,12 @@ static PyNetlinkIPaddress * get_last_ipv4_address(PyObject *addrlist)
 /**
  * ethtool.etherinfo function for retrieving data from a Python object.
  *
- * @param self    Pointer to the current etherinfo_py device object
+ * @param self    Pointer to the current PyEtherInfo device object
  * @param attr_o  contains the object member request (which element to return)
  *
  * @return Returns a PyObject with the value requested on success, otherwise NULL
  */
-PyObject *_ethtool_etherinfo_getter(etherinfo_py *self, PyObject *attr_o)
+PyObject *_ethtool_etherinfo_getter(PyEtherInfo *self, PyObject *attr_o)
 {
 	char *attr = PyString_AsString(attr_o);
 	PyNetlinkIPaddress *py_addr;
@@ -149,7 +149,7 @@ PyObject *_ethtool_etherinfo_getter(etherinfo_py *self, PyObject *attr_o)
  *
  * @return Returns always -1 (failure).
  */
-int _ethtool_etherinfo_setter(etherinfo_py *self, PyObject *attr_o, PyObject *val_o)
+int _ethtool_etherinfo_setter(PyEtherInfo *self, PyObject *attr_o, PyObject *val_o)
 {
 	PyErr_SetString(PyExc_AttributeError, "etherinfo member values are read-only.");
 	return -1;
@@ -159,11 +159,11 @@ int _ethtool_etherinfo_setter(etherinfo_py *self, PyObject *attr_o, PyObject *va
 /**
  * Creates a human readable format of the information when object is being treated as a string
  *
- * @param self  Pointer to the current etherinfo_py device object
+ * @param self  Pointer to the current PyEtherInfo device object
  *
  * @return Returns a PyObject with a string with all of the information
  */
-PyObject *_ethtool_etherinfo_str(etherinfo_py *self)
+PyObject *_ethtool_etherinfo_str(PyEtherInfo *self)
 {
 	PyObject *ret = NULL;
         PyObject *ipv4addrs = NULL, *ipv6addrs = NULL;
@@ -224,12 +224,12 @@ PyObject *_ethtool_etherinfo_str(etherinfo_py *self)
 /**
  * Returns a tuple list of configured IPv4 addresses
  *
- * @param self     Pointer to the current etherinfo_py device object to extract IPv4 info from
+ * @param self     Pointer to the current PyEtherInfo device object to extract IPv4 info from
  * @param notused
  *
  * @return Returns a Python tuple list of NetlinkIP4Address objects
  */
-static PyObject *_ethtool_etherinfo_get_ipv4_addresses(etherinfo_py *self, PyObject *notused) {
+static PyObject *_ethtool_etherinfo_get_ipv4_addresses(PyEtherInfo *self, PyObject *notused) {
 	if( !self ) {
 		PyErr_SetString(PyExc_AttributeError, "No data available");
 		return NULL;
@@ -242,12 +242,12 @@ static PyObject *_ethtool_etherinfo_get_ipv4_addresses(etherinfo_py *self, PyObj
 /**
  * Returns a tuple list of configured IPv6 addresses
  *
- * @param self     Pointer to the current etherinfo_py device object to extract IPv6 info from
+ * @param self     Pointer to the current PyEtherInfo device object to extract IPv6 info from
  * @param notused
  *
  * @return Returns a Python tuple list of NetlinkIP6Address objects
  */
-static PyObject *_ethtool_etherinfo_get_ipv6_addresses(etherinfo_py *self, PyObject *notused) {
+static PyObject *_ethtool_etherinfo_get_ipv6_addresses(PyEtherInfo *self, PyObject *notused) {
 	if( !self ) {
 		PyErr_SetString(PyExc_AttributeError, "No data available");
 		return NULL;
@@ -273,10 +273,10 @@ static PyMethodDef _ethtool_etherinfo_methods[] = {
  * Definition of the functions a Python class/object requires.
  *
  */
-PyTypeObject ethtool_etherinfoType = {
+PyTypeObject PyEtherInfo_Type = {
     PyObject_HEAD_INIT(NULL)
     .tp_name = "ethtool.etherinfo",
-    .tp_basicsize = sizeof(etherinfo_py),
+    .tp_basicsize = sizeof(PyEtherInfo),
     .tp_flags = Py_TPFLAGS_HAVE_CLASS,
     .tp_dealloc = (destructor)_ethtool_etherinfo_dealloc,
     .tp_str = (reprfunc)_ethtool_etherinfo_str,

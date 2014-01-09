@@ -50,7 +50,7 @@ typedef struct {
 	int index;                          /**< NETLINK index reference */
 	PyObject *hwaddress;                /**< string: HW address / MAC address of device */
 	unsigned short nlc_active;	    /**< Is this instance using NETLINK? */
-} etherinfo_py;
+} PyEtherInfo;
 
 
 
