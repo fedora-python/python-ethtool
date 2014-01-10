@@ -185,7 +185,9 @@ int get_etherinfo_link(PyEtherInfo *self)
                 return 0;
         }
         link = rtnl_link_alloc();
-        /* FIXME: Error handling? */
+        if( !link ) {
+                return 0;
+        }
         rtnl_link_set_ifindex(link, self->index);
         nl_cache_foreach_filter(link_cache, OBJ_CAST(link), callback_nl_link, self);
         rtnl_link_put(link);
@@ -236,7 +238,9 @@ PyObject * get_etherinfo_address(PyEtherInfo *self, nlQuery query)
                 return NULL;
         }
         addr = rtnl_addr_alloc();
-        /* FIXME: Error handling? */
+        if( !addr ) {
+                return NULL;
+        }
         rtnl_addr_set_ifindex(addr, self->index);
 
 	switch( query ) {
