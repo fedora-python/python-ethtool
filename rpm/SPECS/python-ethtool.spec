@@ -3,7 +3,7 @@
 
 Summary: Ethernet settings python bindings
 Name: python-ethtool
-Version: 0.9
+Version: 0.10
 Release: 1%{?dist}
 URL: http://git.fedorahosted.org/cgit/python-ethtool.git
 Source: https://fedorahosted.org/releases/p/y/python-ethtool/python-ethtool-%{version}.tar.bz2
