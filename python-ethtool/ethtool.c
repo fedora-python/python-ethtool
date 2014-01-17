@@ -55,10 +55,8 @@ static PyObject *get_active_devices(PyObject *self __unused, PyObject *args __un
 	PyObject *list;
 	struct ifaddrs *ifaddr, *ifa;
 
-	if (getifaddrs(&ifaddr) == -1) {
-		PyErr_SetString(PyExc_OSError, strerror(errno));
-		return NULL;
-	}
+	if (getifaddrs(&ifaddr) == -1)
+		return PyErr_SetFromErrno(PyExc_OSError);
 
 	list = PyList_New(0);
 	for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) {
@@ -83,15 +81,13 @@ static PyObject *get_devices(PyObject *self __unused, PyObject *args __unused)
 	FILE *fd = fopen(_PATH_PROCNET_DEV, "r");
 
 	if (fd == NULL) {
-		PyErr_SetString(PyExc_OSError, strerror(errno));
-		return NULL;
+		return PyErr_SetFromErrno(PyExc_OSError);
 	}
 	/* skip over first two lines */
 	ret = fgets(buffer, 256, fd);
 	ret = fgets(buffer, 256, fd);
 	if( !ret ) {
-		PyErr_SetString(PyExc_OSError, strerror(errno));
-		return NULL;
+		return PyErr_SetFromErrno(PyExc_OSError);
 	}
 
 	while (!feof(fd)) {
@@ -134,18 +130,13 @@ static PyObject *get_hwaddress(PyObject *self __unused, PyObject *args)
 	/* Open control socket. */
 	fd = socket(AF_INET, SOCK_DGRAM, 0);
 	if (fd < 0) {
-		PyErr_SetString(PyExc_OSError, strerror(errno));
-		return NULL;
+		return PyErr_SetFromErrno(PyExc_OSError);
 	}
 
 	/* Get current settings. */
 	err = ioctl(fd, SIOCGIFHWADDR, &ifr);
 	if (err < 0) {
-		char buf[2048];
-		int eno = errno;
-
-		snprintf(buf, sizeof(buf), "[Errno %d] %s", eno, strerror(eno));
-		PyErr_SetString(PyExc_IOError, buf);
+		PyErr_SetFromErrno(PyExc_IOError);
 		close(fd);
 		return NULL;
 	}
@@ -181,17 +172,13 @@ static PyObject *get_ipaddress(PyObject *self __unused, PyObject *args)
 	/* Open control socket. */
 	fd = socket(AF_INET, SOCK_DGRAM, 0);
 	if (fd < 0) {
-		PyErr_SetString(PyExc_OSError, strerror(errno));
-		return NULL;
+		return PyErr_SetFromErrno(PyExc_OSError);
 	}
 
 	/* Get current settings. */
 	err = ioctl(fd, SIOCGIFADDR, &ifr);
 	if (err < 0) {
-		char buf[2048];
-		int eno = errno;
-		snprintf(buf, sizeof(buf), "[Errno %d] %s", eno, strerror(eno));
-		PyErr_SetString(PyExc_IOError, buf);
+		PyErr_SetFromErrno(PyExc_IOError);
 		close(fd);
 		return NULL;
 	}
@@ -276,7 +263,7 @@ static PyObject *get_interfaces_info(PyObject *self __unused, PyObject *args) {
 
                 dev = PyObject_New(PyEtherInfo, &PyEtherInfo_Type);
                 if( !dev ) {
-			PyErr_SetString(PyExc_OSError, strerror(errno));
+			PyErr_SetFromErrno(PyExc_OSError);
 			free(fetch_devs);
 			return NULL;
                 }
@@ -311,15 +298,11 @@ static PyObject *get_flags (PyObject *self __unused, PyObject *args)
 	/* Open control socket. */
 	fd = socket(AF_INET, SOCK_DGRAM, 0);
 	if (fd < 0) {
-		PyErr_SetString(PyExc_OSError, strerror(errno));
-		return NULL;
+		return PyErr_SetFromErrno(PyExc_OSError);
 	}
 	err = ioctl(fd, SIOCGIFFLAGS, &ifr);
 	if(err < 0) {
-		char buf[2048];
-		int eno = errno;
-		snprintf(buf, sizeof(buf), "[Errno %d] %s", eno, strerror(eno));
-		PyErr_SetString(PyExc_IOError, buf);
+		PyErr_SetFromErrno(PyExc_IOError);
 		close(fd);
 		return NULL;
 	}
@@ -348,17 +331,13 @@ static PyObject *get_netmask (PyObject *self __unused, PyObject *args)
 	/* Open control socket. */
 	fd = socket(AF_INET, SOCK_DGRAM, 0);
 	if (fd < 0) {
-		PyErr_SetString(PyExc_OSError, strerror(errno));
-		return NULL;
+		return PyErr_SetFromErrno(PyExc_OSError);
 	}
 
 	/* Get current settings. */
 	err = ioctl(fd, SIOCGIFNETMASK, &ifr);
 	if (err < 0) {
-		char buf[2048];
-		int eno = errno;
-		snprintf(buf, sizeof(buf), "[Errno %d] %s", eno, strerror(eno));
-		PyErr_SetString(PyExc_IOError, buf);
+		PyErr_SetFromErrno(PyExc_IOError);
 		close(fd);
 		return NULL;
 	}
@@ -392,17 +371,13 @@ static PyObject *get_broadcast(PyObject *self __unused, PyObject *args)
 	/* Open control socket. */
 	fd = socket(AF_INET, SOCK_DGRAM, 0);
 	if (fd < 0) {
-		PyErr_SetString(PyExc_OSError, strerror(errno));
-		return NULL;
+		return PyErr_SetFromErrno(PyExc_OSError);
 	}
 
 	/* Get current settings. */
 	err = ioctl(fd, SIOCGIFBRDADDR, &ifr);
 	if (err < 0) {
-		char buf[2048];
-		int eno = errno;
-		snprintf(buf, sizeof(buf), "[Errno %d] %s", eno, strerror(eno));
-		PyErr_SetString(PyExc_IOError, buf);
+		PyErr_SetFromErrno(PyExc_IOError);
 		close(fd);
 		return NULL;
 	}
@@ -441,16 +416,14 @@ static PyObject *get_module(PyObject *self __unused, PyObject *args)
 	/* Open control socket. */
 	fd = socket(AF_INET, SOCK_DGRAM, 0);
 	if (fd < 0) {
-		PyErr_SetString(PyExc_OSError, strerror(errno));
-		return NULL;
+		return PyErr_SetFromErrno(PyExc_OSError);
 	}
 
 	/* Get current settings. */
 	err = ioctl(fd, SIOCETHTOOL, &ifr);
 
 	if (err < 0) {  /* failed? */
-		int eno = errno;
-		PyObject *err_obj;
+		PyErr_SetFromErrno(PyExc_IOError);
 		FILE *file;
 		int found = 0;
 		char driver[101], dev[101];
@@ -459,11 +432,6 @@ static PyObject *get_module(PyObject *self __unused, PyObject *args)
 		/* Before bailing, maybe it is a PCMCIA/PC Card? */
 		file = fopen("/var/lib/pcmcia/stab", "r");
 		if (file == NULL) {
-			err_obj = Py_BuildValue("(is)", eno, strerror(eno));
-                        if (err_obj != NULL) {
-				PyErr_SetObject(PyExc_IOError, err_obj);
-				Py_DECREF(err_obj);
-			}
 			return NULL;
 		}
 
@@ -484,14 +452,11 @@ static PyObject *get_module(PyObject *self __unused, PyObject *args)
 		}
 		fclose(file);
 		if (!found) {
-			err_obj = Py_BuildValue("(is)", eno, strerror(eno));
-                        if (err_obj != NULL) {
-				PyErr_SetObject(PyExc_IOError, err_obj);
-				Py_DECREF(err_obj);
-			}
 			return NULL;
-		} else
+		} else {
+			PyErr_Clear();
 			return PyString_FromString(driver);
+		}
 	}
 
 	close(fd);
@@ -528,11 +493,8 @@ static PyObject *get_businfo(PyObject *self __unused, PyObject *args)
 	err = ioctl(fd, SIOCETHTOOL, &ifr);
 
 	if (err < 0) {  /* failed? */
-		int eno = errno;
+		PyErr_SetFromErrno(PyExc_IOError);
 		close(fd);
-
-		sprintf(buf, "[Errno %d] %s", eno, strerror(eno));
-		PyErr_SetString(PyExc_IOError, buf);
 		return NULL;
 	}
 
@@ -556,16 +518,14 @@ static int send_command(int cmd, const char *devname, void *value)
 	/* Open control socket. */
 	fd = socket(AF_INET, SOCK_DGRAM, 0), err;
 	if (fd < 0) {
-		PyErr_SetString(PyExc_OSError, strerror(errno));
+		PyErr_SetFromErrno(PyExc_OSError);
 		return -1;
 	}
 
 	/* Get current settings. */
 	err = ioctl(fd, SIOCETHTOOL, &ifr);
 	if (err < 0) {
-		char buf[2048];
-		sprintf(buf, "[Errno %d] %s", errno, strerror(errno));
-		PyErr_SetString(PyExc_IOError, buf);
+		PyErr_SetFromErrno(PyExc_IOError);
 	}
 
 	close(fd);
