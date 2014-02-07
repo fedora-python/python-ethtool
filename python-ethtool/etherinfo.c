@@ -118,6 +118,9 @@ static int _set_device_index(PyEtherInfo *self)
 	struct nl_cache *link_cache;
 	struct rtnl_link *link;
 
+	/* Reset errno, as we will use it to report errors further on */
+	errno = 0;
+
 	/* Find the interface index we're looking up.
 	 * As we don't expect it to change, we're reusing a "cached"
 	 * interface index if we have that
@@ -129,6 +132,7 @@ static int _set_device_index(PyEtherInfo *self)
 
                 link = rtnl_link_get_by_name(link_cache, PyString_AsString(self->device));
                 if( !link ) {
+			errno = ENODEV;
 			nl_cache_free(link_cache);
                         return 0;
                 }
@@ -177,6 +181,9 @@ int get_etherinfo_link(PyEtherInfo *self)
 	}
 
         if( _set_device_index(self) != 1) {
+		if( errno != 0 ) {
+			PyErr_SetString(PyExc_IOError, strerror(errno));
+		}
                 return 0;
         }
 
@@ -227,6 +234,9 @@ PyObject * get_etherinfo_address(PyEtherInfo *self, nlQuery query)
 	}
 
         if( _set_device_index(self) != 1) {
+		if( errno != 0 ) {
+			return PyErr_SetFromErrno(PyExc_IOError);
+		}
                 return NULL;
         }
 
