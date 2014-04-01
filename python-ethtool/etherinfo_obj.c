@@ -104,7 +104,9 @@ PyObject *_ethtool_etherinfo_getter(PyEtherInfo *self, PyObject *attr_o)
                 }
 	} else if( strcmp(attr, "mac_address") == 0 ) {
 		get_etherinfo_link(self);
-		Py_INCREF(self->hwaddress);
+		if( self->hwaddress ) {
+			Py_INCREF(self->hwaddress);
+		}
 		return self->hwaddress;
 	} else if( strcmp(attr, "ipv4_address") == 0 ) {
 		addrlist = get_etherinfo_address(self, NLQRY_ADDR4);
