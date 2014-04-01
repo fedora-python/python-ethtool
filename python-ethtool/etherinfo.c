@@ -26,6 +26,7 @@
 #include <arpa/inet.h>
 #include <netlink/cache.h>
 #include <netlink/addr.h>
+#include <netlink/errno.h>
 #include <netlink/route/addr.h>
 #include <netlink/route/link.h>
 #include <netlink/route/rtnl.h>
@@ -111,34 +112,35 @@ static void callback_nl_address(struct nl_object *obj, void *arg)
  * @param self A pointer the current PyEtherInfo Python object which contains the device name
  *               and the place where to save the corresponding index value.
  *
- * @return Returns 1 on success, otherwise 0.
+ * @return Returns 1 on success, otherwise 0.  On error, a Python error exception is set.
  */
 static int _set_device_index(PyEtherInfo *self)
 {
 	struct nl_cache *link_cache;
 	struct rtnl_link *link;
 
-	/* Reset errno, as we will use it to report errors further on */
-	errno = 0;
-
 	/* Find the interface index we're looking up.
 	 * As we don't expect it to change, we're reusing a "cached"
 	 * interface index if we have that
 	 */
 	if( self->index < 0 ) {
-		if( rtnl_link_alloc_cache(get_nlc(), AF_UNSPEC, &link_cache) < 0) {
+		if( (errno = rtnl_link_alloc_cache(get_nlc(), AF_UNSPEC, &link_cache)) < 0) {
+                        PyErr_SetString(PyExc_OSError, nl_geterror(errno));
                         return 0;
                 }
 
                 link = rtnl_link_get_by_name(link_cache, PyString_AsString(self->device));
                 if( !link ) {
 			errno = ENODEV;
+			PyErr_SetFromErrno(PyExc_IOError);
 			nl_cache_free(link_cache);
                         return 0;
                 }
 
 		self->index = rtnl_link_get_ifindex(link);
-		if( self->index < 0 ) {
+		if( self->index <= 0 ) {
+			errno = ENODEV;
+			PyErr_SetFromErrno(PyExc_IOError);
 			rtnl_link_put(link);
 			nl_cache_free(link_cache);
 			return 0;
@@ -167,6 +169,7 @@ int get_etherinfo_link(PyEtherInfo *self)
 {
 	struct nl_cache *link_cache;
 	struct rtnl_link *link;
+	int err = 0;
 
 	if( !self ) {
 		return 0;
@@ -181,18 +184,18 @@ int get_etherinfo_link(PyEtherInfo *self)
 	}
 
         if( _set_device_index(self) != 1) {
-		if( errno != 0 ) {
-			PyErr_SetString(PyExc_IOError, strerror(errno));
-		}
                 return 0;
         }
 
         /* Extract MAC/hardware address of the interface */
-        if( rtnl_link_alloc_cache(get_nlc(), AF_UNSPEC, &link_cache) < 0) {
+        if( (err = rtnl_link_alloc_cache(get_nlc(), AF_UNSPEC, &link_cache)) < 0) {
+                PyErr_SetString(PyExc_OSError, nl_geterror(err));
                 return 0;
         }
         link = rtnl_link_alloc();
         if( !link ) {
+                errno = ENOMEM;
+                PyErr_SetFromErrno(PyExc_OSError);
                 return 0;
         }
         rtnl_link_set_ifindex(link, self->index);
@@ -220,6 +223,7 @@ PyObject * get_etherinfo_address(PyEtherInfo *self, nlQuery query)
 	struct nl_cache *addr_cache;
 	struct rtnl_addr *addr;
         PyObject *addrlist = NULL;
+	int err = 0;
 
 	if( !self ) {
 		return NULL;
@@ -234,21 +238,21 @@ PyObject * get_etherinfo_address(PyEtherInfo *self, nlQuery query)
 	}
 
         if( _set_device_index(self) != 1) {
-		if( errno != 0 ) {
-			return PyErr_SetFromErrno(PyExc_IOError);
-		}
                 return NULL;
         }
 
 	/* Query the for requested info via NETLINK */
 
         /* Extract IP address information */
-        if( rtnl_addr_alloc_cache(get_nlc(), &addr_cache) < 0) {
+        if( (err = rtnl_addr_alloc_cache(get_nlc(), &addr_cache)) < 0) {
+                PyErr_SetString(PyExc_OSError, nl_geterror(err));
                 nl_cache_free(addr_cache);
                 return NULL;
         }
         addr = rtnl_addr_alloc();
         if( !addr ) {
+                errno = ENOMEM;
+                PyErr_SetFromErrno(PyExc_OSError);
                 return NULL;
         }
         rtnl_addr_set_ifindex(addr, self->index);
