@@ -58,7 +58,9 @@ int open_netlink(PyEtherInfo *ethi)
 	/* No earlier connections exists, establish a new one */
 	nlconnection = nl_socket_alloc();
 	if( nlconnection != NULL ) {
-		nl_connect(nlconnection, NETLINK_ROUTE);
+		if( nl_connect(nlconnection, NETLINK_ROUTE) < 0 ) {
+			return 0;
+		}
 		/* Force O_CLOEXEC flag on the NETLINK socket */
 		if( fcntl(nl_socket_get_fd(nlconnection), F_SETFD, FD_CLOEXEC) == -1 ) {
 			fprintf(stderr,
