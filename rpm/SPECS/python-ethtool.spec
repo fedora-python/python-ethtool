@@ -3,7 +3,7 @@
 
 Summary: Ethernet settings python bindings
 Name: python-ethtool
-Version: 0.10
+Version: 0.11
 Release: 1%{?dist}
 URL: https://fedorahosted.org/python-ethtool/
 Source: https://fedorahosted.org/releases/p/y/python-ethtool/python-ethtool-%{version}.tar.bz2
@@ -49,6 +49,26 @@ rm -rf %{buildroot}
 %endif
 
 %changelog
+* Thu May 8 2014 David Sommerseth <davids@redhat.com> - 0.11-1
+- Improved error handling several places
+- Ensure that we get a valid libnl NETLINK connection when connecting
+- URL updates to SPEC file
+
+* Fri Jan 10 2014 David Sommerseth <davids@redhat.com> - 0.10-1
+- Not really a full release, but a preliminary release to get more wide testing
+- FSF Copyright updates
+- Build fixes
+- Mostly code cleanup
+
+* Wed Dec 11 2013 David Sommerseth <davids@redhat.com> - 0.9-1
+- Fixed get_active_devices() for IPv6 only interfaces
+- Moved from libnl1 to libnl3
+- Refactor PyNetlink*Address implementation
+
+* Tue Feb 19 2013 David Malcolm <dmalcolm@redhat.com> - 0.8-1
+- Enable IPv6 in pifethtool example
+- Code cleanup, fixing buffer overflows, memory leaks, etc
+
 * Mon Apr 11 2011 David Sommerseth <davids@redhat.com> - 0.7-1
 - Fixed several memory leaks (commit aa2c20e697af, abc7f912f66d)
 - Improved error checking towards NULL values(commit 4e928d62a8e3)
@@ -57,7 +77,7 @@ rm -rf %{buildroot}
 - Added man page for pifconfig and pethtool (commit 9f0d17aa532, rhbz#638475)
 - Force NETLINK socket to close on fork() using FD_CLOEXEC (commit 1680cbeb40e)
 
-* Wed Jan 19 2011 David Sommerseth <dazo@users.sourceforge.net> - 0.6-1
+* Wed Jan 19 2011 David Sommerseth <davids@redhat.com> - 0.6-1
 - Don't segfault if we don't receive any address from rtnl_link_get_addr()
 - Remove errornous file from MANIFEST
 - Added ethtool.version string constant
