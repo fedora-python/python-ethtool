@@ -21,7 +21,6 @@
 #include <string.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <fcntl.h>
 #include <stdlib.h>
 #include <asm/types.h>
 #include <sys/socket.h>
@@ -457,13 +456,6 @@ int open_netlink(struct etherinfo_obj_data *data)
 	*data->nlc = nl_handle_alloc();
 	nl_connect(*data->nlc, NETLINK_ROUTE);
 	if( (*data->nlc != NULL) ) {
-		/* Force O_CLOEXEC flag on the NETLINK socket */
-		if( fcntl(nl_socket_get_fd(*data->nlc), F_SETFD, FD_CLOEXEC) == -1 ) {
-			fprintf(stderr,
-				"**WARNING** Failed to set O_CLOEXEC on NETLINK socket: %s\n",
-				strerror(errno));
-		}
-
 		/* Tag this object as an active user */
 		pthread_mutex_lock(&nlc_counter_mtx);
 		(*data->nlc_users)++;
