@@ -1,5 +1,7 @@
 #!/usr/bin/python2
 
+from __future__ import print_function
+
 from distutils.core import setup, Extension
 import commands
 import sys
@@ -16,22 +18,22 @@ def pkgconfig(pkg):
 
     (res, cflags) = commands.getstatusoutput('pkg-config --cflags-only-other %s' % pkg)
     if res != 0:
-        print 'Failed to query pkg-config --cflags-only-other %s' % pkg
+        print('Failed to query pkg-config --cflags-only-other %s' % pkg)
         sys.exit(1)
 
     (res, includes) = commands.getstatusoutput('pkg-config --cflags-only-I %s' % pkg)
     if res != 0:
-        print 'Failed to query pkg-config --cflags-only-I %s' % pkg
+        print('Failed to query pkg-config --cflags-only-I %s' % pkg)
         sys.exit(1)
 
     (res, libs) = commands.getstatusoutput('pkg-config --libs-only-l %s' % pkg)
     if res != 0:
-        print 'Failed to query pkg-config --libs-only-l %s' % pkg
+        print('Failed to query pkg-config --libs-only-l %s' % pkg)
         sys.exit(1)
 
     (res, libdirs) = commands.getstatusoutput('pkg-config --libs-only-L %s' % pkg)
     if res != 0:
-        print 'Failed to query pkg-config --libs-only-L %s' % pkg
+        print('Failed to query pkg-config --libs-only-L %s' % pkg)
         sys.exit(1)
 
 
