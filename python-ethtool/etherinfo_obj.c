@@ -78,88 +78,6 @@ static PyNetlinkIPaddress * get_last_ipv4_address(PyObject *addrlist)
 }
 
 /**
- * ethtool.etherinfo function for retrieving data from a Python object.
- *
- * @param self    Pointer to the current PyEtherInfo device object
- * @param attr_o  contains the object member request (which element to return)
- *
- * @return Returns a PyObject with the value requested on success, otherwise NULL
- */
-PyObject *_ethtool_etherinfo_getter(PyEtherInfo *self, PyObject *attr_o)
-{
-	char *attr = PyBytes_AsString(attr_o);
-	PyNetlinkIPaddress *py_addr;
-        PyObject *addrlist = NULL;
-
-	if( !self ) {
-		PyErr_SetString(PyExc_AttributeError, "No data available");
-		return NULL;
-	}
-
-	if( strcmp(attr, "device") == 0 ) {
-                if( self->device ) {
-                        Py_INCREF(self->device);
-                        return self->device;
-                } else {
-                        return Py_INCREF(Py_None), Py_None;
-                }
-	} else if( strcmp(attr, "mac_address") == 0 ) {
-		get_etherinfo_link(self);
-		if( self->hwaddress ) {
-			Py_INCREF(self->hwaddress);
-		}
-		return self->hwaddress;
-	} else if( strcmp(attr, "ipv4_address") == 0 ) {
-		addrlist = get_etherinfo_address(self, NLQRY_ADDR4);
-		/* For compatiblity with old approach, return last IPv4 address: */
-		py_addr = get_last_ipv4_address(addrlist);
-		if (py_addr) {
-		  if (py_addr->local) {
-		      Py_INCREF(py_addr->local);
-		      return py_addr->local;
-		  }
-		}
-		Py_RETURN_NONE;
-	} else if( strcmp(attr, "ipv4_netmask") == 0 ) {
-		addrlist = get_etherinfo_address(self, NLQRY_ADDR4);
-		py_addr = get_last_ipv4_address(addrlist);
-		if (py_addr) {
-		  return PyLong_FromLong(py_addr->prefixlen);
-		}
-		return PyLong_FromLong(0);
-	} else if( strcmp(attr, "ipv4_broadcast") == 0 ) {
-		addrlist = get_etherinfo_address(self, NLQRY_ADDR4);
-		py_addr = get_last_ipv4_address(addrlist);
-		if (py_addr) {
-		  if (py_addr->ipv4_broadcast) {
-		      Py_INCREF(py_addr->ipv4_broadcast);
-		      return py_addr->ipv4_broadcast;
-		  }
-		}
-		Py_RETURN_NONE;
-	} else {
-		return PyObject_GenericGetAttr((PyObject *)self, attr_o);
-	}
-}
-
-/**
- * ethtool.etherinfo function for setting a value to a object member.  This feature is
- * disabled by always returning -1, as the values are read-only by the user.
- *
- * @param self
- * @param attr_o
- * @param val_o
- *
- * @return Returns always -1 (failure).
- */
-int _ethtool_etherinfo_setter(PyEtherInfo *self, PyObject *attr_o, PyObject *val_o)
-{
-	PyErr_SetString(PyExc_AttributeError, "etherinfo member values are read-only.");
-	return -1;
-}
-
-
-/**
  * Creates a human readable format of the information when object is being treated as a string
  *
  * @param self  Pointer to the current PyEtherInfo device object
@@ -272,6 +190,88 @@ static PyMethodDef _ethtool_etherinfo_methods[] = {
 	{NULL}  /**< No methods defined */
 };
 
+static PyObject *get_device(PyObject *obj, void *info)
+{
+	PyEtherInfo *self = (PyEtherInfo *) obj;
+
+	if( self->device ) {
+		Py_INCREF(self->device);
+		return self->device;
+	}
+	Py_RETURN_NONE;
+}
+
+static PyObject *get_mac_addr(PyObject *obj, void *info)
+{
+	PyEtherInfo *self = (PyEtherInfo *) obj;
+
+	get_etherinfo_link(self);
+	if( self->hwaddress ) {
+		Py_INCREF(self->hwaddress);
+	}
+	return self->hwaddress;
+}
+
+static PyObject *get_ipv4_addr(PyObject *obj, void *info)
+{
+	PyEtherInfo *self = (PyEtherInfo *) obj;
+	PyObject *addrlist;
+	PyNetlinkIPaddress *py_addr;
+
+	addrlist = get_etherinfo_address(self, NLQRY_ADDR4);
+	/* For compatiblity with old approach, return last IPv4 address: */
+	py_addr = get_last_ipv4_address(addrlist);
+	if (py_addr) {
+		if (py_addr->local) {
+			Py_INCREF(py_addr->local);
+			return py_addr->local;
+		}
+	}
+	Py_RETURN_NONE;
+}
+
+static PyObject *get_ipv4_mask(PyObject *obj, void *info)
+{
+	PyEtherInfo *self = (PyEtherInfo *) obj;
+	PyObject *addrlist;
+	PyNetlinkIPaddress *py_addr;
+
+	addrlist = get_etherinfo_address(self, NLQRY_ADDR4);
+	py_addr = get_last_ipv4_address(addrlist);
+	if (py_addr) {
+		return PyLong_FromLong(py_addr->prefixlen);
+	}
+	return PyLong_FromLong(0);
+}
+
+static PyObject *get_ipv4_bcast(PyObject *obj, void *info)
+{
+	PyEtherInfo *self = (PyEtherInfo *) obj;
+	PyObject *addrlist;
+	PyNetlinkIPaddress *py_addr;
+
+	addrlist = get_etherinfo_address(self, NLQRY_ADDR4);
+	py_addr = get_last_ipv4_address(addrlist);
+	if (py_addr) {
+		if (py_addr->ipv4_broadcast) {
+			Py_INCREF(py_addr->ipv4_broadcast);
+			return py_addr->ipv4_broadcast;
+		}
+	}
+	Py_RETURN_NONE;
+}
+
+
+static PyGetSetDef _ethtool_etherinfo_attributes[] = {
+	{"device", get_device, NULL, "device", NULL},
+	{"mac_address", get_mac_addr, NULL, "MAC address", NULL},
+	{"ipv4_address", get_ipv4_addr, NULL, "IPv4 address", NULL},
+	{"ipv4_netmask", get_ipv4_mask, NULL, "IPv4 netmask", NULL},
+	{"ipv4_broadcast", get_ipv4_bcast, NULL, "IPv4 broadcast", NULL},
+	{NULL},
+};
+
+
 /**
  * Definition of the functions a Python class/object requires.
  *
@@ -283,8 +283,7 @@ PyTypeObject PyEtherInfo_Type = {
     .tp_flags = Py_TPFLAGS_DEFAULT,
     .tp_dealloc = (destructor)_ethtool_etherinfo_dealloc,
     .tp_str = (reprfunc)_ethtool_etherinfo_str,
-    .tp_getattro = (getattrofunc)_ethtool_etherinfo_getter,
-    .tp_setattro = (setattrofunc)_ethtool_etherinfo_setter,
+    .tp_getset = _ethtool_etherinfo_attributes,
     .tp_methods = _ethtool_etherinfo_methods,
     .tp_doc = "Contains information about a specific ethernet device"
 };
