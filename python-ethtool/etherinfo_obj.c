@@ -42,7 +42,7 @@ static void _ethtool_etherinfo_dealloc(PyEtherInfo *self)
 	close_netlink(self);
         Py_XDECREF(self->device);    self->device = NULL;
         Py_XDECREF(self->hwaddress); self->hwaddress = NULL;
-	self->ob_type->tp_free((PyObject*)self);
+	Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
 
