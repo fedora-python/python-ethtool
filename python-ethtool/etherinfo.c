@@ -16,6 +16,7 @@
  */
 
 #include <Python.h>
+#include <bytesobject.h>
 #include <bits/sockaddr.h>
 #include <stdio.h>
 #include <string.h>
@@ -65,7 +66,7 @@ static void callback_nl_link(struct nl_object *obj, void *arg)
         if( ethi->hwaddress ) {
                 Py_XDECREF(ethi->hwaddress);
         }
-        ethi->hwaddress = PyString_FromFormat("%s", hwaddr);
+        ethi->hwaddress = PyBytes_FromFormat("%s", hwaddr);
 }
 
 
@@ -129,7 +130,7 @@ static int _set_device_index(PyEtherInfo *self)
                         return 0;
                 }
 
-                link = rtnl_link_get_by_name(link_cache, PyString_AsString(self->device));
+                link = rtnl_link_get_by_name(link_cache, PyBytes_AsString(self->device));
                 if( !link ) {
 			errno = ENODEV;
 			PyErr_SetFromErrno(PyExc_IOError);
@@ -179,7 +180,7 @@ int get_etherinfo_link(PyEtherInfo *self)
 	if( !open_netlink(self) ) {
 		PyErr_Format(PyExc_RuntimeError,
 			     "Could not open a NETLINK connection for %s",
-			     PyString_AsString(self->device));
+			     PyBytes_AsString(self->device));
 		return 0;
 	}
 
@@ -233,7 +234,7 @@ PyObject * get_etherinfo_address(PyEtherInfo *self, nlQuery query)
 	if( !open_netlink(self) ) {
 		PyErr_Format(PyExc_RuntimeError,
 			     "Could not open a NETLINK connection for %s",
-			     PyString_AsString(self->device));
+			     PyBytes_AsString(self->device));
 		return NULL;
 	}
 

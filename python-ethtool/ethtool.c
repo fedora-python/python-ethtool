@@ -16,6 +16,7 @@
  * General Public License for more details.
  */
 #include <Python.h>
+#include <bytesobject.h>
 
 #include <errno.h>
 #include <stddef.h>
@@ -60,7 +61,7 @@ static PyObject *get_active_devices(PyObject *self __unused, PyObject *args __un
 
 	list = PyList_New(0);
 	for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) {
-		PyObject *str = PyString_FromString(ifa->ifa_name);
+		PyObject *str = PyBytes_FromString(ifa->ifa_name);
 		/* names are not unique (listed for both ipv4 and ipv6) */
 		if (!PySequence_Contains(list, str) && (ifa->ifa_flags & (IFF_UP))) {
 			PyList_Append(list, str);
@@ -104,7 +105,7 @@ static PyObject *get_devices(PyObject *self __unused, PyObject *args __unused)
 		while (*name == ' ')
 			name++; /* skip over leading whitespace if any */
 
-		str = PyString_FromString(name);
+		str = PyBytes_FromString(name);
 		PyList_Append(list, str);
 		Py_DECREF(str);
 	}
@@ -151,7 +152,7 @@ static PyObject *get_hwaddress(PyObject *self __unused, PyObject *args)
 		(unsigned int)ifr.ifr_hwaddr.sa_data[4] % 256,
 		(unsigned int)ifr.ifr_hwaddr.sa_data[5] % 256);
 
-	return PyString_FromString(hwaddr);
+	return PyBytes_FromString(hwaddr);
 }
 
 static PyObject *get_ipaddress(PyObject *self __unused, PyObject *args)
@@ -191,7 +192,7 @@ static PyObject *get_ipaddress(PyObject *self __unused, PyObject *args)
 		(unsigned int)ifr.ifr_addr.sa_data[4] % 256,
 		(unsigned int)ifr.ifr_addr.sa_data[5] % 256);
 
-	return PyString_FromString(ipaddr);
+	return PyBytes_FromString(ipaddr);
 }
 
 
@@ -218,10 +219,10 @@ static PyObject *get_interfaces_info(PyObject *self __unused, PyObject *args) {
 
 	/* Parse input arguments if we got them */
 	if( inargs != NULL ) {
-		if( PyString_Check(inargs) ) { /* Input argument is just a string */
+		if( PyBytes_Check(inargs) ) { /* Input argument is just a string */
 			fetch_devs_len = 1;
 			fetch_devs = calloc(1, sizeof(char *));
-			fetch_devs[0] = PyString_AsString(inargs);
+			fetch_devs[0] = PyBytes_AsString(inargs);
 		} else if( PyTuple_Check(inargs) ) { /* Input argument is a tuple list with devices */
 			int j = 0;
 
@@ -229,8 +230,8 @@ static PyObject *get_interfaces_info(PyObject *self __unused, PyObject *args) {
 			fetch_devs = calloc(fetch_devs_len+1, sizeof(char *));
 			for( i = 0; i < fetch_devs_len; i++ ) {
 				PyObject *elmt = PyTuple_GetItem(inargs, i);
-				if( elmt && PyString_Check(elmt) ) {
-					fetch_devs[j++] = PyString_AsString(elmt);
+				if( elmt && PyBytes_Check(elmt) ) {
+					fetch_devs[j++] = PyBytes_AsString(elmt);
 				}
 			}
 			fetch_devs_len = j;
@@ -241,8 +242,8 @@ static PyObject *get_interfaces_info(PyObject *self __unused, PyObject *args) {
 			fetch_devs = calloc(fetch_devs_len+1, sizeof(char *));
 			for( i = 0; i < fetch_devs_len; i++ ) {
 				PyObject *elmt = PyList_GetItem(inargs, i);
-				if( elmt && PyString_Check(elmt) ) {
-					fetch_devs[j++] = PyString_AsString(elmt);
+				if( elmt && PyBytes_Check(elmt) ) {
+					fetch_devs[j++] = PyBytes_AsString(elmt);
 				}
 			}
 			fetch_devs_len = j;
@@ -267,7 +268,7 @@ static PyObject *get_interfaces_info(PyObject *self __unused, PyObject *args) {
 			free(fetch_devs);
 			return NULL;
                 }
-		dev->device = PyString_FromString(fetch_devs[i]);
+		dev->device = PyBytes_FromString(fetch_devs[i]);
 		dev->hwaddress = NULL;
 		dev->index = -1;
 
@@ -350,7 +351,7 @@ static PyObject *get_netmask (PyObject *self __unused, PyObject *args)
 		(unsigned int)ifr.ifr_netmask.sa_data[4] % 256,
 		(unsigned int)ifr.ifr_netmask.sa_data[5] % 256);
 
-	return PyString_FromString(netmask);
+	return PyBytes_FromString(netmask);
 }
 
 static PyObject *get_broadcast(PyObject *self __unused, PyObject *args)
@@ -390,7 +391,7 @@ static PyObject *get_broadcast(PyObject *self __unused, PyObject *args)
 		(unsigned int)ifr.ifr_broadaddr.sa_data[4] % 256,
 		(unsigned int)ifr.ifr_broadaddr.sa_data[5] % 256);
 
-	return PyString_FromString(broadcast);
+	return PyBytes_FromString(broadcast);
 }
 
 static PyObject *get_module(PyObject *self __unused, PyObject *args)
@@ -455,12 +456,12 @@ static PyObject *get_module(PyObject *self __unused, PyObject *args)
 			return NULL;
 		} else {
 			PyErr_Clear();
-			return PyString_FromString(driver);
+			return PyBytes_FromString(driver);
 		}
 	}
 
 	close(fd);
-	return PyString_FromString(((struct ethtool_drvinfo *)buf)->driver);
+	return PyBytes_FromString(((struct ethtool_drvinfo *)buf)->driver);
 }
 
 static PyObject *get_businfo(PyObject *self __unused, PyObject *args)
@@ -499,7 +500,7 @@ static PyObject *get_businfo(PyObject *self __unused, PyObject *args)
 	}
 
 	close(fd);
-	return PyString_FromString(((struct ethtool_drvinfo *)buf)->bus_info);
+	return PyBytes_FromString(((struct ethtool_drvinfo *)buf)->bus_info);
 }
 
 static int send_command(int cmd, const char *devname, void *value)
