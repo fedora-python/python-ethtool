@@ -124,9 +124,9 @@ PyObject *_ethtool_etherinfo_getter(PyEtherInfo *self, PyObject *attr_o)
 		addrlist = get_etherinfo_address(self, NLQRY_ADDR4);
 		py_addr = get_last_ipv4_address(addrlist);
 		if (py_addr) {
-		  return PyInt_FromLong(py_addr->prefixlen);
+		  return PyLong_FromLong(py_addr->prefixlen);
 		}
-		return PyInt_FromLong(0);
+		return PyLong_FromLong(0);
 	} else if( strcmp(attr, "ipv4_broadcast") == 0 ) {
 		addrlist = get_etherinfo_address(self, NLQRY_ADDR4);
 		py_addr = get_last_ipv4_address(addrlist);

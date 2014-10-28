@@ -667,7 +667,7 @@ static PyObject *__struct_desc_create_dict(struct struct_desc *table,
 
 		switch (d->size) {
 		case sizeof(uint32_t):
-			objval = PyInt_FromLong(*(uint32_t *)val);
+			objval = PyLong_FromLong(*(uint32_t *)val);
 			break;
 		}
 
@@ -712,7 +712,7 @@ static int __struct_desc_from_dict(struct struct_desc *table,
 				PyErr_SetString(PyExc_IOError, buf);
 				return -1;
 			}
-			*(uint32_t *)val = PyInt_AsLong(obj);
+			*(uint32_t *)val = PyLong_AsLong(obj);
 			break;
 		default:
 			snprintf(buf, sizeof(buf),
