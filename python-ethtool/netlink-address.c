@@ -156,6 +156,14 @@ netlink_ip_address_repr(PyNetlinkIPaddress *obj)
 
 	PyBytes_ConcatAndDel(&result, PyBytes_FromString(")"));
 
+#if PY_MAJOR_VERSION >= 3
+	{
+		PyObject *bytestr = result;
+		result = PyUnicode_FromString(PyBytes_AsString(result));
+		Py_DECREF(bytestr);
+	}
+#endif
+
 	return result;
 }
 

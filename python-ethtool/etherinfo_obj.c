@@ -139,6 +139,14 @@ PyObject *_ethtool_etherinfo_str(PyEtherInfo *self)
 	       }
 	}
 
+#if PY_MAJOR_VERSION >= 3
+	{
+		PyObject *bytestr = ret;
+		ret = PyUnicode_FromString(PyBytes_AsString(bytestr));
+		Py_DECREF(bytestr);
+	}
+#endif
+
 	return ret;
 }
 
