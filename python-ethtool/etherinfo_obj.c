@@ -280,7 +280,7 @@ PyTypeObject PyEtherInfo_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name = "ethtool.etherinfo",
     .tp_basicsize = sizeof(PyEtherInfo),
-    .tp_flags = Py_TPFLAGS_HAVE_CLASS,
+    .tp_flags = Py_TPFLAGS_DEFAULT,
     .tp_dealloc = (destructor)_ethtool_etherinfo_dealloc,
     .tp_str = (reprfunc)_ethtool_etherinfo_str,
     .tp_getattro = (getattrofunc)_ethtool_etherinfo_getter,
