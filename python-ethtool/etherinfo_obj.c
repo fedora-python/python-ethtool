@@ -277,7 +277,7 @@ static PyMethodDef _ethtool_etherinfo_methods[] = {
  *
  */
 PyTypeObject PyEtherInfo_Type = {
-    PyObject_HEAD_INIT(NULL)
+    PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name = "ethtool.etherinfo",
     .tp_basicsize = sizeof(PyEtherInfo),
     .tp_flags = Py_TPFLAGS_HAVE_CLASS,
