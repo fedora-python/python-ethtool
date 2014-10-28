@@ -223,6 +223,12 @@ static PyObject *get_interfaces_info(PyObject *self __unused, PyObject *args) {
 			fetch_devs_len = 1;
 			fetch_devs = calloc(1, sizeof(char *));
 			fetch_devs[0] = PyBytes_AsString(inargs);
+#if PY_MAJOR_VERSION >= 3
+		} else if( PyUnicode_Check(inargs) ) { /* Input argument is just a ustring */
+			fetch_devs_len = 1;
+			fetch_devs = calloc(1, sizeof(char *));
+			fetch_devs[0] = PyUnicode_AsUTF8(inargs);
+#endif
 		} else if( PyTuple_Check(inargs) ) { /* Input argument is a tuple list with devices */
 			int j = 0;
 
