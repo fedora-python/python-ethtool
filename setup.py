@@ -3,7 +3,10 @@
 from __future__ import print_function
 
 from distutils.core import setup, Extension
-import commands
+try:
+    import commands
+except ImportError:
+    import subprocess as commands
 import sys
 
 version = '0.11'
