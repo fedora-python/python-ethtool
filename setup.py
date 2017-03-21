@@ -9,7 +9,7 @@ except ImportError:
     import subprocess as commands
 import sys
 
-version = '0.11'
+version = '0.12'
 
 def pkgconfig(pkg):
     def _str2list(pkgstr, onlystr):

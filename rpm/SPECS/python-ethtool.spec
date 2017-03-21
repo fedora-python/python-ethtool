@@ -3,10 +3,10 @@
 
 Summary: Ethernet settings python bindings
 Name: python-ethtool
-Version: 0.11
+Version: 0.12
 Release: 1%{?dist}
-URL: https://fedorahosted.org/python-ethtool/
-Source: https://fedorahosted.org/releases/p/y/python-ethtool/python-ethtool-%{version}.tar.bz2
+URL: https://github.com/fedora-python/python-ethtool
+Source: https://github.com/fedora-python/python-ethtool/archive/v%{version}.tar.gz
 License: GPLv2
 Group: System Environment/Libraries
 BuildRequires: python-devel libnl3-devel asciidoc
@@ -49,6 +49,10 @@ rm -rf %{buildroot}
 %endif
 
 %changelog
+* Tue Mar 21 2017 Charalampos Stratakis <cstratak@redhat.com> - 0.12-1
+- Release 0.12
+- First attempt at python3 support
+
 * Thu May 8 2014 David Sommerseth <davids@redhat.com> - 0.11-1
 - Improved error handling several places
 - Ensure that we get a valid libnl NETLINK connection when connecting
