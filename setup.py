@@ -57,7 +57,7 @@ setup(name='ethtool',
       description='Python module to interface with ethtool',
       author='Harald Hoyer, Arnaldo Carvalho de Melo, David Sommerseth',
       author_email='davids@redhat.com',
-      url='http://fedoraproject.org/wiki/python-ethtool',
+      url='https://github.com/fedora-python/python-ethtool',
       ext_modules=[
         Extension(
             'ethtool',
