@@ -4,11 +4,13 @@
 from __future__ import print_function
 
 from distutils.core import setup, Extension
+import sys
+
 try:
     import commands
 except ImportError:
     import subprocess as commands
-import sys
+run = commands.getstatusoutput
 
 version = '0.12'
 
@@ -28,60 +30,38 @@ class PkgConfigExtension(Extension):
             # on Python 3, that's not needed or possible
             pass
         self._pkg = pkg
-        self._pkgconfig_result = None
 
-    @property
-    def pkgconfig(self):
-        if self._pkgconfig_result is None:
-            self._pkgconfig_result = self._pkgconfig(self._pkg)
-        return self._pkgconfig_result
-
-    def _pkgconfig(self, pkg):
-        def _str2list(pkgstr, onlystr):
-            res = []
-            for l in pkgstr.split(" "):
-                if l.find(onlystr) == 0:
-                    res.append(l.replace(onlystr, "", 1))
-            return res
-
-        (res, cflags) = commands.getstatusoutput('pkg-config --cflags-only-other %s' % pkg)
-        if res != 0:
-            print('Failed to query pkg-config --cflags-only-other %s' % pkg)
-            sys.exit(1)
-
-        (res, includes) = commands.getstatusoutput('pkg-config --cflags-only-I %s' % pkg)
-        if res != 0:
-            print('Failed to query pkg-config --cflags-only-I %s' % pkg)
-            sys.exit(1)
-
-        (res, libs) = commands.getstatusoutput('pkg-config --libs-only-l %s' % pkg)
-        if res != 0:
-            print('Failed to query pkg-config --libs-only-l %s' % pkg)
-            sys.exit(1)
-
-        (res, libdirs) = commands.getstatusoutput('pkg-config --libs-only-L %s' % pkg)
-        if res != 0:
-            print('Failed to query pkg-config --libs-only-L %s' % pkg)
-            sys.exit(1)
-
-        # Clean up the results and return what we've extracted from pkg-config
-        return {'cflags': cflags,
-                'include': _str2list(includes, '-I'),
-                'libs': _str2list(libs, '-l'),
-                'libdirs': _str2list(libdirs, '-L')
-                }
+    @classmethod
+    def _str2list(cls, pkgstr, onlystr):
+        res = []
+        for l in pkgstr.split(" "):
+            if l.find(onlystr) == 0:
+                res.append(l.replace(onlystr, "", 1))
+        return res
 
     @property
     def include_dirs(self):
-        return self.pkgconfig['include']
+        res, includes = run('pkg-config --cflags-only-I %s' % self._pkg)
+        if res != 0:
+            print('Failed to query pkg-config --cflags-only-I %s' % self._pkg)
+            sys.exit(1)
+        return self._str2list(includes, '-I')
 
     @property
     def library_dirs(self):
-        return self.pkgconfig['libdirs']
+        res, libdirs = run('pkg-config --libs-only-L %s' % self._pkg)
+        if res != 0:
+            print('Failed to query pkg-config --libs-only-L %s' % self._pkg)
+            sys.exit(1)
+        return self._str2list(libdirs, '-L')
 
     @property
     def libraries(self):
-        return self.pkgconfig['libs'] + ['nl-route-3']
+        res, libs = run('pkg-config --libs-only-l %s' % self._pkg)
+        if res != 0:
+            print('Failed to query pkg-config --libs-only-l %s' % self._pkg)
+            sys.exit(1)
+        return self._str2list(libs, '-l') + ['nl-route-3']
 
     @include_dirs.setter
     def include_dirs(self, value):
