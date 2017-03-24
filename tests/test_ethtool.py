@@ -25,7 +25,7 @@ from test.test_support import run_unittest # requires python-test subpackage on 
 
 import ethtool
 
-from parse_ifconfig import IfConfig
+from .parse_ifconfig import IfConfig
 
 INVALID_DEVICE_NAME = "I am not a valid device name"
 
