@@ -21,11 +21,10 @@
 
 import sys
 import unittest
-from test.test_support import run_unittest # requires python-test subpackage on Fedora/RHEL
 
 import ethtool
 
-from parse_ifconfig import IfConfig
+from .parse_ifconfig import IfConfig
 
 INVALID_DEVICE_NAME = "I am not a valid device name"
 
@@ -42,14 +41,14 @@ class EthtoolTests(unittest.TestCase):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     def assertIsString(self, value):
-        self.assert_(isinstance(value, str))
+        self.assertTrue(isinstance(value, str))
 
     def assertIsStringOrNone(self, value):
         if value is not None:
-            self.assert_(isinstance(value, str))
+            self.assertTrue(isinstance(value, str))
 
     def assertIsInt(self, value):
-        self.assert_(isinstance(value, int))
+        self.assertTrue(isinstance(value, int))
 
     def assertRaisesIOError(self, fn, args, errmsg):
         """
@@ -63,7 +62,7 @@ class EthtoolTests(unittest.TestCase):
             fn(*args)
         except IOError as e:
             # Check the details of the exception:
-            self.assertEquals(e.args, (errmsg, ))
+            self.assertEqual(e.args, (errmsg, ))
         else:
             self.fail('IOError was not raised calling %s on %s' % (fn, args))
 
@@ -145,7 +144,7 @@ class EthtoolTests(unittest.TestCase):
             #TODO: self.assertIsString(ethtool.set_tso(devname))
 
     def _verify_etherinfo_object(self, ei):
-        self.assert_(isinstance(ei, ethtool.etherinfo))
+        self.assertTrue(isinstance(ei, ethtool.etherinfo))
         self.assertIsString(ei.device)
 
         try:
@@ -173,11 +172,11 @@ class EthtoolTests(unittest.TestCase):
 
         i6s = ei.get_ipv6_addresses()
         for i6 in i6s:
-            self.assert_(isinstance(i6, ethtool.etherinfo_ipv6addr))
+            self.assertTrue(isinstance(i6, ethtool.etherinfo_ipv6addr))
             self.assertIsString(i6.address)
             self.assertIsInt(i6.netmask)
             self.assertIsString(i6.scope)
-            self.assertEquals(str(i6),
+            self.assertEqual(str(i6),
                               '[%s] %s/%i' % (i6.scope, 
                                               i6.address,
                                               i6.netmask))
@@ -210,13 +209,13 @@ class EthtoolTests(unittest.TestCase):
 
     def test_get_interface_info_invalid(self):
         eis = ethtool.get_interfaces_info(INVALID_DEVICE_NAME)
-        self.assertEquals(len(eis), 1)
+        self.assertEqual(len(eis), 1)
         ei = eis[0]
-        self.assertEquals(ei.device, INVALID_DEVICE_NAME)
-        self.assertEquals(ei.ipv4_address, None)
-        self.assertEquals(ei.ipv4_broadcast, None)
-        self.assertEquals(ei.ipv4_netmask, 0)
-        self.assertEquals(ei.mac_address, None)
+        self.assertEqual(ei.device, INVALID_DEVICE_NAME)
+        self.assertEqual(ei.ipv4_address, None)
+        self.assertEqual(ei.ipv4_broadcast, None)
+        self.assertEqual(ei.ipv4_netmask, 0)
+        self.assertEqual(ei.mac_address, None)
 
     def test_get_interface_info_active(self):
         eis = ethtool.get_interfaces_info(ethtool.get_active_devices())
@@ -237,6 +236,43 @@ class EthtoolTests(unittest.TestCase):
         eis = ethtool.get_interfaces_info(devnames)
         for ei in eis:
             self._verify_etherinfo_object(ei)
+
+
+def _run_suite(suite):
+    """Run tests from a unittest.TestSuite-derived class."""
+    if verbose:
+        runner = unittest.TextTestRunner(sys.stdout, verbosity=2)
+    else:
+        runner = BasicTestRunner()
+
+    result = runner.run(suite)
+    if not result.wasSuccessful():
+        if len(result.errors) == 1 and not result.failures:
+            err = result.errors[0][1]
+        elif len(result.failures) == 1 and not result.errors:
+            err = result.failures[0][1]
+        else:
+            err = "multiple errors occurred"
+            if not verbose:
+                err += "; run in verbose mode for details"
+        raise TestFailed(err)
+
+
+def run_unittest(*classes):
+    """Run tests from unittest.TestCase-derived classes."""
+    valid_types = (unittest.TestSuite, unittest.TestCase)
+    suite = unittest.TestSuite()
+    for cls in classes:
+        if isinstance(cls, str):
+            if cls in sys.modules:
+                suite.addTest(unittest.findTestCases(sys.modules[cls]))
+            else:
+                raise ValueError("str arguments must be keys in sys.modules")
+        elif isinstance(cls, valid_types):
+            suite.addTest(cls)
+        else:
+            suite.addTest(unittest.makeSuite(cls))
+    _run_suite(suite)
 
 
 if __name__ == '__main__':
