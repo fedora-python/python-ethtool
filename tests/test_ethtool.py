@@ -61,7 +61,7 @@ class EthtoolTests(unittest.TestCase):
         """
         try:
             fn(*args)
-        except IOError, e:
+        except IOError as e:
             # Check the details of the exception:
             self.assertEquals(e.args, (errmsg, ))
         else:
