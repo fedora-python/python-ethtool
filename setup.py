@@ -55,6 +55,10 @@ libnl['libs'].append('nl-route-3')
 with open('README.rst') as f:
     long_description = f.read()
 
+with open('CHANGES.rst') as f:
+    long_description += '\n\n'
+    long_description += f.read()
+
 setup(name='ethtool',
       version=version,
       description='Python module to interface with ethtool',
