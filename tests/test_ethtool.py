@@ -43,14 +43,14 @@ class EthtoolTests(unittest.TestCase):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     def assertIsString(self, value):
-        self.assert_(isinstance(value, str))
+        self.assertTrue(isinstance(value, str))
 
     def assertIsStringOrNone(self, value):
         if value is not None:
-            self.assert_(isinstance(value, str))
+            self.assertTrue(isinstance(value, str))
 
     def assertIsInt(self, value):
-        self.assert_(isinstance(value, int))
+        self.assertTrue(isinstance(value, int))
 
     def assertRaisesIOError(self, fn, args, errmsg):
         """
@@ -65,7 +65,7 @@ class EthtoolTests(unittest.TestCase):
         except IOError as e:
             # Check the details of the exception:
             enum, emsg = e.args
-            self.assertEquals('[Errno {}] {}'.format(enum, emsg), errmsg)
+            self.assertEqual('[Errno {}] {}'.format(enum, emsg), errmsg)
         else:
             self.fail('IOError was not raised calling %s on %s' % (fn, args))
 
@@ -144,7 +144,7 @@ class EthtoolTests(unittest.TestCase):
             # TODO: self.assertIsString(ethtool.set_tso(devname))
 
     def _verify_etherinfo_object(self, ei):
-        self.assert_(isinstance(ei, ethtool.etherinfo))
+        self.assertTrue(isinstance(ei, ethtool.etherinfo))
         self.assertIsString(ei.device)
 
         try:
@@ -172,7 +172,7 @@ class EthtoolTests(unittest.TestCase):
 
         i6s = ei.get_ipv6_addresses()
         for i6 in i6s:
-            self.assert_(isinstance(i6, ethtool.NetlinkIPaddress))
+            self.assertTrue(isinstance(i6, ethtool.NetlinkIPaddress))
             self.assertIsString(i6.address)
             self.assertIsInt(i6.netmask)
             self.assertIsString(i6.scope)
@@ -204,12 +204,12 @@ class EthtoolTests(unittest.TestCase):
 
     def test_get_interface_info_invalid(self):
         eis = ethtool.get_interfaces_info(INVALID_DEVICE_NAME)
-        self.assertEquals(len(eis), 1)
+        self.assertEqual(len(eis), 1)
         ei = eis[0]
-        self.assertEquals(ei.device, INVALID_DEVICE_NAME)
-        self.assertEquals(ei.ipv4_netmask, 0)
-        self.assertEquals(ei.ipv4_address, None)
-        self.assertEquals(ei.ipv4_broadcast, None)
+        self.assertEqual(ei.device, INVALID_DEVICE_NAME)
+        self.assertEqual(ei.ipv4_netmask, 0)
+        self.assertEqual(ei.ipv4_address, None)
+        self.assertEqual(ei.ipv4_broadcast, None)
         self.assertRaisesIOError(getattr, (ei, 'mac_address'), '[Errno 19] No such device')
 
     def test_get_interface_info_active(self):
