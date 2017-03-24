@@ -10,7 +10,6 @@ addons:
     - libc6-dev
     - libnl-3-dev
     - libnl-route-3-dev
-    - valgrind
 cache:
   directories:
     - $HOME/.cache/pip
