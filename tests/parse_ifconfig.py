@@ -183,11 +183,11 @@ class Device:
         # count bits in "packed":
         result = 0
         for ch in packed:
-            ch = ord(ch)
+            ch = ord(ch) if isinstance(ch, str) else ch
             while ch:
                 if ch & 1:
                     result += 1
-                ch /= 2
+                ch //= 2
         return result
 
     def __repr__(self):
@@ -912,8 +912,8 @@ lo        Link encap:Local Loopback
         self.assertEqual(dev.txcompressed, 11)
 
     def test_parse_ip4addr(self):
-        self.assertEqual(parse_ip4addr('1.1.1.1'), '\x01\x01\x01\x01')
-        self.assertEqual(parse_ip4addr('127.0.0.1'), '\x7f\x00\x00\x01')
+        self.assertEqual(parse_ip4addr('1.1.1.1'), b'\x01\x01\x01\x01')
+        self.assertEqual(parse_ip4addr('127.0.0.1'), b'\x7f\x00\x00\x01')
 
     def test_local(self):
         # Actually invoke ifconfig locally, and parse whatever it emits:
