@@ -12,6 +12,20 @@ Python SIG.**
 Usage
 -----
 
+``ethtool`` may be used as a Python library::
+
+    >>> import ethtool
+    >>> ethtool.get_active_devices()
+    ['lo', 'enp0s31f6', 'wlp4s0', 'virbr0', 'docker0', 'virbr1', 'eth0', 'tun0']
+    >>> ethtool.get_ipaddr('lo')
+    '127.0.0.1'
+
+``python-ethtool`` also provides the ``pethtool`` and ``pifconfig`` utilities.  More example usage may be gathered from their sources,
+`pethtool.py <https://github.com/fedora-python/python-ethtool/blob/master/pethtool.py>`_
+and
+`pifconfig.py <https://github.com/fedora-python/python-ethtool/blob/master/pethtool.py>`_.
+
+
 ``pethtool`` mimics behavior of the ``ethtool`` utility, but does not
 support all options.
 
@@ -68,7 +82,7 @@ are welcome.
 License
 -------
 
-``python-ethtool`` is free software put under the
+``python-ethtool`` is free software distributed under the terms of the
 GNU General Public License v2.0, see
 `COPYING <https://github.com/fedora-python/python-ethtool/blob/master/COPYING>`_.
 
