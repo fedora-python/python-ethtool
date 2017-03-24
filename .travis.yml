@@ -1,0 +1,22 @@
+language: python
+python:
+- '2.7'
+- '3.5'
+- '3.6'
+dist: trusty
+addons:
+  apt:
+    packages:
+    - libc6-dev
+    - libnl-3-dev
+    - libnl-route-3-dev
+    - valgrind
+cache:
+  directories:
+    - $HOME/.cache/pip
+    - $HOME/virtualenv/python$TRAVIS_PYTHON_VERSION/lib/python$TRAVIS_PYTHON_VERSION/site-packages
+    - $HOME/virtualenv/python$TRAVIS_PYTHON_VERSION/bin
+notifications:
+  email: false
+install: pip install --upgrade tox tox-travis
+script: tox
