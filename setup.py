@@ -1,4 +1,5 @@
 #!/usr/bin/python2
+# -*- coding: utf-8 -*-
 
 from __future__ import print_function
 
@@ -51,13 +52,35 @@ def pkgconfig(pkg):
 libnl = pkgconfig('libnl-3.0')
 libnl['libs'].append('nl-route-3')
 
-# don't reformat this line, Makefile parses it
+with open('README.rst') as f:
+    long_description = f.read()
+
 setup(name='ethtool',
       version=version,
       description='Python module to interface with ethtool',
+      long_description=long_description,
+      
       author='Harald Hoyer, Arnaldo Carvalho de Melo, David Sommerseth',
       author_email='davids@redhat.com',
+      
+      maintainer='Lumír Balhar, Miro Hrončok, Charalampos Stratakis, Sanqui',
+      maintainer_email='python-maint@redhat.com',
+      
       url='https://github.com/fedora-python/python-ethtool',
+      license='GPL-2.0',
+      keywords='network networking ethernet tool ethtool',
+
+      classifiers=[
+          'Intended Audience :: Developers',
+          'Intended Audience :: System Administrators',
+          'Operating System :: POSIX :: Linux',
+          'License :: OSI Approved :: GNU General Public License v2 (GPLv2)',
+          'Programming Language :: Python',
+          'Programming Language :: Python :: 2',
+          'Programming Language :: Python :: 2.7',
+          'Topic :: Software Development :: Libraries',
+          'Topic :: System :: Networking',
+      ],
       ext_modules=[
         Extension(
             'ethtool',
