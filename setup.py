@@ -18,9 +18,16 @@ version = '0.12'
 class PkgConfigExtension(Extension):
     '''Extension with lazy properties taken from pkg-config'''
     def __init__(self, *args, **kwargs):
-        pkg = kwargs['pkg']
+        self._pkg = kwargs['pkg']
         del kwargs['pkg']
+        if 'extra_libraries' in kwargs:
+            self._extra_libraries = kwargs['extra_libraries']
+            del kwargs['extra_libraries']
+        else:
+            self._extra_libraries = []
+
         Extension.__init__(self, *args, **kwargs)
+
         try:
             # on Python 2 we need to delete those now
             del self.include_dirs
@@ -29,7 +36,6 @@ class PkgConfigExtension(Extension):
         except AttributeError:
             # on Python 3, that's not needed or possible
             pass
-        self._pkg = pkg
 
     @classmethod
     def _str2list(cls, pkgstr, onlystr):
@@ -61,7 +67,7 @@ class PkgConfigExtension(Extension):
         if res != 0:
             print('Failed to query pkg-config --libs-only-l %s' % self._pkg)
             sys.exit(1)
-        return self._str2list(libs, '-l') + ['nl-route-3']
+        return self._str2list(libs, '-l') + self._extra_libraries
 
     @include_dirs.setter
     def include_dirs(self, value):
@@ -121,6 +127,7 @@ setup(name='ethtool',
             extra_compile_args=['-fno-strict-aliasing'],
             define_macros = [('VERSION', '"%s"' % version)],
             pkg = 'libnl-3.0',
+            extra_libraries = ['nl-route-3'],
         )
       ]
 )
