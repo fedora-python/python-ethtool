@@ -10,6 +10,20 @@ Python SIG.**
 Allows querying and changing of ethernet card settings, such as speed,
 port, autonegotiation, and PCI locations.
 
+## Authors
+
+### Original authors
+
+* Harald Hoyer
+* Arnaldo Carvalho de Melo
+* David Sommerseth
+
+### Current maintainers
+
+* Lumír Balhar <lbalhar@redhat.com>
+* Miro Hrončok <mhroncok@redhat.com>
+* Charalampos Stratakis <cstratak@redhat.com>
+
 ## Contribution
 
 Feel free to help us with improving test coverage, porting to Python 3
