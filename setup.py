@@ -12,45 +12,89 @@ import sys
 
 version = '0.12'
 
-def pkgconfig(pkg):
-    def _str2list(pkgstr, onlystr):
-        res = []
-        for l in pkgstr.split(" "):
-            if l.find(onlystr) == 0:
-                res.append(l.replace(onlystr, "", 1))
-        return res
 
-    (res, cflags) = commands.getstatusoutput('pkg-config --cflags-only-other %s' % pkg)
-    if res != 0:
-        print('Failed to query pkg-config --cflags-only-other %s' % pkg)
-        sys.exit(1)
+class PkgConfigExtension(Extension):
+    '''Extension with lazy properties taken from pkg-config'''
+    def __init__(self, *args, **kwargs):
+        pkg = kwargs['pkg']
+        del kwargs['pkg']
+        Extension.__init__(self, *args, **kwargs)
+        try:
+            # on Python 2 we need to delete those now
+            del self.include_dirs
+            del self.library_dirs
+            del self.libraries
+        except AttributeError:
+            # on Python 3, that's not needed or possible
+            pass
+        self._pkg = pkg
+        self._pkgconfig_result = None
 
-    (res, includes) = commands.getstatusoutput('pkg-config --cflags-only-I %s' % pkg)
-    if res != 0:
-        print('Failed to query pkg-config --cflags-only-I %s' % pkg)
-        sys.exit(1)
+    @property
+    def pkgconfig(self):
+        if self._pkgconfig_result is None:
+            self._pkgconfig_result = self._pkgconfig(self._pkg)
+        return self._pkgconfig_result
 
-    (res, libs) = commands.getstatusoutput('pkg-config --libs-only-l %s' % pkg)
-    if res != 0:
-        print('Failed to query pkg-config --libs-only-l %s' % pkg)
-        sys.exit(1)
+    def _pkgconfig(self, pkg):
+        def _str2list(pkgstr, onlystr):
+            res = []
+            for l in pkgstr.split(" "):
+                if l.find(onlystr) == 0:
+                    res.append(l.replace(onlystr, "", 1))
+            return res
 
-    (res, libdirs) = commands.getstatusoutput('pkg-config --libs-only-L %s' % pkg)
-    if res != 0:
-        print('Failed to query pkg-config --libs-only-L %s' % pkg)
-        sys.exit(1)
+        (res, cflags) = commands.getstatusoutput('pkg-config --cflags-only-other %s' % pkg)
+        if res != 0:
+            print('Failed to query pkg-config --cflags-only-other %s' % pkg)
+            sys.exit(1)
 
+        (res, includes) = commands.getstatusoutput('pkg-config --cflags-only-I %s' % pkg)
+        if res != 0:
+            print('Failed to query pkg-config --cflags-only-I %s' % pkg)
+            sys.exit(1)
 
-    # Clean up the results and return what we've extracted from pkg-config
-    return {'cflags': cflags,
-            'include': _str2list(includes, '-I'),
-            'libs': _str2list(libs, '-l'),
-            'libdirs': _str2list(libdirs, '-L')
-            }
+        (res, libs) = commands.getstatusoutput('pkg-config --libs-only-l %s' % pkg)
+        if res != 0:
+            print('Failed to query pkg-config --libs-only-l %s' % pkg)
+            sys.exit(1)
 
+        (res, libdirs) = commands.getstatusoutput('pkg-config --libs-only-L %s' % pkg)
+        if res != 0:
+            print('Failed to query pkg-config --libs-only-L %s' % pkg)
+            sys.exit(1)
 
-libnl = pkgconfig('libnl-3.0')
-libnl['libs'].append('nl-route-3')
+        # Clean up the results and return what we've extracted from pkg-config
+        return {'cflags': cflags,
+                'include': _str2list(includes, '-I'),
+                'libs': _str2list(libs, '-l'),
+                'libdirs': _str2list(libdirs, '-L')
+                }
+
+    @property
+    def include_dirs(self):
+        return self.pkgconfig['include']
+
+    @property
+    def library_dirs(self):
+        return self.pkgconfig['libdirs']
+
+    @property
+    def libraries(self):
+        return self.pkgconfig['libs'] + ['nl-route-3']
+
+    @include_dirs.setter
+    def include_dirs(self, value):
+        pass
+
+    @library_dirs.setter
+    def library_dirs(self, value):
+        pass
+
+    @libraries.setter
+    def libraries(self, value):
+        pass
+
 
 with open('README.rst') as f:
     long_description = f.read()
@@ -86,7 +130,7 @@ setup(name='ethtool',
           'Topic :: System :: Networking',
       ],
       ext_modules=[
-        Extension(
+        PkgConfigExtension(
             'ethtool',
             sources = [
                 'python-ethtool/ethtool.c',
@@ -95,10 +139,8 @@ setup(name='ethtool',
                 'python-ethtool/netlink.c',
                 'python-ethtool/netlink-address.c'],
             extra_compile_args=['-fno-strict-aliasing'],
-            include_dirs = libnl['include'],
-            library_dirs = libnl['libdirs'],
-            libraries = libnl['libs'],
-            define_macros = [('VERSION', '"%s"' % version)]
-            )
-        ]
+            define_macros = [('VERSION', '"%s"' % version)],
+            pkg = 'libnl-3.0',
+        )
+      ]
 )
