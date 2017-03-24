@@ -71,7 +71,8 @@ class IfConfig:
         else:
             env = os.environ.copy()
             env.update(LANG='C.utf8')
-            p = Popen('ifconfig', stdout=PIPE, stderr=PIPE, env=env)
+            p = Popen('ifconfig', stdout=PIPE, stderr=PIPE,
+                      env=env, universal_newlines=True)
             self.stdout, self.stderr = p.communicate()
             if self.stderr != '':
                 raise ValueError('stderr from ifconfig was nonempty:\n%s' % self.stderr)
