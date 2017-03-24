@@ -18,6 +18,15 @@ version = '0.12'
 class PkgConfigExtension(Extension):
     '''Extension with lazy properties taken from pkg-config'''
     def __init__(self, *args, **kwargs):
+        '''Behaves like Extension's __init__ but you should not use
+        include_dirs, library_dirs and libraries arguments.
+
+        Extra arguments:
+          pkg : string
+            The name of the pkg-config package to use for querying
+          extra_libraris : [string]
+            This will be added to the libraries attribute. Optional.
+        '''
         self._pkg = kwargs['pkg']
         del kwargs['pkg']
         if 'extra_libraries' in kwargs:
