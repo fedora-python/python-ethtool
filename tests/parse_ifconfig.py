@@ -25,6 +25,7 @@
 #   net-tools-1.60/lib/interface.c
 # within ife_print_long()
 
+import os
 import re
 from subprocess import Popen, PIPE
 import unittest
@@ -68,7 +69,9 @@ class IfConfig:
             self.stdout = stdout
             self.stderr = ''
         else:
-            p = Popen('ifconfig', stdout=PIPE, stderr=PIPE)
+            env = os.environ.copy()
+            env.update(LANG='C.utf8')
+            p = Popen('ifconfig', stdout=PIPE, stderr=PIPE, env=env)
             self.stdout, self.stderr = p.communicate()
             if self.stderr != '':
                 raise ValueError('stderr from ifconfig was nonempty:\n%s' % self.stderr)
