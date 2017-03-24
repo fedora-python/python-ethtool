@@ -10,7 +10,6 @@ try:
     import commands
 except ImportError:
     import subprocess as commands
-run = commands.getstatusoutput
 
 version = '0.12'
 
@@ -54,28 +53,27 @@ class PkgConfigExtension(Extension):
                 res.append(l.replace(onlystr, "", 1))
         return res
 
+    @classmethod
+    def _run(cls, command_string):
+        res, output = commands.getstatusoutput(command_string)
+        if res != 0:
+            print('Failed to query %s' % command_string)
+            sys.exit(1)
+        return output
+
     @property
     def include_dirs(self):
-        res, includes = run('pkg-config --cflags-only-I %s' % self._pkg)
-        if res != 0:
-            print('Failed to query pkg-config --cflags-only-I %s' % self._pkg)
-            sys.exit(1)
+        includes = self._run('pkg-config --cflags-only-I %s' % self._pkg)
         return self._str2list(includes, '-I')
 
     @property
     def library_dirs(self):
-        res, libdirs = run('pkg-config --libs-only-L %s' % self._pkg)
-        if res != 0:
-            print('Failed to query pkg-config --libs-only-L %s' % self._pkg)
-            sys.exit(1)
+        libdirs = self._run('pkg-config --libs-only-L %s' % self._pkg)
         return self._str2list(libdirs, '-L')
 
     @property
     def libraries(self):
-        res, libs = run('pkg-config --libs-only-l %s' % self._pkg)
-        if res != 0:
-            print('Failed to query pkg-config --libs-only-l %s' % self._pkg)
-            sys.exit(1)
+        libs = self._run('pkg-config --libs-only-l %s' % self._pkg)
         return self._str2list(libs, '-l') + self._extra_libraries
 
     @include_dirs.setter
