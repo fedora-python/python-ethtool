@@ -51,7 +51,6 @@ def pkgconfig(pkg):
 libnl = pkgconfig('libnl-3.0')
 libnl['libs'].append('nl-route-3')
 
-# don't reformat this line, Makefile parses it
 setup(name='ethtool',
       version=version,
       description='Python module to interface with ethtool',
