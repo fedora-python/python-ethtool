@@ -59,9 +59,23 @@ Tests may be run by ``tox``.  However, they're currently failing, see
 Authors
 -------
 
-* Harald Hoyer
+* Andy Grover
+* Antoni S. Puimedon
 * Arnaldo Carvalho de Melo
+* Bohuslav Kabrda
+* Braňo Náter
+* Dave Malcolm
+* David S. Miller
 * David Sommerseth
+* Harald Hoyer
+* Charalampos Stratakis
+* Jeff Garzik
+* Lumir Balhar
+* Miro Hrončok
+* Miroslav Suchý
+* Ruben Kerkhof
+* Sanqui
+* Yaakov Selkowitz
 
 Current maintainers
 -------------------
