@@ -28,7 +28,9 @@
 #include <sys/types.h>
 #include <ifaddrs.h>
 #include <netlink/route/addr.h>
+#if !defined IFF_UP
 #include <net/if.h>
+#endif
 
 #include "etherinfo_struct.h"
 #include "etherinfo_obj.h"
