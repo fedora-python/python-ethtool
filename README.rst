@@ -62,4 +62,13 @@ Contributing
 
 Feel free to help us with improving test coverage, porting to Python 3
 or anything else.
-Issues and PRs `on GitHub <https://github.com/fedora-python/python-ethtool>`_ are welcome.
+Issues and PRs `on GitHub <https://github.com/fedora-python/python-ethtool>`_
+are welcome.
+
+License
+-------
+
+``python-ethtool`` is free software put under the
+GNU General Public License v2.0, see
+`COPYING <https://github.com/fedora-python/python-ethtool/blob/master/COPYING>`_.
+
