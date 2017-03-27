@@ -953,7 +953,10 @@ MODULE_INIT_FUNC(ethtool)
 	PyModule_AddIntConstant(m, "AF_INET6", AF_INET6);               /* IPv6 interface */
 	PyModule_AddStringConstant(m, "version", "python-ethtool v" VERSION);
 
-	return MOD_SUCCESS_VAL(m);
+	Py_INCREF(&PyEtherInfo_Type);
+	PyModule_AddObject(m, "etherinfo", (PyObject *)&PyEtherInfo_Type);
+
+	return m;
 }
 
 
