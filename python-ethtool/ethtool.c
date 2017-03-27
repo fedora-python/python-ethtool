@@ -526,7 +526,7 @@ static int send_command(int cmd, const char *devname, void *value)
 	eval->cmd = cmd;
 
 	/* Open control socket. */
-	fd = socket(AF_INET, SOCK_DGRAM, 0), err;
+	fd = socket(AF_INET, SOCK_DGRAM, 0);
 	if (fd < 0) {
 		PyErr_SetFromErrno(PyExc_OSError);
 		return -1;
