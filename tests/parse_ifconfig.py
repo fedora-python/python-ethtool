@@ -55,9 +55,11 @@ group_ip4addr = ('(' + dec + dot +
                  dec + dot +
                  dec + ')')
 
+
 def parse_ip4addr(addr):
     import socket
     return (socket.inet_aton(addr))
+
 
 class IfConfig:
     """

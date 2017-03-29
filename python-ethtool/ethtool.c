@@ -321,9 +321,8 @@ static PyObject *get_flags (PyObject *self __unused, PyObject *args)
 	close(fd);
 
 	return Py_BuildValue("h", ifr.ifr_flags);
-
-
 }
+
 static PyObject *get_netmask (PyObject *self __unused, PyObject *args)
 {
 	struct ifreq ifr;

@@ -35,6 +35,7 @@ ifconfig = IfConfig()
 for dev in ifconfig.devices:
     print(dev)
 
+
 class EthtoolTests(unittest.TestCase):
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -191,7 +192,7 @@ class EthtoolTests(unittest.TestCase):
 
         get_fns = ('get_broadcast', 'get_businfo', 'get_coalesce', 'get_flags',
                    'get_gso', 'get_hwaddr', 'get_ipaddr', 'get_module',
-                   'get_netmask', 'get_ringparam', 'get_sg', 'get_tso', 
+                   'get_netmask', 'get_ringparam', 'get_sg', 'get_tso',
                    'get_ufo')
         for fnname in get_fns:
             self.assertRaisesNoSuchDevice(getattr(ethtool, fnname),
@@ -231,7 +232,7 @@ class EthtoolTests(unittest.TestCase):
     def test_get_active_devices(self):
         for devname in ethtool.get_active_devices():
             self._functions_accepting_devnames(devname)
-                       
+
     def test_etherinfo_objects(self):
         devnames = ethtool.get_devices()
         eis = ethtool.get_interfaces_info(devnames)
