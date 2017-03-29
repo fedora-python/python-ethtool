@@ -24,6 +24,7 @@
  */
 
 #include <Python.h>
+#include "include/py3c/compat.h"
 #include <bytesobject.h>
 #include "structmember.h"
 
