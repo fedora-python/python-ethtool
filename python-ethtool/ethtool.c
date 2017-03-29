@@ -124,7 +124,7 @@ static PyObject *get_hwaddress(PyObject *self __unused, PyObject *args)
 	const char *devname;
 	char hwaddr[20];
 
-	if (!PyArg_ParseTuple(args, "s*", &devname))
+	if (!PyArg_ParseTuple(args, "s", &devname))
 		return NULL;
 
 	/* Setup our request structure. */
@@ -166,7 +166,7 @@ static PyObject *get_ipaddress(PyObject *self __unused, PyObject *args)
 	const char *devname;
 	char ipaddr[20];
 
-	if (!PyArg_ParseTuple(args, "s*", &devname))
+	if (!PyArg_ParseTuple(args, "s", &devname))
 		return NULL;
 
 	/* Setup our request structure. */
@@ -298,7 +298,7 @@ static PyObject *get_flags (PyObject *self __unused, PyObject *args)
 	const char *devname;
 	int fd, err;
 
-	if (!PyArg_ParseTuple(args, "s*", &devname))
+	if (!PyArg_ParseTuple(args, "s", &devname))
 		return NULL;
 
 	/* Setup our request structure. */
@@ -331,7 +331,7 @@ static PyObject *get_netmask (PyObject *self __unused, PyObject *args)
 	const char *devname;
 	char netmask[20];
 
-	if (!PyArg_ParseTuple(args, "s*", &devname))
+	if (!PyArg_ParseTuple(args, "s", &devname))
 		return NULL;
 
 	/* Setup our request structure. */
@@ -371,7 +371,7 @@ static PyObject *get_broadcast(PyObject *self __unused, PyObject *args)
 	const char *devname;
 	char broadcast[20];
 
-	if (!PyArg_ParseTuple(args, "s*", &devname))
+	if (!PyArg_ParseTuple(args, "s", &devname))
 		return NULL;
 
 	/* Setup our request structure. */
@@ -412,7 +412,7 @@ static PyObject *get_module(PyObject *self __unused, PyObject *args)
 	char buf[2048];
 	const char *devname;
 
-	if (!PyArg_ParseTuple(args, "s*", &devname))
+	if (!PyArg_ParseTuple(args, "s", &devname))
 		return NULL;
 
 	/* Setup our control structures. */
@@ -482,7 +482,7 @@ static PyObject *get_businfo(PyObject *self __unused, PyObject *args)
 	char buf[1024];
 	const char *devname;
 
-	if (!PyArg_ParseTuple(args, "s*", &devname))
+	if (!PyArg_ParseTuple(args, "s", &devname))
 		return NULL;
 
 	/* Setup our control structures. */
@@ -548,7 +548,7 @@ static int get_dev_value(int cmd, PyObject *args, void *value)
 	const char *devname;
 	int err = -1;
 
-	if (PyArg_ParseTuple(args, "s*", &devname))
+	if (PyArg_ParseTuple(args, "s", &devname))
 		err = send_command(cmd, devname, value);
 
 	return err;
@@ -570,7 +570,7 @@ static int dev_set_int_value(int cmd, PyObject *args)
 	struct ethtool_value eval;
 	const char *devname;
 
-	if (!PyArg_ParseTuple(args, "s*i", &devname, &eval.data))
+	if (!PyArg_ParseTuple(args, "si", &devname, &eval.data))
 		return -1;
 
 	return send_command(cmd, devname, &eval);
@@ -755,7 +755,7 @@ static PyObject *set_coalesce(PyObject *self __unused, PyObject *args)
 	const char *devname;
 	PyObject *dict;
 
-	if (!PyArg_ParseTuple(args, "s*O", &devname, &dict))
+	if (!PyArg_ParseTuple(args, "sO", &devname, &dict))
 		return NULL;
 
 	if (struct_desc_from_dict(ethtool_coalesce_desc, &coal, dict) != 0)
@@ -795,7 +795,7 @@ static PyObject *set_ringparam(PyObject *self __unused, PyObject *args)
 	const char *devname;
 	PyObject *dict;
 
-	if (!PyArg_ParseTuple(args, "s*O", &devname, &dict))
+	if (!PyArg_ParseTuple(args, "sO", &devname, &dict))
 		return NULL;
 
 	if (struct_desc_from_dict(ethtool_ringparam_desc, &ring, dict) != 0)
