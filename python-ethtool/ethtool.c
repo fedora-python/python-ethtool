@@ -955,6 +955,9 @@ MODULE_INIT_FUNC(ethtool)
 	Py_INCREF(&PyEtherInfo_Type);
 	PyModule_AddObject(m, "etherinfo", (PyObject *)&PyEtherInfo_Type);
 
+	Py_INCREF(&ethtool_netlink_ip_address_Type);
+	PyModule_AddObject(m, "NetlinkIPaddress", (PyObject *)&ethtool_netlink_ip_address_Type);
+
 	return m;
 }
 

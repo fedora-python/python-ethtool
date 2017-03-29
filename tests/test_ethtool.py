@@ -174,7 +174,7 @@ class EthtoolTests(unittest.TestCase):
 
         i6s = ei.get_ipv6_addresses()
         for i6 in i6s:
-            self.assert_(isinstance(i6, ethtool.etherinfo_ipv6addr))
+            self.assert_(isinstance(i6, ethtool.NetlinkIPaddress))
             self.assertIsString(i6.address)
             self.assertIsInt(i6.netmask)
             self.assertIsString(i6.scope)
