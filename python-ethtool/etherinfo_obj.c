@@ -248,9 +248,9 @@ static PyObject *get_ipv4_mask(PyObject *obj, void *info)
 	addrlist = get_etherinfo_address(self, NLQRY_ADDR4);
 	py_addr = get_last_ipv4_address(addrlist);
 	if (py_addr) {
-		return PyLong_FromLong(py_addr->prefixlen);
+		return PyInt_FromLong(py_addr->prefixlen);
 	}
-	return PyLong_FromLong(0);
+	return PyInt_FromLong(0);
 }
 
 static PyObject *get_ipv4_bcast(PyObject *obj, void *info)
