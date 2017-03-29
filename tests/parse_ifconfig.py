@@ -118,6 +118,7 @@ class IfConfig:
                 return dev
         raise ValueError('device not found: %r' % devname)
 
+
 class Device:
     """
     Wrapper around a device entry within the output of "ifconfig"
@@ -529,9 +530,10 @@ class Device:
 
         raise ValueError('parser could not handle line: %r' % line)
 
-#ifconfig = IfConfig()
-#for dev in ifconfig.devices:
+# ifconfig = IfConfig()
+# for dev in ifconfig.devices:
 #    print(dev)
+
 
 class ParserTests(unittest.TestCase):
     def test_full(self):
