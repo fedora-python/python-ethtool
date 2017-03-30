@@ -21,7 +21,6 @@
 
 import sys
 import unittest
-from test.test_support import run_unittest # requires python-test subpackage on Fedora/RHEL
 
 import ethtool
 
@@ -237,12 +236,4 @@ class EthtoolTests(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    try:
-        # if count provided do a soak test, to detect leaking resources
-        count = int(sys.argv[1])
-        for i in range(count):
-            run_unittest(EthtoolTests)
-            if i % (count / 10) == 0:
-                sys.stderr.write("%s %%\n" % (i * 100 / count))
-    except:
-        run_unittest(EthtoolTests)
+    unittest.main()
