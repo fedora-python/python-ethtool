@@ -15,6 +15,7 @@
 
 /* Python object corresponding to a (struct rtnl_addr) */
 #include <Python.h>
+#include "include/py3c/compat.h"
 #include <bytesobject.h>
 #include "structmember.h"
 
@@ -55,7 +56,7 @@ PyNetlinkIPaddress_from_rtnl_addr(struct rtnl_addr *addr)
 		PyErr_SetFromErrno(PyExc_RuntimeError);
 		goto error;
 	}
-	py_obj->local = PyBytes_FromString(buf);
+	py_obj->local = PyStr_FromString(buf);
 	if (!py_obj->local) {
 		goto error;
 	}
@@ -85,7 +86,7 @@ PyNetlinkIPaddress_from_rtnl_addr(struct rtnl_addr *addr)
 			PyErr_SetFromErrno(PyExc_RuntimeError);
 			goto error;
 		}
-		py_obj->ipv4_broadcast = PyBytes_FromString(buf);
+		py_obj->ipv4_broadcast = PyStr_FromString(buf);
 		if (!py_obj->ipv4_broadcast) {
 			goto error;
 		}
@@ -94,7 +95,7 @@ PyNetlinkIPaddress_from_rtnl_addr(struct rtnl_addr *addr)
 	/* Set IP address scope: */
 	memset(&buf, 0, sizeof(buf));
 	rtnl_scope2str(rtnl_addr_get_scope(addr), buf, sizeof(buf));
-	py_obj->scope = PyBytes_FromString(buf);
+	py_obj->scope = PyStr_FromString(buf);
 
 	return (PyObject*)py_obj;
 

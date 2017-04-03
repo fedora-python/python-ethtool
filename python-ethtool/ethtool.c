@@ -223,16 +223,11 @@ static PyObject *get_interfaces_info(PyObject *self __unused, PyObject *args) {
 
 	/* Parse input arguments if we got them */
 	if( inargs != NULL ) {
-		if( PyBytes_Check(inargs) ) { /* Input argument is just a string */
+		if( PyStr_Check(inargs) ) { /* Input argument is just a string */
 			fetch_devs_len = 1;
 			fetch_devs = calloc(1, sizeof(char *));
-			fetch_devs[0] = PyBytes_AsString(inargs);
-#if PY_MAJOR_VERSION >= 3
-		} else if( PyUnicode_Check(inargs) ) { /* Input argument is just a ustring */
-			fetch_devs_len = 1;
-			fetch_devs = calloc(1, sizeof(char *));
-			fetch_devs[0] = PyUnicode_AsUTF8(inargs);
-#endif
+			fetch_devs[0] = PyStr_AsString(inargs);
+
 		} else if( PyTuple_Check(inargs) ) { /* Input argument is a tuple list with devices */
 			int j = 0;
 
@@ -240,8 +235,8 @@ static PyObject *get_interfaces_info(PyObject *self __unused, PyObject *args) {
 			fetch_devs = calloc(fetch_devs_len+1, sizeof(char *));
 			for( i = 0; i < fetch_devs_len; i++ ) {
 				PyObject *elmt = PyTuple_GetItem(inargs, i);
-				if( elmt && PyBytes_Check(elmt) ) {
-					fetch_devs[j++] = PyBytes_AsString(elmt);
+				if( elmt && PyStr_Check(elmt) ) {
+					fetch_devs[j++] = PyStr_AsString(elmt);
 				}
 			}
 			fetch_devs_len = j;
@@ -252,8 +247,8 @@ static PyObject *get_interfaces_info(PyObject *self __unused, PyObject *args) {
 			fetch_devs = calloc(fetch_devs_len+1, sizeof(char *));
 			for( i = 0; i < fetch_devs_len; i++ ) {
 				PyObject *elmt = PyList_GetItem(inargs, i);
-				if( elmt && PyBytes_Check(elmt) ) {
-					fetch_devs[j++] = PyBytes_AsString(elmt);
+				if( elmt && PyStr_Check(elmt) ) {
+					fetch_devs[j++] = PyStr_AsString(elmt);
 				}
 			}
 			fetch_devs_len = j;

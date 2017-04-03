@@ -67,7 +67,7 @@ static void callback_nl_link(struct nl_object *obj, void *arg)
         if( ethi->hwaddress ) {
                 Py_XDECREF(ethi->hwaddress);
         }
-        ethi->hwaddress = PyBytes_FromFormat("%s", hwaddr);
+        ethi->hwaddress = PyStr_FromFormat("%s", hwaddr);
 }
 
 
