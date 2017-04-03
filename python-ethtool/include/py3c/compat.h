@@ -95,19 +95,16 @@ SOFTWARE.
 #define PyStr_InternFromString PyString_InternFromString
 #define PyStr_Decode PyString_Decode
 
-//
-// Suppress warning about unused function
-//
-// static PyObject *PyStr_Concat(PyObject *left, PyObject *right) {
-//     PyObject *str = left;
-//     Py_INCREF(left);  // reference to old left will be stolen
-//     PyString_Concat(&str, right);
-//     if (str) {
-//         return str;
-//     } else {
-//         return NULL;
-//     }
-// }
+static PyObject *PyStr_Concat(PyObject *left, PyObject *right) {
+    PyObject *str = left;
+    Py_INCREF(left);  // reference to old left will be stolen
+    PyString_Concat(&str, right);
+    if (str) {
+        return str;
+    } else {
+        return NULL;
+    }
+}
 
 #define PyStr_AsUTF8String(str) (Py_INCREF(str), (str))
 #define PyStr_AsUTF8 PyString_AsString
