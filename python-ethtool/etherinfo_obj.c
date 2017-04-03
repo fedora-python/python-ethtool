@@ -271,7 +271,7 @@ static PyObject *get_ipv4_bcast(PyObject *obj, void *info)
 	if (PyErr_Occurred()) {
 		return NULL;
 	} else {
-		Py_RETURN_NONE;
+		return PyStr_FromString("0.0.0.0");
 	}
 }
 
