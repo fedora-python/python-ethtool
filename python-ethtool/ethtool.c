@@ -266,18 +266,19 @@ static PyObject *get_interfaces_info(PyObject *self __unused, PyObject *args) {
 
 	devlist = PyList_New(0);
 	for( i = 0; i < fetch_devs_len; i++ ) {
-                PyEtherInfo *dev = NULL;
+        PyEtherInfo *dev = NULL;
 
 		/* Store the device name and a reference to the NETLINK connection for
 		 * objects to use when quering for device info
 		 */
 
-                dev = PyObject_New(PyEtherInfo, &PyEtherInfo_Type);
-                if( !dev ) {
+        dev = PyObject_New(PyEtherInfo, &PyEtherInfo_Type);
+        if( !dev ) {
 			PyErr_SetFromErrno(PyExc_OSError);
 			free(fetch_devs);
 			return NULL;
-                }
+        }
+
 		dev->device = PyStr_FromString(fetch_devs[i]);
 		dev->hwaddress = NULL;
 		dev->index = -1;

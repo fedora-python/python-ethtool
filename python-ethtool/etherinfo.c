@@ -127,18 +127,16 @@ static int _set_device_index(PyEtherInfo *self)
 	 */
 	if( self->index < 0 ) {
 		if( (errno = rtnl_link_alloc_cache(get_nlc(), AF_UNSPEC, &link_cache)) < 0) {
-                        PyErr_SetString(PyExc_OSError, nl_geterror(errno));
-                        return 0;
-                }
-
-                link = rtnl_link_get_by_name(link_cache, PyBytes_AsString(self->device));
-                if( !link ) {
+            PyErr_SetString(PyExc_OSError, nl_geterror(errno));
+            return 0;
+        }
+        link = rtnl_link_get_by_name(link_cache, PyStr_AsString(self->device));
+        if( !link ) {
 			errno = ENODEV;
 			PyErr_SetFromErrno(PyExc_IOError);
 			nl_cache_free(link_cache);
-                        return 0;
-                }
-
+            return 0;
+        }
 		self->index = rtnl_link_get_ifindex(link);
 		if( self->index <= 0 ) {
 			errno = ENODEV;
@@ -147,6 +145,7 @@ static int _set_device_index(PyEtherInfo *self)
 			nl_cache_free(link_cache);
 			return 0;
 		}
+
 		rtnl_link_put(link);
 		nl_cache_free(link_cache);
 	}
@@ -244,20 +243,21 @@ PyObject * get_etherinfo_address(PyEtherInfo *self, nlQuery query)
         }
 
 	/* Query the for requested info via NETLINK */
+    /* Extract IP address information */
+    if( (err = rtnl_addr_alloc_cache(get_nlc(), &addr_cache)) < 0) {
+            PyErr_SetString(PyExc_OSError, nl_geterror(err));
+            nl_cache_free(addr_cache);
+            return NULL;
+    }
 
-        /* Extract IP address information */
-        if( (err = rtnl_addr_alloc_cache(get_nlc(), &addr_cache)) < 0) {
-                PyErr_SetString(PyExc_OSError, nl_geterror(err));
-                nl_cache_free(addr_cache);
-                return NULL;
-        }
-        addr = rtnl_addr_alloc();
-        if( !addr ) {
-                errno = ENOMEM;
-                PyErr_SetFromErrno(PyExc_OSError);
-                return NULL;
-        }
-        rtnl_addr_set_ifindex(addr, self->index);
+    addr = rtnl_addr_alloc();
+
+    if( !addr ) {
+            errno = ENOMEM;
+            PyErr_SetFromErrno(PyExc_OSError);
+            return NULL;
+    }
+    rtnl_addr_set_ifindex(addr, self->index);
 
 	switch( query ) {
         case NLQRY_ADDR4:
