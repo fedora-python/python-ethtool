@@ -16,6 +16,7 @@
  */
 
 #include <Python.h>
+#include "include/py3c/compat.h"
 #include <bytesobject.h>
 #include <bits/sockaddr.h>
 #include <stdio.h>
@@ -180,7 +181,7 @@ int get_etherinfo_link(PyEtherInfo *self)
 	if( !open_netlink(self) ) {
 		PyErr_Format(PyExc_RuntimeError,
 			     "Could not open a NETLINK connection for %s",
-			     PyBytes_AsString(self->device));
+			     PyStr_AsString(self->device));
 		return 0;
 	}
 
@@ -234,7 +235,7 @@ PyObject * get_etherinfo_address(PyEtherInfo *self, nlQuery query)
 	if( !open_netlink(self) ) {
 		PyErr_Format(PyExc_RuntimeError,
 			     "Could not open a NETLINK connection for %s",
-			     PyBytes_AsString(self->device));
+			     PyStr_AsString(self->device));
 		return NULL;
 	}
 
