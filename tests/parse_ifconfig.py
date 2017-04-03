@@ -182,6 +182,8 @@ class Device:
     def get_netmask_bits(self):
         # Convert a dotted netmask string to a bitcount int
         # e.g. from "255.255.252.0" to 22:
+        if not self.netmask:
+            return 0
         packed = parse_ip4addr(self.netmask)
         # count bits in "packed":
         result = 0
