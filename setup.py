@@ -4,53 +4,90 @@
 from __future__ import print_function
 
 from distutils.core import setup, Extension
+import sys
+
 try:
     import commands
 except ImportError:
     import subprocess as commands
-import sys
 
 version = '0.12'
 
-def pkgconfig(pkg):
-    def _str2list(pkgstr, onlystr):
+
+class PkgConfigExtension(Extension):
+    '''Extension with lazy properties taken from pkg-config'''
+    def __init__(self, *args, **kwargs):
+        '''Behaves like Extension's __init__ but you should not use
+        include_dirs, library_dirs and libraries arguments.
+
+        Extra arguments:
+          pkg : string
+            The name of the pkg-config package to use for querying
+          extra_libraris : [string]
+            This will be added to the libraries attribute. Optional.
+        '''
+        self._pkg = kwargs['pkg']
+        del kwargs['pkg']
+        if 'extra_libraries' in kwargs:
+            self._extra_libraries = kwargs['extra_libraries']
+            del kwargs['extra_libraries']
+        else:
+            self._extra_libraries = []
+
+        Extension.__init__(self, *args, **kwargs)
+
+        try:
+            # on Python 2 we need to delete those now
+            del self.include_dirs
+            del self.library_dirs
+            del self.libraries
+        except AttributeError:
+            # on Python 3, that's not needed or possible
+            pass
+
+    @classmethod
+    def _str2list(cls, pkgstr, onlystr):
         res = []
         for l in pkgstr.split(" "):
             if l.find(onlystr) == 0:
                 res.append(l.replace(onlystr, "", 1))
         return res
 
-    (res, cflags) = commands.getstatusoutput('pkg-config --cflags-only-other %s' % pkg)
-    if res != 0:
-        print('Failed to query pkg-config --cflags-only-other %s' % pkg)
-        sys.exit(1)
+    @classmethod
+    def _run(cls, command_string):
+        res, output = commands.getstatusoutput(command_string)
+        if res != 0:
+            print('Failed to query %s' % command_string)
+            sys.exit(1)
+        return output
 
-    (res, includes) = commands.getstatusoutput('pkg-config --cflags-only-I %s' % pkg)
-    if res != 0:
-        print('Failed to query pkg-config --cflags-only-I %s' % pkg)
-        sys.exit(1)
+    @property
+    def include_dirs(self):
+        includes = self._run('pkg-config --cflags-only-I %s' % self._pkg)
+        return self._str2list(includes, '-I')
 
-    (res, libs) = commands.getstatusoutput('pkg-config --libs-only-l %s' % pkg)
-    if res != 0:
-        print('Failed to query pkg-config --libs-only-l %s' % pkg)
-        sys.exit(1)
+    @property
+    def library_dirs(self):
+        libdirs = self._run('pkg-config --libs-only-L %s' % self._pkg)
+        return self._str2list(libdirs, '-L')
 
-    (res, libdirs) = commands.getstatusoutput('pkg-config --libs-only-L %s' % pkg)
-    if res != 0:
-        print('Failed to query pkg-config --libs-only-L %s' % pkg)
-        sys.exit(1)
+    @property
+    def libraries(self):
+        libs = self._run('pkg-config --libs-only-l %s' % self._pkg)
+        return self._str2list(libs, '-l') + self._extra_libraries
 
+    @include_dirs.setter
+    def include_dirs(self, value):
+        pass
 
-    # Clean up the results and return what we've extracted from pkg-config
-    return {'cflags': cflags,
-            'include': _str2list(includes, '-I'),
-            'libs': _str2list(libs, '-l'),
-            'libdirs': _str2list(libdirs, '-L')
-            }
+    @library_dirs.setter
+    def library_dirs(self, value):
+        pass
 
+    @libraries.setter
+    def libraries(self, value):
+        pass
 
-libnl = pkgconfig('libnl-3.0')
-libnl['libs'].append('nl-route-3')
 
 with open('README.rst') as f:
     long_description = f.read()
@@ -86,7 +123,7 @@ setup(name='ethtool',
           'Topic :: System :: Networking',
       ],
       ext_modules=[
-        Extension(
+        PkgConfigExtension(
             'ethtool',
             sources = [
                 'python-ethtool/ethtool.c',
@@ -95,10 +132,9 @@ setup(name='ethtool',
                 'python-ethtool/netlink.c',
                 'python-ethtool/netlink-address.c'],
             extra_compile_args=['-fno-strict-aliasing'],
-            include_dirs = libnl['include'],
-            library_dirs = libnl['libdirs'],
-            libraries = libnl['libs'],
-            define_macros = [('VERSION', '"%s"' % version)]
-            )
-        ]
+            define_macros = [('VERSION', '"%s"' % version)],
+            pkg = 'libnl-3.0',
+            extra_libraries = ['nl-route-3'],
+        )
+      ]
 )
