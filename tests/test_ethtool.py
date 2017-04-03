@@ -206,9 +206,9 @@ class EthtoolTests(unittest.TestCase):
         self.assertEqual(len(eis), 1)
         ei = eis[0]
         self.assertEqual(ei.device, INVALID_DEVICE_NAME)
-        self.assertEqual(ei.ipv4_netmask, 0)
-        self.assertEqual(ei.ipv4_address, None)
-        self.assertEqual(ei.ipv4_broadcast, None)
+        self.assertRaisesIOError(getattr, (ei, 'ipv4_address'), '[Errno 19] No such device')
+        self.assertRaisesIOError(getattr, (ei, 'ipv4_netmask'), '[Errno 19] No such device')
+        self.assertRaisesIOError(getattr, (ei, 'ipv4_broadcast'), '[Errno 19] No such device')
         self.assertRaisesIOError(getattr, (ei, 'mac_address'), '[Errno 19] No such device')
 
     def test_get_interface_info_active(self):

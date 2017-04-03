@@ -236,7 +236,12 @@ static PyObject *get_ipv4_addr(PyObject *obj, void *info)
 			return py_addr->local;
 		}
 	}
-	Py_RETURN_NONE;
+
+	if (PyErr_Occurred()) {
+		return NULL;
+	} else {
+		Py_RETURN_NONE;
+	}
 }
 
 static PyObject *get_ipv4_mask(PyObject *obj, void *info)
@@ -250,7 +255,12 @@ static PyObject *get_ipv4_mask(PyObject *obj, void *info)
 	if (py_addr) {
 		return PyInt_FromLong(py_addr->prefixlen);
 	}
-	return PyInt_FromLong(0);
+
+	if (PyErr_Occurred()) {
+		return NULL;
+	} else {
+		return PyInt_FromLong(0);
+	}
 }
 
 static PyObject *get_ipv4_bcast(PyObject *obj, void *info)
@@ -267,7 +277,12 @@ static PyObject *get_ipv4_bcast(PyObject *obj, void *info)
 			return py_addr->ipv4_broadcast;
 		}
 	}
-	Py_RETURN_NONE;
+
+	if (PyErr_Occurred()) {
+		return NULL;
+	} else {
+		Py_RETURN_NONE;
+	}
 }
 
 

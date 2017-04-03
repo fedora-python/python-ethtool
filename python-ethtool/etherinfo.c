@@ -238,9 +238,9 @@ PyObject * get_etherinfo_address(PyEtherInfo *self, nlQuery query)
 		return NULL;
 	}
 
-        if( _set_device_index(self) != 1) {
-                return NULL;
-        }
+    if(!_set_device_index(self)) {
+        return NULL;
+    }
 
 	/* Query the for requested info via NETLINK */
     /* Extract IP address information */
