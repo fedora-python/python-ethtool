@@ -199,7 +199,8 @@ class Device:
         return result
 
     def __repr__(self):
-        return ('Device(name=%(name)r, flagsint=%(flagsint)r, flagsstr=%(flagsstr)r, mtu=%(mtu)r)'
+        return ('Device(name=%(name)r, flagsint=%(flagsint)r, '
+                'flagsstr=%(flagsstr)r, mtu=%(mtu)r)'
                 % (self.__dict__))
 
     def _debug(self, groups):
@@ -370,7 +371,8 @@ class Device:
                 self.baseaddr = int(m.group(1), 16)
                 line = m.group(2)
 
-            m = re.match('memory ' + group_o_hex + '-' + group_hex + ws + '(.*)',
+            m = re.match('memory ' + group_o_hex + '-' +
+                         group_hex + ws + '(.*)',
                          line)
             if m:
                 self.memstart = int(m.group(1), 16)
@@ -665,34 +667,34 @@ vnet1: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
         virbr0 = ifconfig.devices[2]
         self.assertEqual(virbr0.name, 'virbr0')
         # virbr0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
-        #         inet 1.12.123.124  netmask 255.255.252.0  broadcast 1.12.123.255
-        #         ether ff:00:11:22:33:42  txqueuelen 0  (Ethernet)
-        #         RX packets 88730  bytes 5140566 (4.9 MiB)
-        #         RX errors 0  dropped 0  overruns 0  frame 0
-        #         TX packets 177583  bytes 244647206 (233.3 MiB)
-        #         TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+        #  inet 1.12.123.124  netmask 255.255.252.0  broadcast 1.12.123.255
+        #  ether ff:00:11:22:33:42  txqueuelen 0  (Ethernet)
+        #  RX packets 88730  bytes 5140566 (4.9 MiB)
+        #  RX errors 0  dropped 0  overruns 0  frame 0
+        #  TX packets 177583  bytes 244647206 (233.3 MiB)
+        #  TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
 
         # Verify vnet0:
         vnet0 = ifconfig.devices[3]
         self.assertEqual(vnet0.name, 'vnet0')
         # vnet0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
-        #         inet6 ffff::ffff:ffff:ffff:ffff  prefixlen 64  scopeid 0x20<link>
-        #         ether ff:00:11:22:33:42  txqueuelen 0  (Ethernet)
-        #         RX packets 538  bytes 172743 (168.6 KiB)
-        #         RX errors 0  dropped 0  overruns 0  frame 0
-        #         TX packets 26593  bytes 1379054 (1.3 MiB)
-        #         TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+        #  inet6 ffff::ffff:ffff:ffff:ffff  prefixlen 64  scopeid 0x20<link>
+        #  ether ff:00:11:22:33:42  txqueuelen 0  (Ethernet)
+        #  RX packets 538  bytes 172743 (168.6 KiB)
+        #  RX errors 0  dropped 0  overruns 0  frame 0
+        #  TX packets 26593  bytes 1379054 (1.3 MiB)
+        #  TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
 
         # Verify vnet1:
         vnet1 = ifconfig.devices[4]
         self.assertEqual(vnet1.name, 'vnet1')
         # vnet1: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
-        #         inet6 ffff::ffff:ffff:ffff:ffff  prefixlen 64  scopeid 0x20<link>
-        #         ether ff:00:11:22:33:42  txqueuelen 0  (Ethernet)
-        #         RX packets 71567  bytes 5033151 (4.7 MiB)
-        #         RX errors 0  dropped 0  overruns 0  frame 0
-        #         TX packets 216553  bytes 200424748 (191.1 MiB)
-        #         TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+        #  inet6 ffff::ffff:ffff:ffff:ffff  prefixlen 64  scopeid 0x20<link>
+        #  ether ff:00:11:22:33:42  txqueuelen 0  (Ethernet)
+        #  RX packets 71567  bytes 5033151 (4.7 MiB)
+        #  RX errors 0  dropped 0  overruns 0  frame 0
+        #  TX packets 216553  bytes 200424748 (191.1 MiB)
+        #  TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
 
         fullOld = '''
 eth0      Link encap:Ethernet  HWaddr 00:11:22:33:44:55
@@ -729,11 +731,11 @@ lo        Link encap:Local Loopback
         self.assertEqual(eth0.inet, '1.12.123.124')
         self.assertEqual(eth0.netmask, '255.255.252.0')
         self.assertEqual(eth0.broadcast, '1.12.123.255')
-        #           inet6 addr: dddd::dddd:dddd:dddd:dddd:dddd:dddd/64 Scope:Site
+        #       inet6 addr: dddd::dddd:dddd:dddd:dddd:dddd:dddd/64 Scope:Site
         # self.assertEqual(eth0.inet6, 'dddd::dddd:dddd:dddd:dddd:dddd:dddd')
         # self.assertEqual(eth0.prefixlen, 64)
         # self.assertEqual(eth0.scopeid, 'Site')
-        #           inet6 addr: eeee::eeee:eeee:eeee:eeee:eeee:eeee/64 Scope:Global
+        #       inet6 addr: eeee::eeee:eeee:eeee:eeee:eeee:eeee/64 Scope:Global
         # self.assertEqual(eth0.inet6, 'eeee::eeee:eeee:eeee:eeee:eeee:eeee')
         # self.assertEqual(eth0.prefixlen, 64)
         # self.assertEqual(eth0.scopeid, 'Global')
@@ -809,7 +811,8 @@ lo        Link encap:Local Loopback
         self.assertEqual(dev.mtu, 1500)
 
         dev = self.parse_single_device(
-            'foo: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500  outfill 32  keepalive 96\n')
+            'foo: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500  '
+            'outfill 32  keepalive 96\n')
         self.assertEqual(dev.mtu, 1500)
         self.assertEqual(dev.outfill, 32)
         self.assertEqual(dev.keepalive, 96)
@@ -817,7 +820,8 @@ lo        Link encap:Local Loopback
         # old format
         dev = self.parse_single_device(
             'foo      Link encap:Ethernet  HWaddr F0:F0:F0:F0:F0:F0\n'
-            '         UP BROADCAST RUNNING MULTICAST  MTU:500  Metric:2  Outfill:55  Keepalive:66\n')
+            '         UP BROADCAST RUNNING MULTICAST  MTU:500  Metric:2  '
+            'Outfill:55  Keepalive:66\n')
         self.assertEqual(dev.flagsstr, 'UP BROADCAST RUNNING MULTICAST')
         self.assertEqual(dev.mtu, 500)
         self.assertEqual(dev.metric, 2)
@@ -827,7 +831,8 @@ lo        Link encap:Local Loopback
     def test_parsing_ip(self):
         dev = self.parse_single_device(
             'foo: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500\n'
-            '        inet 1.12.123.124  netmask 255.255.252.0  broadcast 1.12.123.255\n')
+            '        inet 1.12.123.124  netmask 255.255.252.0  broadcast '
+            '1.12.123.255\n')
         self.assertEqual(dev.inet, '1.12.123.124')
         self.assertEqual(dev.netmask, '255.255.252.0')
         self.assertEqual(dev.get_netmask_bits(), 22)
@@ -846,7 +851,8 @@ lo        Link encap:Local Loopback
 
         dev = self.parse_single_device(
             'foo: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500\n'
-            '        inet 1.1.1.1  netmask 255.255.255.254  destination 1.12.123.255\n')
+            '        inet 1.1.1.1  netmask 255.255.255.254  destination '
+            '1.12.123.255\n')
         self.assertEqual(dev.inet, '1.1.1.1')
         self.assertEqual(dev.netmask, '255.255.255.254')
         self.assertEqual(dev.broadcast, None)
@@ -855,7 +861,8 @@ lo        Link encap:Local Loopback
         # old format
         dev = self.parse_single_device(
             'foo      Link encap:Ethernet  HWaddr F0:F0:F0:F0:F0:F0\n'
-            '       inet addr:1.2.3.4  P-t-P:10.20.30.40  Mask:255.255.254.0\n')
+            '       inet addr:1.2.3.4  P-t-P:10.20.30.40  '
+            'Mask:255.255.254.0\n')
         self.assertEqual(dev.inet, '1.2.3.4')
         self.assertEqual(dev.destination, '10.20.30.40')
         self.assertEqual(dev.broadcast, None)

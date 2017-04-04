@@ -114,7 +114,8 @@ class EthtoolTests(unittest.TestCase):
                 self.assertEqualIpv4Str(broadcast, scraped.broadcast)
 
         self.assertIsStringExceptForLoopback(ethtool.get_businfo, devname,
-                                             '[Errno 95] Operation not supported')
+                                             '[Errno 95] Operation not '
+                                             'supported')
 
         self.assertIsInt(ethtool.get_flags(devname))
         # flagsint cannot be obtained from old ifconfig format
@@ -130,7 +131,8 @@ class EthtoolTests(unittest.TestCase):
             self.assertEqual(ethtool.get_ipaddr(devname), scraped.inet)
 
         self.assertIsStringExceptForLoopback(ethtool.get_module, devname,
-                                             '[Errno 95] Operation not supported')
+                                             '[Errno 95] Operation not '
+                                             'supported')
 
         if assignable:
             self.assertIsString(ethtool.get_netmask(devname))
