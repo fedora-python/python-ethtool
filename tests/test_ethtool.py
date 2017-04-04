@@ -98,12 +98,20 @@ class EthtoolTests(unittest.TestCase):
 
             scraped = ifconfig.get_device_by_name(devname)
 
-            self.assertIsString(ethtool.get_broadcast(devname))
+            try:
+                broadcast = ethtool.get_broadcast(devname)
+            except (OSError, IOError):
+                # Some devices might end up with
+                # [Errno 99] Cannot assign requested address
+                # That's IOError on 2.7, OSError on 3
+                assignable = False
+            else:
+                assignable = True
+                self.assertIsString(broadcast)
 
-            # Broadcast is optional in ifconfig output
-            if scraped.broadcast:
-                self.assertEqualIpv4Str(ethtool.get_broadcast(devname),
-                                        scraped.broadcast)
+                # Broadcast is optional in ifconfig output
+                if scraped.broadcast:
+                    self.assertEqualIpv4Str(broadcast, scraped.broadcast)
 
             self.assertIsStringExceptForLoopback(ethtool.get_businfo, devname,
                                                  '[Errno 95] Operation not supported')
@@ -116,15 +124,19 @@ class EthtoolTests(unittest.TestCase):
             self.assertIsString(ethtool.get_hwaddr(devname))
             self.assertEqualHwAddr(ethtool.get_hwaddr(devname),
                                    scraped.hwaddr)
-            self.assertIsString(ethtool.get_ipaddr(devname))
-            self.assertEqual(ethtool.get_ipaddr(devname), scraped.inet)
+
+            if assignable:
+                self.assertIsString(ethtool.get_ipaddr(devname))
+                self.assertEqual(ethtool.get_ipaddr(devname), scraped.inet)
 
             self.assertIsStringExceptForLoopback(ethtool.get_module, devname,
                                                  '[Errno 95] Operation not supported')
 
-            self.assertIsString(ethtool.get_netmask(devname))
-            self.assertEqual(ethtool.get_netmask(devname),
-                             scraped.netmask)
+
+            if assignable:
+                self.assertIsString(ethtool.get_netmask(devname))
+                self.assertEqual(ethtool.get_netmask(devname),
+                                 scraped.netmask)
 
             # Operation is not supported only on loopback device
             if devname == 'lo':
