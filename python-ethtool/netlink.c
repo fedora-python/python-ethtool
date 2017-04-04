@@ -39,44 +39,44 @@ static unsigned int nlconnection_users = 0;  /* How many NETLINK users are activ
  */
 int open_netlink(PyEtherInfo *ethi)
 {
-	if( !ethi ) {
-		return 0;
-	}
+    if( !ethi ) {
+        return 0;
+    }
 
-	/* Reuse already established NETLINK connection, if a connection exists */
-	if( nlconnection ) {
-		/* If this object has not used NETLINK earlier, tag it as a user */
-		if( !ethi->nlc_active ) {
-			pthread_mutex_lock(&nlc_counter_mtx);
-			nlconnection_users++;
-			pthread_mutex_unlock(&nlc_counter_mtx);
-		}
-		ethi->nlc_active = 1;
-		return 1;
-	}
+    /* Reuse already established NETLINK connection, if a connection exists */
+    if( nlconnection ) {
+        /* If this object has not used NETLINK earlier, tag it as a user */
+        if( !ethi->nlc_active ) {
+            pthread_mutex_lock(&nlc_counter_mtx);
+            nlconnection_users++;
+            pthread_mutex_unlock(&nlc_counter_mtx);
+        }
+        ethi->nlc_active = 1;
+        return 1;
+    }
 
-	/* No earlier connections exists, establish a new one */
-	nlconnection = nl_socket_alloc();
-	if( nlconnection != NULL ) {
-		if( nl_connect(nlconnection, NETLINK_ROUTE) < 0 ) {
-			return 0;
-		}
-		/* Force O_CLOEXEC flag on the NETLINK socket */
-		if( fcntl(nl_socket_get_fd(nlconnection), F_SETFD, FD_CLOEXEC) == -1 ) {
-			fprintf(stderr,
-				"**WARNING** Failed to set O_CLOEXEC on NETLINK socket: %s\n",
-				strerror(errno));
-		}
+    /* No earlier connections exists, establish a new one */
+    nlconnection = nl_socket_alloc();
+    if( nlconnection != NULL ) {
+        if( nl_connect(nlconnection, NETLINK_ROUTE) < 0 ) {
+            return 0;
+        }
+        /* Force O_CLOEXEC flag on the NETLINK socket */
+        if( fcntl(nl_socket_get_fd(nlconnection), F_SETFD, FD_CLOEXEC) == -1 ) {
+            fprintf(stderr,
+                    "**WARNING** Failed to set O_CLOEXEC on NETLINK socket: %s\n",
+                    strerror(errno));
+        }
 
-		/* Tag this object as an active user */
-		pthread_mutex_lock(&nlc_counter_mtx);
-		nlconnection_users++;
-		pthread_mutex_unlock(&nlc_counter_mtx);
-		ethi->nlc_active = 1;
-		return 1;
-	} else {
-		return 0;
-	}
+        /* Tag this object as an active user */
+        pthread_mutex_lock(&nlc_counter_mtx);
+        nlconnection_users++;
+        pthread_mutex_unlock(&nlc_counter_mtx);
+        ethi->nlc_active = 1;
+        return 1;
+    } else {
+        return 0;
+    }
 }
 
 
@@ -87,8 +87,8 @@ int open_netlink(PyEtherInfo *ethi)
  */
 struct nl_sock * get_nlc()
 {
-	assert(nlconnection);
-	return nlconnection;
+    assert(nlconnection);
+    return nlconnection;
 }
 
 /**
@@ -99,30 +99,23 @@ struct nl_sock * get_nlc()
  */
 void close_netlink(PyEtherInfo *ethi)
 {
-	if( !ethi || !nlconnection ) {
-		return;
-	}
+    if( !ethi || !nlconnection ) {
+        return;
+    }
 
-	/* Untag this object as a NETLINK user */
-	ethi->nlc_active = 0;
-	pthread_mutex_lock(&nlc_counter_mtx);
-	nlconnection_users--;
-	pthread_mutex_unlock(&nlc_counter_mtx);
+    /* Untag this object as a NETLINK user */
+    ethi->nlc_active = 0;
+    pthread_mutex_lock(&nlc_counter_mtx);
+    nlconnection_users--;
+    pthread_mutex_unlock(&nlc_counter_mtx);
 
-	/* Don't close the connection if there are more users */
-	if( nlconnection_users > 0) {
-		return;
-	}
+    /* Don't close the connection if there are more users */
+    if( nlconnection_users > 0) {
+        return;
+    }
 
-	/* Close NETLINK connection */
-	nl_close(nlconnection);
-	nl_socket_free(nlconnection);
-	nlconnection = NULL;
+    /* Close NETLINK connection */
+    nl_close(nlconnection);
+    nl_socket_free(nlconnection);
+    nlconnection = NULL;
 }
-
-/*
-Local variables:
-c-basic-offset: 8
-indent-tabs-mode: y
-End:
-*/
