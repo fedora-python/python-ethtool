@@ -66,6 +66,7 @@ class IfConfig:
     """
     Wrapper around a single invocation of "ifconfig"
     """
+
     def __init__(self, stdout=None, debug=False):
         if stdout is not None:
             self.stdout = stdout
@@ -77,7 +78,8 @@ class IfConfig:
                       env=env, universal_newlines=True)
             self.stdout, self.stderr = p.communicate()
             if self.stderr != '':
-                raise ValueError('stderr from ifconfig was nonempty:\n%s' % self.stderr)
+                raise ValueError(
+                    'stderr from ifconfig was nonempty:\n%s' % self.stderr)
         if 0:
             print('self.stdout: %r' % self.stdout)
         self.devices = []
@@ -127,6 +129,7 @@ class Device:
     """
     Wrapper around a device entry within the output of "ifconfig"
     """
+
     def __init__(self, name, debug=False):
         self.name = name
         self.debug = debug
@@ -206,7 +209,7 @@ class Device:
     def _parse_rest_of_first_line(self, text):
         m = re.match(r'flags=([0-9]+)<(.*)>  mtu ([0-9]+)(.*)', text)
         if not m:
-            raise ValueError('unable to parse: %r'% text)
+            raise ValueError('unable to parse: %r' % text)
         self._debug(m.groups())
         self.flagsint = int(m.group(1))
         self.flagsstr = m.group(2)
@@ -225,7 +228,7 @@ class Device:
     def _parse_rest_of_first_line_old(self, text):
         m = re.match('Link encap:(\w+ ?\w*)\s*(HWaddr )?(\S*)', text)
         if not m:
-            raise ValueError('unable to parse: %r'% text)
+            raise ValueError('unable to parse: %r' % text)
         self.hwtitle = m.group(1).strip()
         if m.group(2):
             self.hwaddr = m.group(3)
@@ -254,7 +257,7 @@ class Device:
         m = re.match(ws
                      + 'inet6 ' + group_nonws + ws
                      + 'prefixlen' + ws + group_dec + ws
-                     + 'scopeid '+ group_nonws,
+                     + 'scopeid ' + group_nonws,
                      line)
         if m:
             self._debug(m.groups())
@@ -320,7 +323,7 @@ class Device:
 
         # e.g. '        TX packets 2949524  bytes 344092625 (328.1 MiB)'
         m = re.match(ws
-                     + 'TX packets '+ group_dec + ws
+                     + 'TX packets ' + group_dec + ws
                      + 'bytes ' + group_dec + ws
                      + '\(.*\)',
                      line)
@@ -330,7 +333,8 @@ class Device:
             self.txbytes = int(m.group(2))
             return
 
-        # e.g. '        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0'
+        # e.g. '        TX errors 0  dropped 0 overruns 0  carrier 0
+        # collisions 0'
         m = re.match(ws
                      + 'TX errors ' + group_dec + ws
                      + 'dropped ' + group_dec + ws
@@ -410,7 +414,7 @@ class Device:
         m = re.match(ws
                      + 'inet6 addr: ' + group_nonws + '/'
                      + group_dec + ws
-                     + 'Scope:'+ group_nonws,
+                     + 'Scope:' + group_nonws,
                      line)
         if m:
             self._debug(m.groups())
@@ -419,7 +423,7 @@ class Device:
             self.scopeid = m.group(3)
             return
 
-        #UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+        # UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
         m = re.match(ws + '(.*)'
                      + '  MTU:' + group_dec + ws
                      + 'Metric:' + group_dec
@@ -433,7 +437,7 @@ class Device:
             # It might have "  Outfill:%d  Keepalive:%d":
             m = re.match(ws
                          + 'Outfill:' + group_dec + ws
-                         + 'Keepalive:'+ group_dec,
+                         + 'Keepalive:' + group_dec,
                          m.group(4))
             if m:
                 self._debug(m.groups())
@@ -441,7 +445,7 @@ class Device:
                 self.keepalive = int(m.group(2))
             return
 
-        #RX packets:4458926 errors:0 dropped:0 overruns:0 frame:0
+        # RX packets:4458926 errors:0 dropped:0 overruns:0 frame:0
         m = re.match(ws
                      + 'RX packets:' + group_dec + ws
                      + 'errors:' + group_dec + ws
@@ -458,13 +462,13 @@ class Device:
             self.rxframe = int(m.group(5))
             return
 
-        #"             compressed:%lu\n"
+        # "             compressed:%lu\n"
         m = re.match(ws + 'compressed:' + group_dec, line)
         if m:
             self.rxcompressed = int(m.group(1))
             return
 
-        #TX packets:3536982 errors:0 dropped:0 overruns:0 carrier:0
+        # TX packets:3536982 errors:0 dropped:0 overruns:0 carrier:0
         m = re.match(ws
                      + 'TX packets:' + group_dec + ws
                      + 'errors:' + group_dec + ws
@@ -481,7 +485,7 @@ class Device:
             self.txcarrier = int(m.group(5))
             return
 
-        #"          collisions:%lu compressed:%lu txqueuelen:%d "
+        # "          collisions:%lu compressed:%lu txqueuelen:%d "
         m = re.match(ws + 'collisions:' + group_dec + ws + '(.*)', line)
         if m:
             self._debug(m.groups())
@@ -497,7 +501,7 @@ class Device:
                 self.txqueuelen = int(m.group(1))
             return
 
-        #RX bytes:3380060233 (3.1 GiB)  TX bytes:713438255 (680.3 MiB)
+        # RX bytes:3380060233 (3.1 GiB)  TX bytes:713438255 (680.3 MiB)
         m = re.match(ws + 'RX bytes:' + group_dec + ws + '\(.*\)' + ws
                      + 'TX bytes:' + group_dec + ws + '\(.*\)',
                      line)
@@ -507,7 +511,7 @@ class Device:
             self.txbytes = int(m.group(2))
             return
 
-        #Interrupt:17 Memory:da000000-da012800
+        # Interrupt:17 Memory:da000000-da012800
         m = re.match(ws + 'Interrupt:' + group_dec + '\s*(.*)', line)
         if m:
             self._debug(m.groups())
@@ -600,11 +604,11 @@ vnet1: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
         self.assertEqual(eth1.flagsint, 4163)
         self.assertEqual(eth1.flagsstr, 'UP,BROADCAST,RUNNING,MULTICAST')
         self.assertEqual(eth1.mtu, 1500)
-        #        inet 1.12.123.124  netmask 255.255.252.0  broadcast 1.12.123.255
+        # inet 1.12.123.124  netmask 255.255.252.0  broadcast 1.12.123.255
         self.assertEqual(eth1.inet, '1.12.123.124')
         self.assertEqual(eth1.netmask, '255.255.252.0')
         self.assertEqual(eth1.broadcast, '1.12.123.255')
-        #        inet6 ffff::ffff:ffff:ffff:ffff  prefixlen 64  scopeid 0x20<link>
+        # inet6 ffff::ffff:ffff:ffff:ffff  prefixlen 64  scopeid 0x20<link>
         self.assertEqual(eth1.inet6, 'ffff::ffff:ffff:ffff:ffff')
         self.assertEqual(eth1.prefixlen, 64)
         self.assertEqual(eth1.scopeid, '0x20<link>')
@@ -717,23 +721,23 @@ lo        Link encap:Local Loopback
 
         # Verify eth0:
         eth0 = ifconfig.devices[0]
-        #eth0      Link encap:Ethernet  HWaddr 00:11:22:33:44:55
+        # eth0      Link encap:Ethernet  HWaddr 00:11:22:33:44:55
         self.assertEqual(eth0.name, 'eth0')
         self.assertEqual(eth0.hwtitle, 'Ethernet')
         self.assertEqual(eth0.hwaddr, '00:11:22:33:44:55')
-        #          inet addr:1.12.123.124  Bcast:1.12.123.255  Mask:255.255.252.0
+        # inet addr:1.12.123.124  Bcast:1.12.123.255  Mask:255.255.252.0
         self.assertEqual(eth0.inet, '1.12.123.124')
         self.assertEqual(eth0.netmask, '255.255.252.0')
         self.assertEqual(eth0.broadcast, '1.12.123.255')
-        #          inet6 addr: dddd::dddd:dddd:dddd:dddd:dddd:dddd/64 Scope:Site
-        #self.assertEqual(eth0.inet6, 'dddd::dddd:dddd:dddd:dddd:dddd:dddd')
-        #self.assertEqual(eth0.prefixlen, 64)
-        #self.assertEqual(eth0.scopeid, 'Site')
-        #          inet6 addr: eeee::eeee:eeee:eeee:eeee:eeee:eeee/64 Scope:Global
-        #self.assertEqual(eth0.inet6, 'eeee::eeee:eeee:eeee:eeee:eeee:eeee')
-        #self.assertEqual(eth0.prefixlen, 64)
-        #self.assertEqual(eth0.scopeid, 'Global')
-        #          inet6 addr: ffff::ffff:ffff:ffff:ffff/64 Scope:Link
+        #           inet6 addr: dddd::dddd:dddd:dddd:dddd:dddd:dddd/64 Scope:Site
+        # self.assertEqual(eth0.inet6, 'dddd::dddd:dddd:dddd:dddd:dddd:dddd')
+        # self.assertEqual(eth0.prefixlen, 64)
+        # self.assertEqual(eth0.scopeid, 'Site')
+        #           inet6 addr: eeee::eeee:eeee:eeee:eeee:eeee:eeee/64 Scope:Global
+        # self.assertEqual(eth0.inet6, 'eeee::eeee:eeee:eeee:eeee:eeee:eeee')
+        # self.assertEqual(eth0.prefixlen, 64)
+        # self.assertEqual(eth0.scopeid, 'Global')
+        #           inet6 addr: ffff::ffff:ffff:ffff:ffff/64 Scope:Link
         self.assertEqual(eth0.inet6, 'ffff::ffff:ffff:ffff:ffff')
         self.assertEqual(eth0.prefixlen, 64)
         self.assertEqual(eth0.scopeid, 'Link')
@@ -756,7 +760,7 @@ lo        Link encap:Local Loopback
         #          collisions:0 txqueuelen:1000
         self.assertEqual(eth0.txcollisions, 0)
         self.assertEqual(eth0.txqueuelen, 1000)
-        #          RX bytes:3380060233 (3.1 GiB)  TX bytes:713438255 (680.3 MiB)
+        # RX bytes:3380060233 (3.1 GiB)  TX bytes:713438255 (680.3 MiB)
         self.assertEqual(eth0.rxbytes, 3380060233)
         self.assertEqual(eth0.txbytes, 713438255)
         #          Interrupt:17 Memory:da000000-da012800
@@ -766,7 +770,7 @@ lo        Link encap:Local Loopback
 
         # Verify lo:
         lo = ifconfig.devices[1]
-        #lo        Link encap:Local Loopback
+        # lo        Link encap:Local Loopback
         self.assertEqual(lo.name, 'lo')
         self.assertEqual(lo.hwtitle, 'Local Loopback')
         self.assertEqual(lo.hwaddr, None)
@@ -787,7 +791,7 @@ lo        Link encap:Local Loopback
         #          TX packets:805234 errors:0 dropped:0 overruns:0 carrier:0
         self.assertEqual(lo.txpackets, 805234)
         #          collisions:0 txqueuelen:0
-        #          RX bytes:132177529 (126.0 MiB)  TX bytes:132177529 (126.0 MiB)
+        # RX bytes:132177529 (126.0 MiB)  TX bytes:132177529 (126.0 MiB)
         self.assertEqual(lo.rxbytes, 132177529)
         self.assertEqual(lo.txbytes, 132177529)
 
@@ -924,6 +928,7 @@ lo        Link encap:Local Loopback
     def test_local(self):
         # Actually invoke ifconfig locally, and parse whatever it emits:
         ifconfig = IfConfig()
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -16,6 +16,7 @@ version = '0.12'
 
 class PkgConfigExtension(Extension):
     '''Extension with lazy properties taken from pkg-config'''
+
     def __init__(self, *args, **kwargs):
         '''Behaves like Extension's __init__ but you should not use
         include_dirs, library_dirs and libraries arguments.
@@ -100,13 +101,13 @@ setup(name='ethtool',
       version=version,
       description='Python module to interface with ethtool',
       long_description=long_description,
-      
+
       author='Harald Hoyer, Arnaldo Carvalho de Melo, David Sommerseth',
       author_email='davids@redhat.com',
-      
+
       maintainer='Lumír Balhar, Miro Hrončok, Charalampos Stratakis, Sanqui',
       maintainer_email='python-maint@redhat.com',
-      
+
       url='https://github.com/fedora-python/python-ethtool',
       license='GPL-2.0',
       keywords='network networking ethernet tool ethtool',
@@ -128,18 +129,19 @@ setup(name='ethtool',
       ],
       
       ext_modules=[
-        PkgConfigExtension(
-            'ethtool',
-            sources = [
-                'python-ethtool/ethtool.c',
-                'python-ethtool/etherinfo.c',
-                'python-ethtool/etherinfo_obj.c',
-                'python-ethtool/netlink.c',
-                'python-ethtool/netlink-address.c'],
-            extra_compile_args=['-fno-strict-aliasing', '-Wno-unused-function'],
-            define_macros = [('VERSION', '"%s"' % version)],
-            pkg = 'libnl-3.0',
-            extra_libraries = ['nl-route-3'],
-        )
+          PkgConfigExtension(
+              'ethtool',
+              sources=[
+                  'python-ethtool/ethtool.c',
+                  'python-ethtool/etherinfo.c',
+                  'python-ethtool/etherinfo_obj.c',
+                  'python-ethtool/netlink.c',
+                  'python-ethtool/netlink-address.c'],
+              extra_compile_args=[
+                  '-fno-strict-aliasing', '-Wno-unused-function'],
+              define_macros=[('VERSION', '"%s"' % version)],
+              pkg='libnl-3.0',
+              extra_libraries=['nl-route-3'],
+          )
       ]
-)
+      )

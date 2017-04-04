@@ -94,65 +94,64 @@ class EthtoolTests(unittest.TestCase):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     def _functions_accepting_devnames(self, devname):
-            self.assertIsString(devname)
+        self.assertIsString(devname)
 
-            scraped = ifconfig.get_device_by_name(devname)
+        scraped = ifconfig.get_device_by_name(devname)
 
-            try:
-                broadcast = ethtool.get_broadcast(devname)
-            except (OSError, IOError):
-                # Some devices might end up with
-                # [Errno 99] Cannot assign requested address
-                # That's IOError on 2.7, OSError on 3
-                assignable = False
-            else:
-                assignable = True
-                self.assertIsString(broadcast)
+        try:
+            broadcast = ethtool.get_broadcast(devname)
+        except (OSError, IOError):
+            # Some devices might end up with
+            # [Errno 99] Cannot assign requested address
+            # That's IOError on 2.7, OSError on 3
+            assignable = False
+        else:
+            assignable = True
+            self.assertIsString(broadcast)
 
-                # Broadcast is optional in ifconfig output
-                if scraped.broadcast:
-                    self.assertEqualIpv4Str(broadcast, scraped.broadcast)
+            # Broadcast is optional in ifconfig output
+            if scraped.broadcast:
+                self.assertEqualIpv4Str(broadcast, scraped.broadcast)
 
-            self.assertIsStringExceptForLoopback(ethtool.get_businfo, devname,
-                                                 '[Errno 95] Operation not supported')
+        self.assertIsStringExceptForLoopback(ethtool.get_businfo, devname,
+                                             '[Errno 95] Operation not supported')
 
-            self.assertIsInt(ethtool.get_flags(devname))
-            # flagsint cannot be obtained from old ifconfig format
-            if not ifconfig.oldFormat:
-                self.assertEqual(ethtool.get_flags(devname), scraped.flagsint)
-            self.assertIsInt(ethtool.get_gso(devname))
-            self.assertIsString(ethtool.get_hwaddr(devname))
-            self.assertEqualHwAddr(ethtool.get_hwaddr(devname),
-                                   scraped.hwaddr)
+        self.assertIsInt(ethtool.get_flags(devname))
+        # flagsint cannot be obtained from old ifconfig format
+        if not ifconfig.oldFormat:
+            self.assertEqual(ethtool.get_flags(devname), scraped.flagsint)
+        self.assertIsInt(ethtool.get_gso(devname))
+        self.assertIsString(ethtool.get_hwaddr(devname))
+        self.assertEqualHwAddr(ethtool.get_hwaddr(devname),
+                               scraped.hwaddr)
 
-            if assignable:
-                self.assertIsString(ethtool.get_ipaddr(devname))
-                self.assertEqual(ethtool.get_ipaddr(devname), scraped.inet)
+        if assignable:
+            self.assertIsString(ethtool.get_ipaddr(devname))
+            self.assertEqual(ethtool.get_ipaddr(devname), scraped.inet)
 
-            self.assertIsStringExceptForLoopback(ethtool.get_module, devname,
-                                                 '[Errno 95] Operation not supported')
+        self.assertIsStringExceptForLoopback(ethtool.get_module, devname,
+                                             '[Errno 95] Operation not supported')
 
+        if assignable:
+            self.assertIsString(ethtool.get_netmask(devname))
+            self.assertEqual(ethtool.get_netmask(devname),
+                             scraped.netmask)
 
-            if assignable:
-                self.assertIsString(ethtool.get_netmask(devname))
-                self.assertEqual(ethtool.get_netmask(devname),
-                                 scraped.netmask)
+        # Operation is not supported only on loopback device
+        if devname == 'lo':
+            self.assertRaisesIOError(ethtool.get_ringparam, (devname, ),
+                                     '[Errno 95] Operation not supported')
 
-            # Operation is not supported only on loopback device
-            if devname == 'lo':
-                self.assertRaisesIOError(ethtool.get_ringparam, (devname, ),
-                                         '[Errno 95] Operation not supported')
+        self.assertIsInt(ethtool.get_sg(devname))
+        self.assertIsInt(ethtool.get_ufo(devname))
 
-            self.assertIsInt(ethtool.get_sg(devname))
-            self.assertIsInt(ethtool.get_ufo(devname))
+        self.assertIsInt(ethtool.get_tso(devname))
 
-            self.assertIsInt(ethtool.get_tso(devname))
+        # TODO: self.assertIsString(ethtool.set_coalesce(devname))
 
-            # TODO: self.assertIsString(ethtool.set_coalesce(devname))
+        # TODO: self.assertIsString(ethtool.set_ringparam(devname))
 
-            # TODO: self.assertIsString(ethtool.set_ringparam(devname))
-
-            # TODO: self.assertIsString(ethtool.set_tso(devname))
+        # TODO: self.assertIsString(ethtool.set_tso(devname))
 
     def _verify_etherinfo_object(self, ei):
         self.assertTrue(isinstance(ei, ethtool.etherinfo))
@@ -218,10 +217,14 @@ class EthtoolTests(unittest.TestCase):
         self.assertEqual(len(eis), 1)
         ei = eis[0]
         self.assertEqual(ei.device, INVALID_DEVICE_NAME)
-        self.assertRaisesIOError(getattr, (ei, 'ipv4_address'), '[Errno 19] No such device')
-        self.assertRaisesIOError(getattr, (ei, 'ipv4_netmask'), '[Errno 19] No such device')
-        self.assertRaisesIOError(getattr, (ei, 'ipv4_broadcast'), '[Errno 19] No such device')
-        self.assertRaisesIOError(getattr, (ei, 'mac_address'), '[Errno 19] No such device')
+        self.assertRaisesIOError(
+            getattr, (ei, 'ipv4_address'), '[Errno 19] No such device')
+        self.assertRaisesIOError(
+            getattr, (ei, 'ipv4_netmask'), '[Errno 19] No such device')
+        self.assertRaisesIOError(
+            getattr, (ei, 'ipv4_broadcast'), '[Errno 19] No such device')
+        self.assertRaisesIOError(
+            getattr, (ei, 'mac_address'), '[Errno 19] No such device')
 
     def test_get_interface_info_active(self):
         eis = ethtool.get_interfaces_info(ethtool.get_active_devices())
