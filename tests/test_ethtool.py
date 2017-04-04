@@ -19,7 +19,6 @@
 #   Author: Dave Malcolm <dmalcolm@redhat.com>
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-import sys
 import unittest
 
 import ethtool

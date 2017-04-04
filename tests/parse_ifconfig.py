@@ -934,7 +934,7 @@ lo        Link encap:Local Loopback
 
     def test_local(self):
         # Actually invoke ifconfig locally, and parse whatever it emits:
-        ifconfig = IfConfig()
+        IfConfig()
 
 
 if __name__ == '__main__':
