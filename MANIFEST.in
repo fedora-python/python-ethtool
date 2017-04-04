@@ -1,0 +1,5 @@
+include COPYING
+include *.rst
+recursive-include man *.asciidoc
+recursive-include python-ethtool *.h
+recursive-include tests *.py
