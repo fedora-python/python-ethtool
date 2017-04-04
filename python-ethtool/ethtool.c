@@ -91,7 +91,7 @@ static PyObject *get_devices(PyObject *self __unused, PyObject *args __unused)
     /* skip over first two lines */
     ret = fgets(buffer, 256, fd);
     ret = fgets(buffer, 256, fd);
-    if( !ret ) {
+    if (!ret) {
         return PyErr_SetFromErrno(PyExc_OSError);
     }
 
@@ -222,32 +222,32 @@ static PyObject *get_interfaces_info(PyObject *self __unused, PyObject *args) {
     }
 
     /* Parse input arguments if we got them */
-    if( inargs != NULL ) {
-        if( PyStr_Check(inargs) ) { /* Input argument is just a string */
+    if (inargs != NULL) {
+        if (PyStr_Check(inargs)) { /* Input argument is just a string */
             fetch_devs_len = 1;
             fetch_devs = calloc(1, sizeof(char *));
             fetch_devs[0] = PyStr_AsString(inargs);
 
-        } else if( PyTuple_Check(inargs) ) { /* Input argument is a tuple list with devices */
+        } else if (PyTuple_Check(inargs)) { /* Input argument is a tuple list with devices */
             int j = 0;
 
             fetch_devs_len = PyTuple_Size(inargs);
             fetch_devs = calloc(fetch_devs_len+1, sizeof(char *));
-            for( i = 0; i < fetch_devs_len; i++ ) {
+            for (i = 0; i < fetch_devs_len; i++) {
                 PyObject *elmt = PyTuple_GetItem(inargs, i);
-                if( elmt && PyStr_Check(elmt) ) {
+                if (elmt && PyStr_Check(elmt)) {
                     fetch_devs[j++] = PyStr_AsString(elmt);
                 }
             }
             fetch_devs_len = j;
-        } else if( PyList_Check(inargs) ) { /* Input argument is a list with devices */
+        } else if (PyList_Check(inargs)) { /* Input argument is a list with devices */
             int j = 0;
 
             fetch_devs_len = PyList_Size(inargs);
             fetch_devs = calloc(fetch_devs_len+1, sizeof(char *));
-            for( i = 0; i < fetch_devs_len; i++ ) {
+            for (i = 0; i < fetch_devs_len; i++) {
                 PyObject *elmt = PyList_GetItem(inargs, i);
-                if( elmt && PyStr_Check(elmt) ) {
+                if (elmt && PyStr_Check(elmt)) {
                     fetch_devs[j++] = PyStr_AsString(elmt);
                 }
             }
@@ -260,7 +260,7 @@ static PyObject *get_interfaces_info(PyObject *self __unused, PyObject *args) {
     }
 
     devlist = PyList_New(0);
-    for( i = 0; i < fetch_devs_len; i++ ) {
+    for (i = 0; i < fetch_devs_len; i++) {
         PyEtherInfo *dev = NULL;
 
         /* Store the device name and a reference to the NETLINK connection for
@@ -268,7 +268,7 @@ static PyObject *get_interfaces_info(PyObject *self __unused, PyObject *args) {
          */
 
         dev = PyObject_New(PyEtherInfo, &PyEtherInfo_Type);
-        if( !dev ) {
+        if (!dev) {
             PyErr_SetFromErrno(PyExc_OSError);
             free(fetch_devs);
             return NULL;

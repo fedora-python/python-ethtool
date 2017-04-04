@@ -92,7 +92,7 @@ PyObject *_ethtool_etherinfo_str(PyEtherInfo *self)
     PyObject *ret = NULL;
     PyObject *ipv4addrs = NULL, *ipv6addrs = NULL;
 
-    if( !self ) {
+    if (!self) {
         PyErr_SetString(PyExc_AttributeError, "No data available");
         return NULL;
     }
@@ -101,21 +101,21 @@ PyObject *_ethtool_etherinfo_str(PyEtherInfo *self)
 
     ret = PyStr_FromFormat("Device %s:\n", PyStr_AsString(self->device));
 
-    if( self->hwaddress ) {
+    if (self->hwaddress) {
         ret = PyStr_Concat(ret,
                            PyStr_FromFormat("\tMAC address: %s\n",
                                             PyStr_AsString(self->hwaddress)));
     }
 
     ipv4addrs = get_etherinfo_address(self, NLQRY_ADDR4);
-    if( ipv4addrs ) {
+    if (ipv4addrs) {
         Py_ssize_t i;
         for (i = 0; i < PyList_Size(ipv4addrs); i++) {
             PyNetlinkIPaddress *py_addr = (PyNetlinkIPaddress *)PyList_GetItem(ipv4addrs, i);
             PyObject *tmp = PyStr_FromFormat("\tIPv4 address: ");
             tmp = PyStr_Concat(tmp, py_addr->local);
             tmp = PyStr_Concat(tmp, PyStr_FromFormat("/%d", py_addr->prefixlen));
-            if (py_addr->ipv4_broadcast ) {
+            if (py_addr->ipv4_broadcast) {
                 tmp = PyStr_Concat(tmp,
                                    PyStr_FromFormat("\tBroadcast: %s\n",
                                                     PyStr_AsString(py_addr->ipv4_broadcast)));
@@ -128,7 +128,7 @@ PyObject *_ethtool_etherinfo_str(PyEtherInfo *self)
     }
 
     ipv6addrs = get_etherinfo_address(self, NLQRY_ADDR6);
-    if( ipv6addrs ) {
+    if (ipv6addrs) {
         Py_ssize_t i;
         for (i = 0; i < PyList_Size(ipv6addrs); i++) {
             PyNetlinkIPaddress *py_addr = (PyNetlinkIPaddress *)PyList_GetItem(ipv6addrs, i);
@@ -152,7 +152,7 @@ PyObject *_ethtool_etherinfo_str(PyEtherInfo *self)
  * @return Returns a Python tuple list of NetlinkIP4Address objects
  */
 static PyObject *_ethtool_etherinfo_get_ipv4_addresses(PyEtherInfo *self, PyObject *notused) {
-    if( !self ) {
+    if (!self) {
         PyErr_SetString(PyExc_AttributeError, "No data available");
         return NULL;
     }
@@ -170,7 +170,7 @@ static PyObject *_ethtool_etherinfo_get_ipv4_addresses(PyEtherInfo *self, PyObje
  * @return Returns a Python tuple list of NetlinkIP6Address objects
  */
 static PyObject *_ethtool_etherinfo_get_ipv6_addresses(PyEtherInfo *self, PyObject *notused) {
-    if( !self ) {
+    if (!self) {
         PyErr_SetString(PyExc_AttributeError, "No data available");
         return NULL;
     }
@@ -197,7 +197,7 @@ static PyObject *get_device(PyObject *obj, void *info)
 {
     PyEtherInfo *self = (PyEtherInfo *) obj;
 
-    if( self->device ) {
+    if (self->device) {
         Py_INCREF(self->device);
         return self->device;
     }
@@ -209,7 +209,7 @@ static PyObject *get_mac_addr(PyObject *obj, void *info)
     PyEtherInfo *self = (PyEtherInfo *) obj;
 
     get_etherinfo_link(self);
-    if( self->hwaddress ) {
+    if (self->hwaddress) {
         Py_INCREF(self->hwaddress);
     }
     return self->hwaddress;

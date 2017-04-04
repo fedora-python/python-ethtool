@@ -79,7 +79,7 @@ PyNetlinkIPaddress_from_rtnl_addr(struct rtnl_addr *addr)
     /* Set ipv4_broadcast: */
     py_obj->ipv4_broadcast = NULL;
     brdcst = rtnl_addr_get_broadcast(addr);
-    if( py_obj->family == AF_INET && brdcst ) {
+    if (py_obj->family == AF_INET && brdcst) {
         memset(&buf, 0, sizeof(buf));
         if (!inet_ntop(AF_INET, nl_addr_get_binary_addr(brdcst),
                        buf, sizeof(buf))) {
@@ -209,7 +209,7 @@ make_python_address_from_rtnl_addr(struct rtnl_addr *addr)
 {
     assert(addr);
 
-    switch( rtnl_addr_get_family(addr) ) {
+    switch( rtnl_addr_get_family(addr)) {
 
     case AF_INET:
     case AF_INET6:
