@@ -58,21 +58,21 @@ def show_config(device):
 	ipaddr = ethtool.get_ipaddr(device)
 	netmask = ethtool.get_netmask(device)
 	flags = ethtool.get_flags(device)
-	print '%-9.9s' % device,
+	print('%-9.9s' % device)
 	if not (flags & ethtool.IFF_LOOPBACK):
-		print "HWaddr %s" % ethtool.get_hwaddr(device),
-	print '''
-          inet addr:%s''' % ipaddr,
+		print("HWaddr %s" % ethtool.get_hwaddr(device))
+	print('''
+          inet addr:%s''' % ipaddr)
 	if not (flags & (ethtool.IFF_LOOPBACK | ethtool.IFF_POINTOPOINT)):
-		print "Bcast:%s" % ethtool.get_broadcast(device),
-	print '  Mask:%s' % netmask
+		print("Bcast:%s" % ethtool.get_broadcast(device))
+	print('  Mask:%s' % netmask)
 	for info in ethtool.get_interfaces_info(device):
 		for addr in info.get_ipv6_addresses():
-			print ("	  inet6 addr: %s/%s Scope: %s"
+			print("	  inet6 addr: %s/%s Scope: %s"
 			       % (addr.address,
 				  addr.netmask,
 				  addr.scope))
-	print '	  %s' % flags2str(flags)
+	print('	  %s' % flags2str(flags))
 	print
 
 def main():
@@ -90,8 +90,8 @@ def main():
 	for device in sel_devs:
                 try:
                         show_config(device)
-                except Exception, ex:
-                        print "** ERROR ** [Device %s]: %s" % (device, str(ex))
+                except Exception as ex:
+                        print("** ERROR ** [Device %s]: %s" % (device, str(ex)))
                         sys.exit(2)
 
 if __name__ == '__main__':
