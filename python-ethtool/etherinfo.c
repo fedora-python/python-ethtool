@@ -16,6 +16,7 @@
  */
 
 #include <Python.h>
+#include "include/py3c/compat.h"
 #include <bytesobject.h>
 #include <bits/sockaddr.h>
 #include <stdio.h>
@@ -66,7 +67,7 @@ static void callback_nl_link(struct nl_object *obj, void *arg)
         if( ethi->hwaddress ) {
                 Py_XDECREF(ethi->hwaddress);
         }
-        ethi->hwaddress = PyBytes_FromFormat("%s", hwaddr);
+        ethi->hwaddress = PyStr_FromFormat("%s", hwaddr);
 }
 
 
@@ -126,18 +127,16 @@ static int _set_device_index(PyEtherInfo *self)
 	 */
 	if( self->index < 0 ) {
 		if( (errno = rtnl_link_alloc_cache(get_nlc(), AF_UNSPEC, &link_cache)) < 0) {
-                        PyErr_SetString(PyExc_OSError, nl_geterror(errno));
-                        return 0;
-                }
-
-                link = rtnl_link_get_by_name(link_cache, PyBytes_AsString(self->device));
-                if( !link ) {
+            PyErr_SetString(PyExc_OSError, nl_geterror(errno));
+            return 0;
+        }
+        link = rtnl_link_get_by_name(link_cache, PyStr_AsString(self->device));
+        if( !link ) {
 			errno = ENODEV;
 			PyErr_SetFromErrno(PyExc_IOError);
 			nl_cache_free(link_cache);
-                        return 0;
-                }
-
+            return 0;
+        }
 		self->index = rtnl_link_get_ifindex(link);
 		if( self->index <= 0 ) {
 			errno = ENODEV;
@@ -146,6 +145,7 @@ static int _set_device_index(PyEtherInfo *self)
 			nl_cache_free(link_cache);
 			return 0;
 		}
+
 		rtnl_link_put(link);
 		nl_cache_free(link_cache);
 	}
@@ -180,7 +180,7 @@ int get_etherinfo_link(PyEtherInfo *self)
 	if( !open_netlink(self) ) {
 		PyErr_Format(PyExc_RuntimeError,
 			     "Could not open a NETLINK connection for %s",
-			     PyBytes_AsString(self->device));
+			     PyStr_AsString(self->device));
 		return 0;
 	}
 
@@ -234,29 +234,30 @@ PyObject * get_etherinfo_address(PyEtherInfo *self, nlQuery query)
 	if( !open_netlink(self) ) {
 		PyErr_Format(PyExc_RuntimeError,
 			     "Could not open a NETLINK connection for %s",
-			     PyBytes_AsString(self->device));
+			     PyStr_AsString(self->device));
 		return NULL;
 	}
 
-        if( _set_device_index(self) != 1) {
-                return NULL;
-        }
+    if(!_set_device_index(self)) {
+        return NULL;
+    }
 
 	/* Query the for requested info via NETLINK */
+    /* Extract IP address information */
+    if( (err = rtnl_addr_alloc_cache(get_nlc(), &addr_cache)) < 0) {
+            PyErr_SetString(PyExc_OSError, nl_geterror(err));
+            nl_cache_free(addr_cache);
+            return NULL;
+    }
 
-        /* Extract IP address information */
-        if( (err = rtnl_addr_alloc_cache(get_nlc(), &addr_cache)) < 0) {
-                PyErr_SetString(PyExc_OSError, nl_geterror(err));
-                nl_cache_free(addr_cache);
-                return NULL;
-        }
-        addr = rtnl_addr_alloc();
-        if( !addr ) {
-                errno = ENOMEM;
-                PyErr_SetFromErrno(PyExc_OSError);
-                return NULL;
-        }
-        rtnl_addr_set_ifindex(addr, self->index);
+    addr = rtnl_addr_alloc();
+
+    if( !addr ) {
+            errno = ENOMEM;
+            PyErr_SetFromErrno(PyExc_OSError);
+            return NULL;
+    }
+    rtnl_addr_set_ifindex(addr, self->index);
 
 	switch( query ) {
         case NLQRY_ADDR4:

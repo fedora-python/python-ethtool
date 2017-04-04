@@ -25,6 +25,7 @@
 #   net-tools-1.60/lib/interface.c
 # within ife_print_long()
 
+import os
 import re
 from subprocess import Popen, PIPE
 import unittest
@@ -55,9 +56,11 @@ group_ip4addr = ('(' + dec + dot +
                  dec + dot +
                  dec + ')')
 
+
 def parse_ip4addr(addr):
     import socket
     return (socket.inet_aton(addr))
+
 
 class IfConfig:
     """
@@ -68,7 +71,10 @@ class IfConfig:
             self.stdout = stdout
             self.stderr = ''
         else:
-            p = Popen('ifconfig', stdout=PIPE, stderr=PIPE)
+            env = os.environ.copy()
+            env.update(LANG='C.utf8')
+            p = Popen('ifconfig', stdout=PIPE, stderr=PIPE,
+                      env=env, universal_newlines=True)
             self.stdout, self.stderr = p.communicate()
             if self.stderr != '':
                 raise ValueError('stderr from ifconfig was nonempty:\n%s' % self.stderr)
@@ -115,6 +121,7 @@ class IfConfig:
             if dev.name == devname:
                 return dev
         raise ValueError('device not found: %r' % devname)
+
 
 class Device:
     """
@@ -175,15 +182,17 @@ class Device:
     def get_netmask_bits(self):
         # Convert a dotted netmask string to a bitcount int
         # e.g. from "255.255.252.0" to 22:
+        if not self.netmask:
+            return 0
         packed = parse_ip4addr(self.netmask)
         # count bits in "packed":
         result = 0
         for ch in packed:
-            ch = ord(ch)
+            ch = ord(ch) if isinstance(ch, str) else ch
             while ch:
                 if ch & 1:
                     result += 1
-                ch /= 2
+                ch //= 2
         return result
 
     def __repr__(self):
@@ -527,9 +536,10 @@ class Device:
 
         raise ValueError('parser could not handle line: %r' % line)
 
-#ifconfig = IfConfig()
-#for dev in ifconfig.devices:
+# ifconfig = IfConfig()
+# for dev in ifconfig.devices:
 #    print(dev)
+
 
 class ParserTests(unittest.TestCase):
     def test_full(self):
@@ -908,8 +918,8 @@ lo        Link encap:Local Loopback
         self.assertEqual(dev.txcompressed, 11)
 
     def test_parse_ip4addr(self):
-        self.assertEqual(parse_ip4addr('1.1.1.1'), '\x01\x01\x01\x01')
-        self.assertEqual(parse_ip4addr('127.0.0.1'), '\x7f\x00\x00\x01')
+        self.assertEqual(parse_ip4addr('1.1.1.1'), b'\x01\x01\x01\x01')
+        self.assertEqual(parse_ip4addr('127.0.0.1'), b'\x7f\x00\x00\x01')
 
     def test_local(self):
         # Actually invoke ifconfig locally, and parse whatever it emits:

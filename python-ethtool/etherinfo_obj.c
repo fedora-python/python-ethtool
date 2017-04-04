@@ -24,6 +24,7 @@
  */
 
 #include <Python.h>
+#include "include/py3c/compat.h"
 #include <bytesobject.h>
 #include "structmember.h"
 
@@ -87,7 +88,7 @@ static PyNetlinkIPaddress * get_last_ipv4_address(PyObject *addrlist)
 PyObject *_ethtool_etherinfo_str(PyEtherInfo *self)
 {
 	PyObject *ret = NULL;
-        PyObject *ipv4addrs = NULL, *ipv6addrs = NULL;
+    PyObject *ipv4addrs = NULL, *ipv6addrs = NULL;
 
 	if( !self ) {
 		PyErr_SetString(PyExc_AttributeError, "No data available");
@@ -96,56 +97,46 @@ PyObject *_ethtool_etherinfo_str(PyEtherInfo *self)
 
 	get_etherinfo_link(self);
 
-	ret = PyBytes_FromFormat("Device ");
-	PyBytes_Concat(&ret, self->device);
-	PyBytes_ConcatAndDel(&ret, PyBytes_FromString(":\n"));
+	ret = PyStr_FromFormat("Device %s:\n", PyStr_AsString(self->device));
 
 	if( self->hwaddress ) {
-		PyBytes_ConcatAndDel(&ret, PyBytes_FromString("\tMAC address: "));
-		PyBytes_Concat(&ret, self->hwaddress);
-		PyBytes_ConcatAndDel(&ret, PyBytes_FromString("\n"));
+		ret = PyStr_Concat(ret,
+			PyStr_FromFormat("\tMAC address: %s\n",
+				PyStr_AsString(self->hwaddress)));
 	}
 
 	ipv4addrs = get_etherinfo_address(self, NLQRY_ADDR4);
 	if( ipv4addrs ) {
-               Py_ssize_t i;
-               for (i = 0; i < PyList_Size(ipv4addrs); i++) {
-                       PyNetlinkIPaddress *py_addr = (PyNetlinkIPaddress *)PyList_GetItem(ipv4addrs, i);
-                       PyObject *tmp = PyBytes_FromFormat("\tIPv4 address: ");
-                       PyBytes_Concat(&tmp, py_addr->local);
-                       PyBytes_ConcatAndDel(&tmp, PyBytes_FromFormat("/%d", py_addr->prefixlen));
-                       if (py_addr->ipv4_broadcast ) {
-                                PyBytes_ConcatAndDel(&tmp,
-                                                      PyBytes_FromString("	  Broadcast: "));
-                                PyBytes_Concat(&tmp, py_addr->ipv4_broadcast);
-                       }
-                       PyBytes_ConcatAndDel(&tmp, PyBytes_FromString("\n"));
-                       PyBytes_ConcatAndDel(&ret, tmp);
-               }
+		Py_ssize_t i;
+		for (i = 0; i < PyList_Size(ipv4addrs); i++) {
+			PyNetlinkIPaddress *py_addr = (PyNetlinkIPaddress *)PyList_GetItem(ipv4addrs, i);
+			PyObject *tmp = PyStr_FromFormat("\tIPv4 address: ");
+			tmp = PyStr_Concat(tmp, py_addr->local);
+			tmp = PyStr_Concat(tmp, PyStr_FromFormat("/%d", py_addr->prefixlen));
+			if (py_addr->ipv4_broadcast ) {
+				tmp = PyStr_Concat(tmp,
+					PyStr_FromFormat("\tBroadcast: %s\n",
+						PyStr_AsString(py_addr->ipv4_broadcast)));
+			} else {
+				tmp = PyStr_Concat(tmp, PyStr_FromFormat("\n"));
+			}
+
+			ret = PyStr_Concat(ret, tmp);
+		}
 	}
 
 	ipv6addrs = get_etherinfo_address(self, NLQRY_ADDR6);
 	if( ipv6addrs ) {
-	       Py_ssize_t i;
-	       for (i = 0; i < PyList_Size(ipv6addrs); i++) {
-		       PyNetlinkIPaddress *py_addr = (PyNetlinkIPaddress *)PyList_GetItem(ipv6addrs, i);
-		       PyObject *tmp = PyBytes_FromFormat("\tIPv6 address: [");
-		       PyBytes_Concat(&tmp, py_addr->scope);
-		       PyBytes_ConcatAndDel(&tmp, PyBytes_FromString("] "));
-		       PyBytes_Concat(&tmp, py_addr->local);
-		       PyBytes_ConcatAndDel(&tmp, PyBytes_FromFormat("/%d", py_addr->prefixlen));
-		       PyBytes_ConcatAndDel(&tmp, PyBytes_FromString("\n"));
-		       PyBytes_ConcatAndDel(&ret, tmp);
-	       }
+		Py_ssize_t i;
+		for (i = 0; i < PyList_Size(ipv6addrs); i++) {
+		   PyNetlinkIPaddress *py_addr = (PyNetlinkIPaddress *)PyList_GetItem(ipv6addrs, i);
+		   PyObject *tmp = PyStr_FromFormat("\tIPv6 address: [%s] %s/%d\n",
+								PyStr_AsString(py_addr->scope),
+								PyStr_AsString(py_addr->local),
+								py_addr->prefixlen);
+		   ret = PyStr_Concat(ret, tmp);
+		}
 	}
-
-#if PY_MAJOR_VERSION >= 3
-	{
-		PyObject *bytestr = ret;
-		ret = PyUnicode_FromString(PyBytes_AsString(bytestr));
-		Py_DECREF(bytestr);
-	}
-#endif
 
 	return ret;
 }
@@ -235,7 +226,12 @@ static PyObject *get_ipv4_addr(PyObject *obj, void *info)
 			return py_addr->local;
 		}
 	}
-	Py_RETURN_NONE;
+
+	if (PyErr_Occurred()) {
+		return NULL;
+	} else {
+		Py_RETURN_NONE;
+	}
 }
 
 static PyObject *get_ipv4_mask(PyObject *obj, void *info)
@@ -247,9 +243,14 @@ static PyObject *get_ipv4_mask(PyObject *obj, void *info)
 	addrlist = get_etherinfo_address(self, NLQRY_ADDR4);
 	py_addr = get_last_ipv4_address(addrlist);
 	if (py_addr) {
-		return PyLong_FromLong(py_addr->prefixlen);
+		return PyInt_FromLong(py_addr->prefixlen);
 	}
-	return PyLong_FromLong(0);
+
+	if (PyErr_Occurred()) {
+		return NULL;
+	} else {
+		return PyInt_FromLong(0);
+	}
 }
 
 static PyObject *get_ipv4_bcast(PyObject *obj, void *info)
@@ -266,7 +267,12 @@ static PyObject *get_ipv4_bcast(PyObject *obj, void *info)
 			return py_addr->ipv4_broadcast;
 		}
 	}
-	Py_RETURN_NONE;
+
+	if (PyErr_Occurred()) {
+		return NULL;
+	} else {
+		return PyStr_FromString("0.0.0.0");
+	}
 }
 
 

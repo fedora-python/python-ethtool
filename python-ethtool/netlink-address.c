@@ -15,6 +15,7 @@
 
 /* Python object corresponding to a (struct rtnl_addr) */
 #include <Python.h>
+#include "include/py3c/compat.h"
 #include <bytesobject.h>
 #include "structmember.h"
 
@@ -55,7 +56,7 @@ PyNetlinkIPaddress_from_rtnl_addr(struct rtnl_addr *addr)
 		PyErr_SetFromErrno(PyExc_RuntimeError);
 		goto error;
 	}
-	py_obj->local = PyBytes_FromString(buf);
+	py_obj->local = PyStr_FromString(buf);
 	if (!py_obj->local) {
 		goto error;
 	}
@@ -64,7 +65,7 @@ PyNetlinkIPaddress_from_rtnl_addr(struct rtnl_addr *addr)
 	memset(&buf, 0, sizeof(buf));
 	if ((peer_addr = rtnl_addr_get_peer(addr))) {
 		nl_addr2str(peer_addr, buf, sizeof(buf));
-		py_obj->peer = PyBytes_FromString(buf);
+		py_obj->peer = PyStr_FromString(buf);
 		if (!py_obj->local) {
 			goto error;
 		}
@@ -85,7 +86,7 @@ PyNetlinkIPaddress_from_rtnl_addr(struct rtnl_addr *addr)
 			PyErr_SetFromErrno(PyExc_RuntimeError);
 			goto error;
 		}
-		py_obj->ipv4_broadcast = PyBytes_FromString(buf);
+		py_obj->ipv4_broadcast = PyStr_FromString(buf);
 		if (!py_obj->ipv4_broadcast) {
 			goto error;
 		}
@@ -94,7 +95,7 @@ PyNetlinkIPaddress_from_rtnl_addr(struct rtnl_addr *addr)
 	/* Set IP address scope: */
 	memset(&buf, 0, sizeof(buf));
 	rtnl_scope2str(rtnl_addr_get_scope(addr), buf, sizeof(buf));
-	py_obj->scope = PyBytes_FromString(buf);
+	py_obj->scope = PyStr_FromString(buf);
 
 	return (PyObject*)py_obj;
 
@@ -120,49 +121,40 @@ netlink_ip_address_dealloc(PyNetlinkIPaddress *obj)
 static PyObject*
 netlink_ip_address_repr(PyNetlinkIPaddress *obj)
 {
-	PyObject *result = PyBytes_FromString("ethtool.NetlinkIPaddress(family=");
+	PyObject *result = PyStr_FromString("ethtool.NetlinkIPaddress(family=");
 	char buf[256];
 
 	memset(&buf, 0, sizeof(buf));
 	nl_af2str(obj->family, buf, sizeof(buf));
-	PyBytes_ConcatAndDel(&result,
-			      PyBytes_FromFormat("%s, address='", buf));
-	PyBytes_Concat(&result, obj->local);
+	result = PyStr_Concat(result,
+				PyStr_FromFormat("%s, address='%s",
+									buf,
+									PyStr_AsString(obj->local)));
 
 	if (obj->family == AF_INET) {
-		PyBytes_ConcatAndDel(&result,
-				      PyBytes_FromFormat("', netmask=%d",
+		result = PyStr_Concat(result,
+				      PyStr_FromFormat("', netmask=%d",
 							  obj->prefixlen));
 	} else if (obj->family == AF_INET6) {
-		PyBytes_ConcatAndDel(&result,
-				      PyBytes_FromFormat("/%d'",
-							  obj->prefixlen));
+		result = PyStr_Concat(result,
+				    PyStr_FromFormat("/%d'", obj->prefixlen));
 	}
 
 	if (obj->peer) {
-		PyBytes_ConcatAndDel(&result, PyBytes_FromString(", peer_address='"));
-		PyBytes_Concat(&result, obj->peer);
-		PyBytes_ConcatAndDel(&result, PyBytes_FromString("'"));
+		result = PyStr_Concat(result,
+					PyStr_FromFormat(", peer_address='%s'",
+						PyStr_AsString(obj->peer)));
 	}
 
 	if (obj->family == AF_INET && obj->ipv4_broadcast) {
-		PyBytes_ConcatAndDel(&result, PyBytes_FromString(", broadcast='"));
-		PyBytes_Concat(&result, obj->ipv4_broadcast);
-		PyBytes_ConcatAndDel(&result, PyBytes_FromString("'"));
+		result = PyStr_Concat(result,
+					PyStr_FromFormat(", broadcast='%s'",
+						PyStr_AsString(obj->ipv4_broadcast)));
 	}
 
-	PyBytes_ConcatAndDel(&result, PyBytes_FromString(", scope="));
-	PyBytes_Concat(&result, obj->scope);
-
-	PyBytes_ConcatAndDel(&result, PyBytes_FromString(")"));
-
-#if PY_MAJOR_VERSION >= 3
-	{
-		PyObject *bytestr = result;
-		result = PyUnicode_FromString(PyBytes_AsString(result));
-		Py_DECREF(bytestr);
-	}
-#endif
+	result = PyStr_Concat(result,
+				PyStr_FromFormat(", scope=%s)",
+					PyStr_AsString(obj->scope)));
 
 	return result;
 }

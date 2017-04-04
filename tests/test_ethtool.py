@@ -21,11 +21,10 @@
 
 import sys
 import unittest
-from test.test_support import run_unittest # requires python-test subpackage on Fedora/RHEL
 
 import ethtool
 
-from parse_ifconfig import IfConfig
+from .parse_ifconfig import IfConfig
 
 INVALID_DEVICE_NAME = "I am not a valid device name"
 
@@ -35,6 +34,7 @@ ifconfig = IfConfig()
 for dev in ifconfig.devices:
     print(dev)
 
+
 class EthtoolTests(unittest.TestCase):
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -42,14 +42,14 @@ class EthtoolTests(unittest.TestCase):
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     def assertIsString(self, value):
-        self.assert_(isinstance(value, str))
+        self.assertTrue(isinstance(value, str))
 
     def assertIsStringOrNone(self, value):
         if value is not None:
-            self.assert_(isinstance(value, str))
+            self.assertTrue(isinstance(value, str))
 
     def assertIsInt(self, value):
-        self.assert_(isinstance(value, int))
+        self.assertTrue(isinstance(value, int))
 
     def assertRaisesIOError(self, fn, args, errmsg):
         """
@@ -63,7 +63,8 @@ class EthtoolTests(unittest.TestCase):
             fn(*args)
         except IOError as e:
             # Check the details of the exception:
-            self.assertEquals(e.args, (errmsg, ))
+            enum, emsg = e.args
+            self.assertEqual('[Errno {}] {}'.format(enum, emsg), errmsg)
         else:
             self.fail('IOError was not raised calling %s on %s' % (fn, args))
 
@@ -98,23 +99,20 @@ class EthtoolTests(unittest.TestCase):
             scraped = ifconfig.get_device_by_name(devname)
 
             self.assertIsString(ethtool.get_broadcast(devname))
-            self.assertEqualIpv4Str(ethtool.get_broadcast(devname),
-                                    scraped.broadcast)
+
+            # Broadcast is optional in ifconfig output
+            if scraped.broadcast:
+                self.assertEqualIpv4Str(ethtool.get_broadcast(devname),
+                                        scraped.broadcast)
 
             self.assertIsStringExceptForLoopback(ethtool.get_businfo, devname,
                                                  '[Errno 95] Operation not supported')
-
-            # ethtool.get_coalesce(devname)
-            # this gives me:
-            #   IOError: [Errno 95] Operation not supported
-            # on my test box
 
             self.assertIsInt(ethtool.get_flags(devname))
             # flagsint cannot be obtained from old ifconfig format
             if not ifconfig.oldFormat:
                 self.assertEqual(ethtool.get_flags(devname), scraped.flagsint)
             self.assertIsInt(ethtool.get_gso(devname))
-    
             self.assertIsString(ethtool.get_hwaddr(devname))
             self.assertEqualHwAddr(ethtool.get_hwaddr(devname),
                                    scraped.hwaddr)
@@ -123,29 +121,29 @@ class EthtoolTests(unittest.TestCase):
 
             self.assertIsStringExceptForLoopback(ethtool.get_module, devname,
                                                  '[Errno 95] Operation not supported')
-    
+
             self.assertIsString(ethtool.get_netmask(devname))
             self.assertEqual(ethtool.get_netmask(devname),
                              scraped.netmask)
-    
-            #self.assertRaisesIOError(ethtool.get_ringparam, (devname, ),
-            #                         '[Errno 95] Operation not supported')
-    
-            # Disabling until BZ#703089 is investigated
-            #self.assertIsInt(ethtool.get_sg(devname))
-            #self.assertIsInt(ethtool.get_ufo(devname))
-    
-            self.assertIsInt(ethtool.get_tso(devname))
-    
-    
-            #TODO: self.assertIsString(ethtool.set_coalesce(devname))
-    
-            #TODO: self.assertIsString(ethtool.set_ringparam(devname))
 
-            #TODO: self.assertIsString(ethtool.set_tso(devname))
+            # Operation is not supported only on loopback device
+            if devname == 'lo':
+                self.assertRaisesIOError(ethtool.get_ringparam, (devname, ),
+                                         '[Errno 95] Operation not supported')
+
+            self.assertIsInt(ethtool.get_sg(devname))
+            self.assertIsInt(ethtool.get_ufo(devname))
+
+            self.assertIsInt(ethtool.get_tso(devname))
+
+            # TODO: self.assertIsString(ethtool.set_coalesce(devname))
+
+            # TODO: self.assertIsString(ethtool.set_ringparam(devname))
+
+            # TODO: self.assertIsString(ethtool.set_tso(devname))
 
     def _verify_etherinfo_object(self, ei):
-        self.assert_(isinstance(ei, ethtool.etherinfo))
+        self.assertTrue(isinstance(ei, ethtool.etherinfo))
         self.assertIsString(ei.device)
 
         try:
@@ -158,7 +156,8 @@ class EthtoolTests(unittest.TestCase):
             self.assertEqual(ei.ipv4_address, scraped.inet)
 
         self.assertIsStringOrNone(ei.ipv4_broadcast)
-        if scraped:
+        if scraped and scraped.broadcast:
+            # Broadcast is optional
             self.assertEqual(ei.ipv4_broadcast, scraped.broadcast)
 
         self.assertIsInt(ei.ipv4_netmask)
@@ -166,21 +165,16 @@ class EthtoolTests(unittest.TestCase):
             self.assertEqual(ei.ipv4_netmask, scraped.get_netmask_bits())
 
         self.assertIsStringOrNone(ei.mac_address)
-        if scraped:
-            if scraped.hwaddr:
-                scraped.hwaddr = scraped.hwaddr.lower()
+        if scraped and scraped.hwaddr and scraped.hwtitle.lower() != 'unspec':
+            scraped.hwaddr = scraped.hwaddr.lower()
             self.assertEqualHwAddr(ei.mac_address.lower(), scraped.hwaddr)
 
         i6s = ei.get_ipv6_addresses()
         for i6 in i6s:
-            self.assert_(isinstance(i6, ethtool.etherinfo_ipv6addr))
+            self.assertTrue(isinstance(i6, ethtool.NetlinkIPaddress))
             self.assertIsString(i6.address)
             self.assertIsInt(i6.netmask)
             self.assertIsString(i6.scope)
-            self.assertEquals(str(i6),
-                              '[%s] %s/%i' % (i6.scope, 
-                                              i6.address,
-                                              i6.netmask))
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     #  tests
@@ -191,7 +185,7 @@ class EthtoolTests(unittest.TestCase):
 
         get_fns = ('get_broadcast', 'get_businfo', 'get_coalesce', 'get_flags',
                    'get_gso', 'get_hwaddr', 'get_ipaddr', 'get_module',
-                   'get_netmask', 'get_ringparam', 'get_sg', 'get_tso', 
+                   'get_netmask', 'get_ringparam', 'get_sg', 'get_tso',
                    'get_ufo')
         for fnname in get_fns:
             self.assertRaisesNoSuchDevice(getattr(ethtool, fnname),
@@ -207,16 +201,15 @@ class EthtoolTests(unittest.TestCase):
                 self.assertRaisesNoSuchDevice(getattr(ethtool, fnname),
                                               INVALID_DEVICE_NAME, 42)
 
-
     def test_get_interface_info_invalid(self):
         eis = ethtool.get_interfaces_info(INVALID_DEVICE_NAME)
-        self.assertEquals(len(eis), 1)
+        self.assertEqual(len(eis), 1)
         ei = eis[0]
-        self.assertEquals(ei.device, INVALID_DEVICE_NAME)
-        self.assertEquals(ei.ipv4_address, None)
-        self.assertEquals(ei.ipv4_broadcast, None)
-        self.assertEquals(ei.ipv4_netmask, 0)
-        self.assertEquals(ei.mac_address, None)
+        self.assertEqual(ei.device, INVALID_DEVICE_NAME)
+        self.assertRaisesIOError(getattr, (ei, 'ipv4_address'), '[Errno 19] No such device')
+        self.assertRaisesIOError(getattr, (ei, 'ipv4_netmask'), '[Errno 19] No such device')
+        self.assertRaisesIOError(getattr, (ei, 'ipv4_broadcast'), '[Errno 19] No such device')
+        self.assertRaisesIOError(getattr, (ei, 'mac_address'), '[Errno 19] No such device')
 
     def test_get_interface_info_active(self):
         eis = ethtool.get_interfaces_info(ethtool.get_active_devices())
@@ -230,8 +223,11 @@ class EthtoolTests(unittest.TestCase):
 
     def test_get_active_devices(self):
         for devname in ethtool.get_active_devices():
+            # Skip these test on tun devices
+            if devname.startswith('tun'):
+                continue
             self._functions_accepting_devnames(devname)
-                       
+
     def test_etherinfo_objects(self):
         devnames = ethtool.get_devices()
         eis = ethtool.get_interfaces_info(devnames)
@@ -240,12 +236,4 @@ class EthtoolTests(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    try:
-        # if count provided do a soak test, to detect leaking resources
-        count = int(sys.argv[1])
-        for i in range(count):
-            run_unittest(EthtoolTests)
-            if i % (count / 10) == 0:
-                sys.stderr.write("%s %%\n" % (i * 100 / count))
-    except:
-        run_unittest(EthtoolTests)
+    unittest.main()

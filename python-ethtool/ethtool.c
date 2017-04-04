@@ -16,6 +16,7 @@
  * General Public License for more details.
  */
 #include <Python.h>
+#include "include/py3c/compat.h"
 #include <bytesobject.h>
 
 #include <errno.h>
@@ -64,7 +65,7 @@ static PyObject *get_active_devices(PyObject *self __unused, PyObject *args __un
 
 	list = PyList_New(0);
 	for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) {
-		PyObject *str = PyBytes_FromString(ifa->ifa_name);
+		PyObject *str = PyStr_FromString(ifa->ifa_name);
 		/* names are not unique (listed for both ipv4 and ipv6) */
 		if (!PySequence_Contains(list, str) && (ifa->ifa_flags & (IFF_UP))) {
 			PyList_Append(list, str);
@@ -108,7 +109,7 @@ static PyObject *get_devices(PyObject *self __unused, PyObject *args __unused)
 		while (*name == ' ')
 			name++; /* skip over leading whitespace if any */
 
-		str = PyBytes_FromString(name);
+		str = PyStr_FromString(name);
 		PyList_Append(list, str);
 		Py_DECREF(str);
 	}
@@ -123,7 +124,7 @@ static PyObject *get_hwaddress(PyObject *self __unused, PyObject *args)
 	const char *devname;
 	char hwaddr[20];
 
-	if (!PyArg_ParseTuple(args, "s*", &devname))
+	if (!PyArg_ParseTuple(args, "s", &devname))
 		return NULL;
 
 	/* Setup our request structure. */
@@ -155,7 +156,7 @@ static PyObject *get_hwaddress(PyObject *self __unused, PyObject *args)
 		(unsigned int)ifr.ifr_hwaddr.sa_data[4] % 256,
 		(unsigned int)ifr.ifr_hwaddr.sa_data[5] % 256);
 
-	return PyBytes_FromString(hwaddr);
+	return PyStr_FromString(hwaddr);
 }
 
 static PyObject *get_ipaddress(PyObject *self __unused, PyObject *args)
@@ -165,7 +166,7 @@ static PyObject *get_ipaddress(PyObject *self __unused, PyObject *args)
 	const char *devname;
 	char ipaddr[20];
 
-	if (!PyArg_ParseTuple(args, "s*", &devname))
+	if (!PyArg_ParseTuple(args, "s", &devname))
 		return NULL;
 
 	/* Setup our request structure. */
@@ -195,7 +196,7 @@ static PyObject *get_ipaddress(PyObject *self __unused, PyObject *args)
 		(unsigned int)ifr.ifr_addr.sa_data[4] % 256,
 		(unsigned int)ifr.ifr_addr.sa_data[5] % 256);
 
-	return PyBytes_FromString(ipaddr);
+	return PyStr_FromString(ipaddr);
 }
 
 
@@ -222,16 +223,11 @@ static PyObject *get_interfaces_info(PyObject *self __unused, PyObject *args) {
 
 	/* Parse input arguments if we got them */
 	if( inargs != NULL ) {
-		if( PyBytes_Check(inargs) ) { /* Input argument is just a string */
+		if( PyStr_Check(inargs) ) { /* Input argument is just a string */
 			fetch_devs_len = 1;
 			fetch_devs = calloc(1, sizeof(char *));
-			fetch_devs[0] = PyBytes_AsString(inargs);
-#if PY_MAJOR_VERSION >= 3
-		} else if( PyUnicode_Check(inargs) ) { /* Input argument is just a ustring */
-			fetch_devs_len = 1;
-			fetch_devs = calloc(1, sizeof(char *));
-			fetch_devs[0] = PyUnicode_AsUTF8(inargs);
-#endif
+			fetch_devs[0] = PyStr_AsString(inargs);
+
 		} else if( PyTuple_Check(inargs) ) { /* Input argument is a tuple list with devices */
 			int j = 0;
 
@@ -239,8 +235,8 @@ static PyObject *get_interfaces_info(PyObject *self __unused, PyObject *args) {
 			fetch_devs = calloc(fetch_devs_len+1, sizeof(char *));
 			for( i = 0; i < fetch_devs_len; i++ ) {
 				PyObject *elmt = PyTuple_GetItem(inargs, i);
-				if( elmt && PyBytes_Check(elmt) ) {
-					fetch_devs[j++] = PyBytes_AsString(elmt);
+				if( elmt && PyStr_Check(elmt) ) {
+					fetch_devs[j++] = PyStr_AsString(elmt);
 				}
 			}
 			fetch_devs_len = j;
@@ -251,8 +247,8 @@ static PyObject *get_interfaces_info(PyObject *self __unused, PyObject *args) {
 			fetch_devs = calloc(fetch_devs_len+1, sizeof(char *));
 			for( i = 0; i < fetch_devs_len; i++ ) {
 				PyObject *elmt = PyList_GetItem(inargs, i);
-				if( elmt && PyBytes_Check(elmt) ) {
-					fetch_devs[j++] = PyBytes_AsString(elmt);
+				if( elmt && PyStr_Check(elmt) ) {
+					fetch_devs[j++] = PyStr_AsString(elmt);
 				}
 			}
 			fetch_devs_len = j;
@@ -265,19 +261,20 @@ static PyObject *get_interfaces_info(PyObject *self __unused, PyObject *args) {
 
 	devlist = PyList_New(0);
 	for( i = 0; i < fetch_devs_len; i++ ) {
-                PyEtherInfo *dev = NULL;
+        PyEtherInfo *dev = NULL;
 
 		/* Store the device name and a reference to the NETLINK connection for
 		 * objects to use when quering for device info
 		 */
 
-                dev = PyObject_New(PyEtherInfo, &PyEtherInfo_Type);
-                if( !dev ) {
+        dev = PyObject_New(PyEtherInfo, &PyEtherInfo_Type);
+        if( !dev ) {
 			PyErr_SetFromErrno(PyExc_OSError);
 			free(fetch_devs);
 			return NULL;
-                }
-		dev->device = PyBytes_FromString(fetch_devs[i]);
+        }
+
+		dev->device = PyStr_FromString(fetch_devs[i]);
 		dev->hwaddress = NULL;
 		dev->index = -1;
 
@@ -297,7 +294,7 @@ static PyObject *get_flags (PyObject *self __unused, PyObject *args)
 	const char *devname;
 	int fd, err;
 
-	if (!PyArg_ParseTuple(args, "s*", &devname))
+	if (!PyArg_ParseTuple(args, "s", &devname))
 		return NULL;
 
 	/* Setup our request structure. */
@@ -320,9 +317,8 @@ static PyObject *get_flags (PyObject *self __unused, PyObject *args)
 	close(fd);
 
 	return Py_BuildValue("h", ifr.ifr_flags);
-
-
 }
+
 static PyObject *get_netmask (PyObject *self __unused, PyObject *args)
 {
 	struct ifreq ifr;
@@ -330,7 +326,7 @@ static PyObject *get_netmask (PyObject *self __unused, PyObject *args)
 	const char *devname;
 	char netmask[20];
 
-	if (!PyArg_ParseTuple(args, "s*", &devname))
+	if (!PyArg_ParseTuple(args, "s", &devname))
 		return NULL;
 
 	/* Setup our request structure. */
@@ -360,7 +356,7 @@ static PyObject *get_netmask (PyObject *self __unused, PyObject *args)
 		(unsigned int)ifr.ifr_netmask.sa_data[4] % 256,
 		(unsigned int)ifr.ifr_netmask.sa_data[5] % 256);
 
-	return PyBytes_FromString(netmask);
+	return PyStr_FromString(netmask);
 }
 
 static PyObject *get_broadcast(PyObject *self __unused, PyObject *args)
@@ -370,7 +366,7 @@ static PyObject *get_broadcast(PyObject *self __unused, PyObject *args)
 	const char *devname;
 	char broadcast[20];
 
-	if (!PyArg_ParseTuple(args, "s*", &devname))
+	if (!PyArg_ParseTuple(args, "s", &devname))
 		return NULL;
 
 	/* Setup our request structure. */
@@ -400,7 +396,7 @@ static PyObject *get_broadcast(PyObject *self __unused, PyObject *args)
 		(unsigned int)ifr.ifr_broadaddr.sa_data[4] % 256,
 		(unsigned int)ifr.ifr_broadaddr.sa_data[5] % 256);
 
-	return PyBytes_FromString(broadcast);
+	return PyStr_FromString(broadcast);
 }
 
 static PyObject *get_module(PyObject *self __unused, PyObject *args)
@@ -411,7 +407,7 @@ static PyObject *get_module(PyObject *self __unused, PyObject *args)
 	char buf[2048];
 	const char *devname;
 
-	if (!PyArg_ParseTuple(args, "s*", &devname))
+	if (!PyArg_ParseTuple(args, "s", &devname))
 		return NULL;
 
 	/* Setup our control structures. */
@@ -465,12 +461,12 @@ static PyObject *get_module(PyObject *self __unused, PyObject *args)
 			return NULL;
 		} else {
 			PyErr_Clear();
-			return PyBytes_FromString(driver);
+			return PyStr_FromString(driver);
 		}
 	}
 
 	close(fd);
-	return PyBytes_FromString(((struct ethtool_drvinfo *)buf)->driver);
+	return PyStr_FromString(((struct ethtool_drvinfo *)buf)->driver);
 }
 
 static PyObject *get_businfo(PyObject *self __unused, PyObject *args)
@@ -481,7 +477,7 @@ static PyObject *get_businfo(PyObject *self __unused, PyObject *args)
 	char buf[1024];
 	const char *devname;
 
-	if (!PyArg_ParseTuple(args, "s*", &devname))
+	if (!PyArg_ParseTuple(args, "s", &devname))
 		return NULL;
 
 	/* Setup our control structures. */
@@ -509,7 +505,7 @@ static PyObject *get_businfo(PyObject *self __unused, PyObject *args)
 	}
 
 	close(fd);
-	return PyBytes_FromString(((struct ethtool_drvinfo *)buf)->bus_info);
+	return PyStr_FromString(((struct ethtool_drvinfo *)buf)->bus_info);
 }
 
 static int send_command(int cmd, const char *devname, void *value)
@@ -526,7 +522,7 @@ static int send_command(int cmd, const char *devname, void *value)
 	eval->cmd = cmd;
 
 	/* Open control socket. */
-	fd = socket(AF_INET, SOCK_DGRAM, 0), err;
+	fd = socket(AF_INET, SOCK_DGRAM, 0);
 	if (fd < 0) {
 		PyErr_SetFromErrno(PyExc_OSError);
 		return -1;
@@ -547,7 +543,7 @@ static int get_dev_value(int cmd, PyObject *args, void *value)
 	const char *devname;
 	int err = -1;
 
-	if (PyArg_ParseTuple(args, "s*", &devname))
+	if (PyArg_ParseTuple(args, "s", &devname))
 		err = send_command(cmd, devname, value);
 
 	return err;
@@ -569,7 +565,7 @@ static int dev_set_int_value(int cmd, PyObject *args)
 	struct ethtool_value eval;
 	const char *devname;
 
-	if (!PyArg_ParseTuple(args, "s*i", &devname, &eval.data))
+	if (!PyArg_ParseTuple(args, "si", &devname, &eval.data))
 		return -1;
 
 	return send_command(cmd, devname, &eval);
@@ -754,7 +750,7 @@ static PyObject *set_coalesce(PyObject *self __unused, PyObject *args)
 	const char *devname;
 	PyObject *dict;
 
-	if (!PyArg_ParseTuple(args, "s*O", &devname, &dict))
+	if (!PyArg_ParseTuple(args, "sO", &devname, &dict))
 		return NULL;
 
 	if (struct_desc_from_dict(ethtool_coalesce_desc, &coal, dict) != 0)
@@ -794,7 +790,7 @@ static PyObject *set_ringparam(PyObject *self __unused, PyObject *args)
 	const char *devname;
 	PyObject *dict;
 
-	if (!PyArg_ParseTuple(args, "s*O", &devname, &dict))
+	if (!PyArg_ParseTuple(args, "sO", &devname, &dict))
 		return NULL;
 
 	if (struct_desc_from_dict(ethtool_ringparam_desc, &ring, dict) != 0)
@@ -908,34 +904,28 @@ static struct PyMethodDef PyEthModuleMethods[] = {
 	{	.ml_name = NULL, },
 };
 
-#if PY_MAJOR_VERSION >= 3
-  #define MOD_ERROR_VAL NULL
-  #define MOD_SUCCESS_VAL(val) val
-  #define MOD_INIT(name) PyMODINIT_FUNC PyInit_##name(void)
-  #define MOD_DEF(ob, name, doc, methods) \
-          static struct PyModuleDef moduledef = { \
-            PyModuleDef_HEAD_INIT, name, doc, -1, methods, }; \
-          ob = PyModule_Create(&moduledef);
-#else
-  #define MOD_ERROR_VAL
-  #define MOD_SUCCESS_VAL(val)
-  #define MOD_INIT(name) void init##name(void)
-  #define MOD_DEF(ob, name, doc, methods) \
-          ob = Py_InitModule3(name, methods, doc);
-#endif
+static struct PyModuleDef moduledef = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "ethtool",
+    .m_doc = "Python ethtool module",
+    .m_size = -1,
+    .m_methods = PyEthModuleMethods,
+};
 
-MOD_INIT(ethtool)
+MODULE_INIT_FUNC(ethtool)
 {
 	PyObject *m;
-	MOD_DEF(m, "ethtool", "Python ethtool module", PyEthModuleMethods);
+	m = PyModule_Create(&moduledef);
+	if (m == NULL)
+		return NULL;
 
 	// Prepare the ethtool.etherinfo class
 	if (PyType_Ready(&PyEtherInfo_Type) < 0)
-		return MOD_ERROR_VAL;
+		return NULL;
 
 	// Prepare the ethtool IPv6 and IPv4 address types
 	if (PyType_Ready(&ethtool_netlink_ip_address_Type))
-		return MOD_ERROR_VAL;
+		return NULL;
 
 	// Setup constants
 	PyModule_AddIntConstant(m, "IFF_UP", IFF_UP);			/* Interface is up. */
@@ -958,7 +948,13 @@ MOD_INIT(ethtool)
 	PyModule_AddIntConstant(m, "AF_INET6", AF_INET6);               /* IPv6 interface */
 	PyModule_AddStringConstant(m, "version", "python-ethtool v" VERSION);
 
-	return MOD_SUCCESS_VAL(m);
+	Py_INCREF(&PyEtherInfo_Type);
+	PyModule_AddObject(m, "etherinfo", (PyObject *)&PyEtherInfo_Type);
+
+	Py_INCREF(&ethtool_netlink_ip_address_Type);
+	PyModule_AddObject(m, "NetlinkIPaddress", (PyObject *)&ethtool_netlink_ip_address_Type);
+
+	return m;
 }
 
 
