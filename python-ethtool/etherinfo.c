@@ -273,7 +273,7 @@ PyObject * get_etherinfo_address(PyEtherInfo *self, nlQuery query)
     }
 
     /* Retrieve all address information */
-    addrlist = PyList_New(0); /* The list where to put the address object */
+    addrlist = PyList_New(0);  /* The list where to put the address object */
     assert(addrlist);
 
     /* Loop through all configured addresses */

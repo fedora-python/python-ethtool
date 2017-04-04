@@ -368,6 +368,6 @@ struct ethtool_stats {
 #define WAKE_BCAST       (1 << 3)
 #define WAKE_ARP         (1 << 4)
 #define WAKE_MAGIC       (1 << 5)
-#define WAKE_MAGICSECURE (1 << 6) /* only meaningful if WAKE_MAGIC */
+#define WAKE_MAGICSECURE (1 << 6)  /* only meaningful if WAKE_MAGIC */
 
 #endif /* _LINUX_ETHTOOL_H */

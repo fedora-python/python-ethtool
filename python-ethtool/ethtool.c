@@ -49,7 +49,7 @@ typedef __uint16_t u16;
 typedef __uint8_t u8;
 
 #include "ethtool-copy.h"
-#include <linux/sockios.h> /* for SIOCETHTOOL */
+#include <linux/sockios.h>  /* for SIOCETHTOOL */
 
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 
@@ -105,9 +105,9 @@ static PyObject *get_devices(PyObject *self __unused, PyObject *args __unused)
         /* find colon */
         while (*end && *end != ':')
             end++;
-        *end = 0; /* terminate where colon was */
+        *end = 0;  /* terminate where colon was */
         while (*name == ' ')
-            name++; /* skip over leading whitespace if any */
+            name++;  /* skip over leading whitespace if any */
 
         str = PyStr_FromString(name);
         PyList_Append(list, str);
@@ -223,12 +223,12 @@ static PyObject *get_interfaces_info(PyObject *self __unused, PyObject *args) {
 
     /* Parse input arguments if we got them */
     if (inargs != NULL) {
-        if (PyStr_Check(inargs)) { /* Input argument is just a string */
+        if (PyStr_Check(inargs)) {  /* Input argument is just a string */
             fetch_devs_len = 1;
             fetch_devs = calloc(1, sizeof(char *));
             fetch_devs[0] = PyStr_AsString(inargs);
 
-        } else if (PyTuple_Check(inargs)) { /* Input argument is a tuple list with devices */
+        } else if (PyTuple_Check(inargs)) {  /* Input argument is a tuple list with devices */
             int j = 0;
 
             fetch_devs_len = PyTuple_Size(inargs);
@@ -240,7 +240,7 @@ static PyObject *get_interfaces_info(PyObject *self __unused, PyObject *args) {
                 }
             }
             fetch_devs_len = j;
-        } else if (PyList_Check(inargs)) { /* Input argument is a list with devices */
+        } else if (PyList_Check(inargs)) {  /* Input argument is a list with devices */
             int j = 0;
 
             fetch_devs_len = PyList_Size(inargs);
