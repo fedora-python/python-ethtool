@@ -53,8 +53,7 @@ and
 Tests
 -----
 
-Tests may be run by ``tox``.  However, they're currently failing, see
-`issue #11 <https://github.com/fedora-python/python-ethtool/issues/11>`_.
+Tests may be run by ``tox``.
 
 Authors
 -------
