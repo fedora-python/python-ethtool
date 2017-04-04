@@ -45,13 +45,15 @@ PyNetlinkIPaddress_from_rtnl_addr(struct rtnl_addr *addr)
     py_obj->family = rtnl_addr_get_family(addr);
     if (py_obj->family != AF_INET && py_obj->family != AF_INET6) {
         PyErr_SetString(PyExc_RuntimeError,
-                        "Only IPv4 (AF_INET) and IPv6 (AF_INET6) address types are supported");
+                        "Only IPv4 (AF_INET) and IPv6 (AF_INET6) "
+                        "address types are supported");
         goto error;
     }
 
     /* Set local IP address: */
     memset(&buf, 0, sizeof(buf));
-    if (!inet_ntop(py_obj->family, nl_addr_get_binary_addr(rtnl_addr_get_local(addr)),
+    if (!inet_ntop(py_obj->family,
+                   nl_addr_get_binary_addr(rtnl_addr_get_local(addr)),
                    buf, sizeof(buf))) {
         PyErr_SetFromErrno(PyExc_RuntimeError);
         goto error;
@@ -149,7 +151,8 @@ netlink_ip_address_repr(PyNetlinkIPaddress *obj)
     if (obj->family == AF_INET && obj->ipv4_broadcast) {
         result = PyStr_Concat(result,
                               PyStr_FromFormat(", broadcast='%s'",
-                                               PyStr_AsString(obj->ipv4_broadcast)));
+                                               PyStr_AsString(
+                                                   obj->ipv4_broadcast)));
     }
 
     result = PyStr_Concat(result,

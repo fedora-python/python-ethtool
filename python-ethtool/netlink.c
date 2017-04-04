@@ -25,7 +25,9 @@
 
 pthread_mutex_t nlc_counter_mtx = PTHREAD_MUTEX_INITIALIZER;
 static struct nl_sock *nlconnection = NULL;
-static unsigned int nlconnection_users = 0;  /* How many NETLINK users are active? */
+
+/* How many NETLINK users are active? */
+static unsigned int nlconnection_users = 0;
 
 
 /**
@@ -64,7 +66,8 @@ int open_netlink(PyEtherInfo *ethi)
         /* Force O_CLOEXEC flag on the NETLINK socket */
         if (fcntl(nl_socket_get_fd(nlconnection), F_SETFD, FD_CLOEXEC) == -1) {
             fprintf(stderr,
-                    "**WARNING** Failed to set O_CLOEXEC on NETLINK socket: %s\n",
+                    "**WARNING** Failed to set O_CLOEXEC on NETLINK socket: "
+                    "%s\n",
                     strerror(errno));
         }
 

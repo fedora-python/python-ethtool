@@ -71,7 +71,8 @@ static PyNetlinkIPaddress * get_last_ipv4_address(PyObject *addrlist)
 
     size = PyList_Size(addrlist);
     if (size > 0) {
-        PyNetlinkIPaddress *item = (PyNetlinkIPaddress *)PyList_GetItem(addrlist, size - 1);
+        PyNetlinkIPaddress *item = (PyNetlinkIPaddress *)
+             PyList_GetItem(addrlist, size - 1);
         if (Py_TYPE(item) == &ethtool_netlink_ip_address_Type) {
             return item;
         }
@@ -81,7 +82,8 @@ static PyNetlinkIPaddress * get_last_ipv4_address(PyObject *addrlist)
 }
 
 /**
- * Creates a human readable format of the information when object is being treated as a string
+ * Creates a human readable format of the information when object is being
+ * treated as a string
  *
  * @param self  Pointer to the current PyEtherInfo device object
  *
@@ -111,14 +113,17 @@ PyObject *_ethtool_etherinfo_str(PyEtherInfo *self)
     if (ipv4addrs) {
         Py_ssize_t i;
         for (i = 0; i < PyList_Size(ipv4addrs); i++) {
-            PyNetlinkIPaddress *py_addr = (PyNetlinkIPaddress *)PyList_GetItem(ipv4addrs, i);
+            PyNetlinkIPaddress *py_addr = (PyNetlinkIPaddress *)
+                PyList_GetItem(ipv4addrs, i);
             PyObject *tmp = PyStr_FromFormat("\tIPv4 address: ");
             tmp = PyStr_Concat(tmp, py_addr->local);
-            tmp = PyStr_Concat(tmp, PyStr_FromFormat("/%d", py_addr->prefixlen));
+            tmp = PyStr_Concat(tmp,
+                               PyStr_FromFormat("/%d", py_addr->prefixlen));
             if (py_addr->ipv4_broadcast) {
-                tmp = PyStr_Concat(tmp,
-                                   PyStr_FromFormat("\tBroadcast: %s\n",
-                                                    PyStr_AsString(py_addr->ipv4_broadcast)));
+                tmp = PyStr_Concat(
+                    tmp, PyStr_FromFormat("\tBroadcast: %s\n",
+                                          PyStr_AsString(
+                                            py_addr->ipv4_broadcast)));
             } else {
                 tmp = PyStr_Concat(tmp, PyStr_FromFormat("\n"));
             }
@@ -131,7 +136,8 @@ PyObject *_ethtool_etherinfo_str(PyEtherInfo *self)
     if (ipv6addrs) {
         Py_ssize_t i;
         for (i = 0; i < PyList_Size(ipv6addrs); i++) {
-            PyNetlinkIPaddress *py_addr = (PyNetlinkIPaddress *)PyList_GetItem(ipv6addrs, i);
+            PyNetlinkIPaddress *py_addr = (PyNetlinkIPaddress *)
+                PyList_GetItem(ipv6addrs, i);
             PyObject *tmp = PyStr_FromFormat("\tIPv6 address: [%s] %s/%d\n",
                                              PyStr_AsString(py_addr->scope),
                                              PyStr_AsString(py_addr->local),
@@ -146,12 +152,14 @@ PyObject *_ethtool_etherinfo_str(PyEtherInfo *self)
 /**
  * Returns a tuple list of configured IPv4 addresses
  *
- * @param self     Pointer to the current PyEtherInfo device object to extract IPv4 info from
+ * @param self     Pointer to the current PyEtherInfo device object to extract
+ *                 IPv4 info from
  * @param notused
  *
  * @return Returns a Python tuple list of NetlinkIP4Address objects
  */
-static PyObject *_ethtool_etherinfo_get_ipv4_addresses(PyEtherInfo *self, PyObject *notused) {
+static PyObject *_ethtool_etherinfo_get_ipv4_addresses(PyEtherInfo *self,
+                                                       PyObject *notused) {
     if (!self) {
         PyErr_SetString(PyExc_AttributeError, "No data available");
         return NULL;
@@ -164,12 +172,14 @@ static PyObject *_ethtool_etherinfo_get_ipv4_addresses(PyEtherInfo *self, PyObje
 /**
  * Returns a tuple list of configured IPv6 addresses
  *
- * @param self     Pointer to the current PyEtherInfo device object to extract IPv6 info from
+ * @param self     Pointer to the current PyEtherInfo device object to extract
+ *                 IPv6 info from
  * @param notused
  *
  * @return Returns a Python tuple list of NetlinkIP6Address objects
  */
-static PyObject *_ethtool_etherinfo_get_ipv6_addresses(PyEtherInfo *self, PyObject *notused) {
+static PyObject *_ethtool_etherinfo_get_ipv6_addresses(PyEtherInfo *self,
+                                                       PyObject *notused) {
     if (!self) {
         PyErr_SetString(PyExc_AttributeError, "No data available");
         return NULL;
@@ -184,11 +194,15 @@ static PyObject *_ethtool_etherinfo_get_ipv6_addresses(PyEtherInfo *self, PyObje
  *
  */
 static PyMethodDef _ethtool_etherinfo_methods[] = {
-    {   "get_ipv4_addresses", (PyCFunction)_ethtool_etherinfo_get_ipv4_addresses, METH_NOARGS,
-        "Retrieve configured IPv4 addresses.  Returns a list of NetlinkIPaddress objects"
+    {   "get_ipv4_addresses",
+        (PyCFunction)_ethtool_etherinfo_get_ipv4_addresses, METH_NOARGS,
+        "Retrieve configured IPv4 addresses.  "
+        "Returns a list of NetlinkIPaddress objects"
     },
-    {   "get_ipv6_addresses", (PyCFunction)_ethtool_etherinfo_get_ipv6_addresses, METH_NOARGS,
-        "Retrieve configured IPv6 addresses.  Returns a list of NetlinkIPaddress objects"
+    {   "get_ipv6_addresses",
+        (PyCFunction)_ethtool_etherinfo_get_ipv6_addresses, METH_NOARGS,
+        "Retrieve configured IPv6 addresses.  "
+        "Returns a list of NetlinkIPaddress objects"
     },
     {NULL}  /**< No methods defined */
 };

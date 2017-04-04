@@ -17,7 +17,8 @@
 #ifndef _ETHERINFO_H
 #define _ETHERINFO_H
 
-typedef enum {NLQRY_ADDR4, NLQRY_ADDR6} nlQuery;  /**<  Supported query types in the etherinfo code */
+/** Supported query types in the etherinfo code */
+typedef enum {NLQRY_ADDR4, NLQRY_ADDR6} nlQuery;
 
 int get_etherinfo_link(PyEtherInfo *data);
 PyObject * get_etherinfo_address(PyEtherInfo *self, nlQuery query);

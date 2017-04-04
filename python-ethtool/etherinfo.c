@@ -46,11 +46,13 @@
 
 
 /**
- *  libnl callback function.  Does the real parsing of a record returned by NETLINK.  This function
- *  parses LINK related packets
+ *  libnl callback function.
+ *  Does the real parsing of a record returned by NETLINK.
+ *  This function parses LINK related packets
  *
  * @param obj   Pointer to a struct nl_object response
- * @param arg   Pointer to a struct etherinfo element where the parse result will be saved
+ * @param arg   Pointer to a struct etherinfo element where the parse result
+ *              will be saved
  */
 static void callback_nl_link(struct nl_object *obj, void *arg)
 {
@@ -72,11 +74,12 @@ static void callback_nl_link(struct nl_object *obj, void *arg)
 
 
 /**
- *  libnl callback function.  Does the real parsing of a record returned by NETLINK.  This function
- *  parses ADDRESS related packets
+ *  libnl callback function.  Does the real parsing of a record returned by
+ *  NETLINK.  This function parses ADDRESS related packets
  *
  * @param obj   Pointer to a struct nl_object response
- * @param arg   Pointer to a struct etherinfo element where the parse result will be saved
+ * @param arg   Pointer to a struct etherinfo element where the parse result
+ *              will be saved
  */
 static void callback_nl_address(struct nl_object *obj, void *arg)
 {
@@ -109,12 +112,15 @@ static void callback_nl_address(struct nl_object *obj, void *arg)
 
 
 /**
- * Sets the etherinfo.index member to the corresponding device set in etherinfo.device
+ * Sets the etherinfo.index member to the corresponding device set in
+ * etherinfo.device
  *
- * @param self A pointer the current PyEtherInfo Python object which contains the device name
- *               and the place where to save the corresponding index value.
+ * @param self A pointer the current PyEtherInfo Python object which contains
+ *             the device name and the place where to save the corresponding
+ *             index value.
  *
- * @return Returns 1 on success, otherwise 0.  On error, a Python error exception is set.
+ * @return Returns 1 on success, otherwise 0.  On error, a Python error
+ *         exception is set.
  */
 static int _set_device_index(PyEtherInfo *self)
 {
@@ -126,7 +132,8 @@ static int _set_device_index(PyEtherInfo *self)
      * interface index if we have that
      */
     if (self->index < 0) {
-        if ((errno = rtnl_link_alloc_cache(get_nlc(), AF_UNSPEC, &link_cache)) < 0) {
+        if ((errno = rtnl_link_alloc_cache(get_nlc(),
+                                           AF_UNSPEC, &link_cache)) < 0) {
             PyErr_SetString(PyExc_OSError, nl_geterror(errno));
             return 0;
         }
@@ -160,7 +167,8 @@ static int _set_device_index(PyEtherInfo *self)
  */
 
 /**
- * Populate the PyEtherInfo Python object with link information for the current device
+ * Populate the PyEtherInfo Python object with link information for the current
+ * device
  *
  * @param self  Pointer to the device object, a PyEtherInfo Python object
  *
@@ -200,7 +208,8 @@ int get_etherinfo_link(PyEtherInfo *self)
         return 0;
     }
     rtnl_link_set_ifindex(link, self->index);
-    nl_cache_foreach_filter(link_cache, OBJ_CAST(link), callback_nl_link, self);
+    nl_cache_foreach_filter(link_cache, OBJ_CAST(link),
+                            callback_nl_link, self);
     rtnl_link_put(link);
     nl_cache_free(link_cache);
 
@@ -212,12 +221,13 @@ int get_etherinfo_link(PyEtherInfo *self)
 /**
  * Query NETLINK for device IP address configuration
  *
- * @param self   A PyEtherInfo Python object for the current device to retrieve IP address
- *               configuration data from
- * @param query  What to query for.  Must be NLQRY_ADDR4 for IPv4 addresses or NLQRY_ADDR6
- *               for IPv6 addresses.
+ * @param self   A PyEtherInfo Python object for the current device to retrieve
+ *               IP address configuration data from
+ * @param query  What to query for.  Must be NLQRY_ADDR4 for IPv4 addresses or
+ *               NLQRY_ADDR6 for IPv6 addresses.
  *
- * @return Returns a Python list containing PyNetlinkIPaddress objects on success, otherwise NULL
+ * @return Returns a Python list containing PyNetlinkIPaddress objects on
+ *         success, otherwise NULL
  */
 PyObject * get_etherinfo_address(PyEtherInfo *self, nlQuery query)
 {
@@ -277,7 +287,8 @@ PyObject * get_etherinfo_address(PyEtherInfo *self, nlQuery query)
     assert(addrlist);
 
     /* Loop through all configured addresses */
-    nl_cache_foreach_filter(addr_cache, OBJ_CAST(addr), callback_nl_address, addrlist);
+    nl_cache_foreach_filter(addr_cache, OBJ_CAST(addr),
+                            callback_nl_address, addrlist);
     rtnl_addr_put(addr);
     nl_cache_free(addr_cache);
 

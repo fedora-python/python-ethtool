@@ -272,10 +272,10 @@ struct ethtool_stats {
 #define ETHTOOL_SRINGPARAM  0x00000011  /* Set ring parameters, priv. */
 #define ETHTOOL_GPAUSEPARAM 0x00000012  /* Get pause parameters */
 #define ETHTOOL_SPAUSEPARAM 0x00000013  /* Set pause parameters, priv. */
-#define ETHTOOL_GRXCSUM     0x00000014  /* Get RX hw csum enable (ethtool_value) */
-#define ETHTOOL_SRXCSUM     0x00000015  /* Set RX hw csum enable (ethtool_value) */
-#define ETHTOOL_GTXCSUM     0x00000016  /* Get TX hw csum enable (ethtool_value) */
-#define ETHTOOL_STXCSUM     0x00000017  /* Set TX hw csum enable (ethtool_value) */
+#define ETHTOOL_GRXCSUM     0x00000014  /* Get RX hw csum enable (e.v.) */
+#define ETHTOOL_SRXCSUM     0x00000015  /* Set RX hw csum enable (e.v.) */
+#define ETHTOOL_GTXCSUM     0x00000016  /* Get TX hw csum enable (e.v.) */
+#define ETHTOOL_STXCSUM     0x00000017  /* Set TX hw csum enable (e.v.) */
 #define ETHTOOL_GSG         0x00000018  /* Get scatter-gather enable
                                          * (ethtool_value) */
 #define ETHTOOL_SSG         0x00000019  /* Set scatter-gather enable
@@ -284,12 +284,12 @@ struct ethtool_stats {
 #define ETHTOOL_GSTRINGS    0x0000001b  /* get specified string set */
 #define ETHTOOL_PHYS_ID     0x0000001c  /* identify the NIC */
 #define ETHTOOL_GSTATS      0x0000001d  /* get NIC-specific statistics */
-#define ETHTOOL_GTSO        0x0000001e  /* Get TSO enable (ethtool_value) */
-#define ETHTOOL_STSO        0x0000001f  /* Set TSO enable (ethtool_value) */
-#define ETHTOOL_GUFO        0x00000021  /* Get UFO enable (ethtool_value) */
-#define ETHTOOL_SUFO        0x00000022  /* Set UFO enable (ethtool_value) */
-#define ETHTOOL_GGSO        0x00000023  /* Get GSO enable (ethtool_value) */
-#define ETHTOOL_SGSO        0x00000024  /* Set GSO enable (ethtool_value) */
+#define ETHTOOL_GTSO        0x0000001e  /* Get TSO enable (e.v.) */
+#define ETHTOOL_STSO        0x0000001f  /* Set TSO enable (e.v.) */
+#define ETHTOOL_GUFO        0x00000021  /* Get UFO enable (e.v.) */
+#define ETHTOOL_SUFO        0x00000022  /* Set UFO enable (e.v.) */
+#define ETHTOOL_GGSO        0x00000023  /* Get GSO enable (e.v.) */
+#define ETHTOOL_SGSO        0x00000024  /* Set GSO enable (e.v.) */
 
 /* compatibility with older code */
 #define SPARC_ETH_GSET ETHTOOL_GSET

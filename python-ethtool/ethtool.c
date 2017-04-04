@@ -55,7 +55,8 @@ typedef __uint8_t u8;
 
 #define _PATH_PROCNET_DEV "/proc/net/dev"
 
-static PyObject *get_active_devices(PyObject *self __unused, PyObject *args __unused)
+static PyObject *get_active_devices(PyObject *self __unused,
+                                    PyObject *args __unused)
 {
     PyObject *list;
     struct ifaddrs *ifaddr, *ifa;
@@ -201,8 +202,8 @@ static PyObject *get_ipaddress(PyObject *self __unused, PyObject *args)
 
 
 /**
- * Retrieves the current information about all interfaces.  All interfaces will be
- * returned as a list of objects per interface.
+ * Retrieves the current information about all interfaces.
+ * All interfaces will be returned as a list of objects per interface.
  *
  * @param self Not used
  * @param args Python arguments - device name(s) as either a string or a list
@@ -228,7 +229,8 @@ static PyObject *get_interfaces_info(PyObject *self __unused, PyObject *args) {
             fetch_devs = calloc(1, sizeof(char *));
             fetch_devs[0] = PyStr_AsString(inargs);
 
-        } else if (PyTuple_Check(inargs)) {  /* Input argument is a tuple list with devices */
+        } else if (PyTuple_Check(inargs)) {
+            /* Input argument is a tuple list with devices */
             int j = 0;
 
             fetch_devs_len = PyTuple_Size(inargs);
@@ -240,7 +242,8 @@ static PyObject *get_interfaces_info(PyObject *self __unused, PyObject *args) {
                 }
             }
             fetch_devs_len = j;
-        } else if (PyList_Check(inargs)) {  /* Input argument is a list with devices */
+        } else if (PyList_Check(inargs)) {
+            /* Input argument is a list with devices */
             int j = 0;
 
             fetch_devs_len = PyList_Size(inargs);
@@ -254,7 +257,8 @@ static PyObject *get_interfaces_info(PyObject *self __unused, PyObject *args) {
             fetch_devs_len = j;
         } else {
             PyErr_SetString(PyExc_LookupError,
-                            "Argument must be either a string, list or a tuple");
+                            "Argument must be either a string, "
+                            "list or a tuple");
             return NULL;
         }
     }
@@ -446,7 +450,8 @@ static PyObject *get_module(PyObject *self __unused, PyObject *args)
                 break;
             buf[2047] = '\0';
             if (strncmp(buf, "Socket", 6) != 0) {
-                if (sscanf(buf, "%*d\t%*s\t%100s\t%*d\t%100s\n", driver, dev) > 0) {
+                if (sscanf(buf, "%*d\t%*s\t%100s\t%*d\t%100s\n",
+                           driver, dev) > 0) {
                     driver[99] = '\0';
                     dev[99] = '\0';
                     if (strcmp(devname, dev) == 0) {
@@ -928,31 +933,51 @@ MODULE_INIT_FUNC(ethtool)
         return NULL;
 
     // Setup constants
-    PyModule_AddIntConstant(m, "IFF_UP", IFF_UP);  /* Interface is up. */
-    PyModule_AddIntConstant(m, "IFF_BROADCAST", IFF_BROADCAST);  /* Broadcast address valid. */
-    PyModule_AddIntConstant(m, "IFF_DEBUG", IFF_DEBUG);  /* Turn on debugging. */
-    PyModule_AddIntConstant(m, "IFF_LOOPBACK", IFF_LOOPBACK);  /* Is a loopback net */
-    PyModule_AddIntConstant(m, "IFF_POINTOPOINT", IFF_POINTOPOINT);  /* Is a point-to-point link */
-    PyModule_AddIntConstant(m, "IFF_NOTRAILERS", IFF_NOTRAILERS);  /* Avoid use of trailers */
-    PyModule_AddIntConstant(m, "IFF_RUNNING", IFF_RUNNING);  /* Resources allocated */
-    PyModule_AddIntConstant(m, "IFF_NOARP", IFF_NOARP);  /* No address resolution protocol. */
-    PyModule_AddIntConstant(m, "IFF_PROMISC", IFF_PROMISC);  /* Receive all packets. */
-    PyModule_AddIntConstant(m, "IFF_ALLMULTI", IFF_ALLMULTI);  /* Receive all multicast packets. */
-    PyModule_AddIntConstant(m, "IFF_MASTER", IFF_MASTER);  /* Master of a load balancer. */
-    PyModule_AddIntConstant(m, "IFF_SLAVE", IFF_SLAVE);  /* Slave of a load balancer. */
-    PyModule_AddIntConstant(m, "IFF_MULTICAST", IFF_MULTICAST);  /* Supports multicast. */
-    PyModule_AddIntConstant(m, "IFF_PORTSEL", IFF_PORTSEL);  /* Can set media type. */
-    PyModule_AddIntConstant(m, "IFF_AUTOMEDIA", IFF_AUTOMEDIA); /* Auto media select active. */
-    PyModule_AddIntConstant(m, "IFF_DYNAMIC", IFF_DYNAMIC);  /* Dialup device with changing addresses.  */
-    PyModule_AddIntConstant(m, "AF_INET", AF_INET);  /* IPv4 interface */
-    PyModule_AddIntConstant(m, "AF_INET6", AF_INET6);  /* IPv6 interface */
+    /* Interface is up: */
+    PyModule_AddIntConstant(m, "IFF_UP", IFF_UP);
+    /* Broadcast address valid: */
+    PyModule_AddIntConstant(m, "IFF_BROADCAST", IFF_BROADCAST);
+    /* Turn on debugging: */
+    PyModule_AddIntConstant(m, "IFF_DEBUG", IFF_DEBUG);
+    /* Is a loopback net: */
+    PyModule_AddIntConstant(m, "IFF_LOOPBACK", IFF_LOOPBACK);
+    /* Is a point-to-point link: */
+    PyModule_AddIntConstant(m, "IFF_POINTOPOINT", IFF_POINTOPOINT);
+    /* Avoid use of trailers: */
+    PyModule_AddIntConstant(m, "IFF_NOTRAILERS", IFF_NOTRAILERS);
+    /* Resources allocated: */
+    PyModule_AddIntConstant(m, "IFF_RUNNING", IFF_RUNNING);
+    /* No address resolution protocol: */
+    PyModule_AddIntConstant(m, "IFF_NOARP", IFF_NOARP);
+    /* Receive all packets: */
+    PyModule_AddIntConstant(m, "IFF_PROMISC", IFF_PROMISC);
+    /* Receive all multicast packets: */
+    PyModule_AddIntConstant(m, "IFF_ALLMULTI", IFF_ALLMULTI);
+    /* Master of a load balancer: */
+    PyModule_AddIntConstant(m, "IFF_MASTER", IFF_MASTER);
+    /* Slave of a load balancer: */
+    PyModule_AddIntConstant(m, "IFF_SLAVE", IFF_SLAVE);
+    /* Supports multicast: */
+    PyModule_AddIntConstant(m, "IFF_MULTICAST", IFF_MULTICAST);
+    /* Can set media type: */
+    PyModule_AddIntConstant(m, "IFF_PORTSEL", IFF_PORTSEL);
+    /* Auto media select active: */
+    PyModule_AddIntConstant(m, "IFF_AUTOMEDIA", IFF_AUTOMEDIA); 
+    /* Dialup device with changing addresses: */
+    PyModule_AddIntConstant(m, "IFF_DYNAMIC", IFF_DYNAMIC);
+    /* IPv4 interface: */
+    PyModule_AddIntConstant(m, "AF_INET", AF_INET);
+    /* IPv6 interface: */
+    PyModule_AddIntConstant(m, "AF_INET6", AF_INET6);
+    /* python-ethtool version: */
     PyModule_AddStringConstant(m, "version", "python-ethtool v" VERSION);
 
     Py_INCREF(&PyEtherInfo_Type);
     PyModule_AddObject(m, "etherinfo", (PyObject *)&PyEtherInfo_Type);
 
     Py_INCREF(&ethtool_netlink_ip_address_Type);
-    PyModule_AddObject(m, "NetlinkIPaddress", (PyObject *)&ethtool_netlink_ip_address_Type);
+    PyModule_AddObject(m, "NetlinkIPaddress",
+                       (PyObject *)&ethtool_netlink_ip_address_Type);
 
     return m;
 }

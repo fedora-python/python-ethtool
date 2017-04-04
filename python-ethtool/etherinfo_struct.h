@@ -34,7 +34,7 @@ typedef struct PyNetlinkIPaddress {
     int family;  /**< int: must be AF_INET or AF_INET6 */
     PyObject *local;  /**< string: Configured local IP address */
     PyObject *peer;  /**< string: Configured peer IP address */
-    PyObject *ipv4_broadcast;  /**< string: Configured IPv4 broadcast address */
+    PyObject *ipv4_broadcast;  /**< string: Configured IPv4 broadcast add. */
     int prefixlen;  /**< int: Configured network prefix (netmask) */
     PyObject *scope;  /**< string: IP address scope */
 } PyNetlinkIPaddress;
