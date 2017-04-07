@@ -21,9 +21,9 @@ Usage
     '127.0.0.1'
 
 ``python-ethtool`` also provides the ``pethtool`` and ``pifconfig`` utilities.  More example usage may be gathered from their sources,
-`pethtool.py <https://github.com/fedora-python/python-ethtool/blob/master/pethtool.py>`_
+`pethtool.py <https://github.com/fedora-python/python-ethtool/blob/master/scripts/pethtool>`_
 and
-`pifconfig.py <https://github.com/fedora-python/python-ethtool/blob/master/pethtool.py>`_.
+`pifconfig.py <https://github.com/fedora-python/python-ethtool/blob/master/scripts/pethtool>`_.
 
 
 ``pethtool`` mimics behavior of the ``ethtool`` utility, but does not
