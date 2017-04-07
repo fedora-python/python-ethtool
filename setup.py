@@ -122,6 +122,11 @@ setup(name='ethtool',
           'Topic :: Software Development :: Libraries',
           'Topic :: System :: Networking',
       ],
+      
+      scripts=[
+        'scripts/pethtool', 'scripts/pifconfig'
+      ],
+      
       ext_modules=[
         PkgConfigExtension(
             'ethtool',
