@@ -44,6 +44,12 @@ def usage():
         [tx-usecs-high N]
         [tx-frames-high N]
         [sample-interval N]
+    -g|--show-ring          Show ring parameters
+    -G|--set-ring           Set ring parameters
+        [rx N]
+        [rx-mini N]
+        [rx-jumbo N]
+        [tx N]
     -i|--driver             Show driver information
     -k|--show-offload       Get protocol offload information
     -K|--offload            Set protocol offload
