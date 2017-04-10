@@ -29,6 +29,7 @@
 #include <sys/types.h>
 #include <ifaddrs.h>
 #include <netlink/route/addr.h>
+#include <linux/wireless.h>
 #if !defined IFF_UP
 #include <net/if.h>
 #endif
@@ -625,6 +626,37 @@ static PyObject *get_sg(PyObject *self __unused, PyObject *args)
     return Py_BuildValue("b", value);
 }
 
+static PyObject *get_wireless_protocol (PyObject *self __unused, PyObject *args)
+{
+    struct iwreq iwr;
+    const char *devname;
+    int fd, err;
+
+    if (!PyArg_ParseTuple(args, "s", &devname))
+        return NULL;
+
+    /* Setup our request structure. */
+    memset(&iwr, 0, sizeof(iwr));
+    strncpy(iwr.ifr_name, devname, IFNAMSIZ);
+
+    /* Open control socket. */
+    fd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (fd < 0) {
+        PyErr_SetFromErrno(PyExc_OSError);
+        return NULL;
+    }
+    err = ioctl(fd, SIOCGIWNAME, &iwr);
+    if(err < 0) {
+        PyErr_SetFromErrno(PyExc_IOError);
+        close(fd);
+        return NULL;
+    }
+
+    close(fd);
+
+    return PyStr_FromString(iwr.u.name);
+}
+
 struct struct_desc {
     char *name;
     unsigned short offset;
@@ -904,6 +936,11 @@ static struct PyMethodDef PyEthModuleMethods[] = {
     {
         .ml_name = "get_flags",
         .ml_meth = (PyCFunction)get_flags,
+        .ml_flags = METH_VARARGS,
+    },
+    {
+        .ml_name = "get_wireless_protocol",
+        .ml_meth = (PyCFunction)get_wireless_protocol,
         .ml_flags = METH_VARARGS,
     },
     { .ml_name = NULL, },
