@@ -1,6 +1,7 @@
 import unittest
 import ethtool
 import sys
+import os
 from io import TextIOWrapper, BytesIO
 from imp import load_source
 
@@ -98,6 +99,9 @@ generic segmentation offload: on
             for expected_start, line in zip(expected_lines_start, lines):
                 self.assertTrue(line.startswith(expected_start))
 
+        @unittest.skipIf('TRAVIS' in os.environ and os.environ['TRAVIS'] == 'true',
+                         'Skipping this test on Travis CI because show '
+                         'coalesce is not supported on ethernet device in VM.')
         def test_show_coalesce_eth(self):
             self.assertIsNone(peth.show_coalesce(device))
             expected_lines_start = ['Coalesce parameters for',
