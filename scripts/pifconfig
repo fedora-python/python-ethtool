@@ -20,39 +20,39 @@ from optparse import OptionParser
 
 
 def flags2str(flags):
-    string = ""
+    string = ''
     if flags & ethtool.IFF_UP:
-        string += "UP "
+        string += 'UP '
     if flags & ethtool.IFF_BROADCAST:
-        string += "BROADCAST "
+        string += 'BROADCAST '
     if flags & ethtool.IFF_DEBUG:
-        string += "DEBUG "
+        string += 'DEBUG '
     if flags & ethtool.IFF_LOOPBACK:
-        string += "LOOPBACK "
+        string += 'LOOPBACK '
     if flags & ethtool.IFF_POINTOPOINT:
-        string += "POINTOPOINT "
+        string += 'POINTOPOINT '
     if flags & ethtool.IFF_NOTRAILERS:
-        string += "NOTRAILERS "
+        string += 'NOTRAILERS '
     if flags & ethtool.IFF_RUNNING:
-        string += "RUNNING "
+        string += 'RUNNING '
     if flags & ethtool.IFF_NOARP:
-        string += "NOARP "
+        string += 'NOARP '
     if flags & ethtool.IFF_PROMISC:
-        string += "PROMISC "
+        string += 'PROMISC '
     if flags & ethtool.IFF_ALLMULTI:
-        string += "ALLMULTI "
+        string += 'ALLMULTI '
     if flags & ethtool.IFF_MASTER:
-        string += "MASTER "
+        string += 'MASTER '
     if flags & ethtool.IFF_SLAVE:
-        string += "SLAVE "
+        string += 'SLAVE '
     if flags & ethtool.IFF_MULTICAST:
-        string += "MULTICAST "
+        string += 'MULTICAST '
     if flags & ethtool.IFF_PORTSEL:
-        string += "PORTSEL "
+        string += 'PORTSEL '
     if flags & ethtool.IFF_AUTOMEDIA:
-        string += "AUTOMEDIA "
+        string += 'AUTOMEDIA '
     if flags & ethtool.IFF_DYNAMIC:
-        string += "DYNAMIC "
+        string += 'DYNAMIC '
 
     return string.strip()
 
@@ -63,26 +63,23 @@ def show_config(device):
     flags = ethtool.get_flags(device)
     print('%-9.9s' % device)
     if not (flags & ethtool.IFF_LOOPBACK):
-        print("HWaddr %s" % ethtool.get_hwaddr(device))
-    print('''
-          inet addr:%s''' % ipaddr)
+        print('\tHWaddr %s' % ethtool.get_hwaddr(device))
+    print('\tinet addr:%s' % ipaddr)
     if not (flags & (ethtool.IFF_LOOPBACK | ethtool.IFF_POINTOPOINT)):
-        print("Bcast:%s" % ethtool.get_broadcast(device))
-    print('  Mask:%s' % netmask)
+        print('\tBcast:%s' % ethtool.get_broadcast(device))
+    print('\tMask:%s' % netmask)
     for info in ethtool.get_interfaces_info(device):
         for addr in info.get_ipv6_addresses():
-            print("	  inet6 addr: %s/%s Scope: %s"
+            print('\tinet6 addr: %s/%s Scope: %s'
                   % (addr.address,
                       addr.netmask,
                       addr.scope))
-    print('	  %s' % flags2str(flags))
+    print('\t%s\n' % flags2str(flags))
     print
 
 
 def main():
-    global all_devices
-
-    usage = "usage: %prog [interface [interface [interface] ...]]"
+    usage = 'usage: %prog [interface [interface [interface] ...]]'
     parser = OptionParser(usage=usage)
     (opts, args) = parser.parse_args()
 
@@ -95,7 +92,7 @@ def main():
         try:
             show_config(device)
         except Exception as ex:
-            print("** ERROR ** [Device %s]: %s" % (device, str(ex)))
+            print('** ERROR ** [Device %s]: %s' % (device, str(ex)))
             sys.exit(2)
 
 
