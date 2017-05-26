@@ -50,6 +50,11 @@ Further usage information may be found in the respective manpages for
 and
 `pifconfig <https://github.com/fedora-python/python-ethtool/blob/master/man/pifconfig.8.asciidoc>`_.
 
+Installation
+------------
+
+On Ubuntu 16.04, run ```sudo apt install libnl-route-3-dev libnl-3-dev``` and install with pip, e.g. in a virtual env, run ```pip install --upgrade -e 'git+https://github.com/fedora-python/python-ethtool.git@v0.12#egg=ethtool'``` for version 0.12 (this version didn't build for me on 16.04; I tried commit 802e74e and it built OK).
+
 Tests
 -----
 
