@@ -1,9 +1,9 @@
-python-ethtool
-==============
+Python ethtool module
+=====================
 
 *Python bindings for the ethtool kernel interface*
 
-``python-ethtool`` allows querying and changing of ethernet card settings,
+The Python ``ethtool`` module allows querying and changing of ethernet card settings,
 such as speed, port, autonegotiation, and PCI locations.
 
 **This is the new upstream for python-ethtool maintained by Fedora's
@@ -20,7 +20,7 @@ Usage
     >>> ethtool.get_ipaddr('lo')
     '127.0.0.1'
 
-``python-ethtool`` also provides the ``pethtool`` and ``pifconfig`` utilities.  More example usage may be gathered from their sources,
+The ``ethtool`` package also provides the ``pethtool`` and ``pifconfig`` utilities.  More example usage may be gathered from their sources,
 `pethtool.py <https://github.com/fedora-python/python-ethtool/blob/master/scripts/pethtool>`_
 and
 `pifconfig.py <https://github.com/fedora-python/python-ethtool/blob/master/scripts/pethtool>`_.
@@ -95,7 +95,7 @@ are welcome.
 License
 -------
 
-``python-ethtool`` is free software distributed under the terms of the
-GNU General Public License v2.0, see
+The Python ``ethtool`` project is free software distributed under the terms of
+the GNU General Public License v2.0, see
 `COPYING <https://github.com/fedora-python/python-ethtool/blob/master/COPYING>`_.
 
