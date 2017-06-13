@@ -11,7 +11,7 @@ try:
 except ImportError:
     import subprocess as commands
 
-version = '0.12'
+version = '0.13'
 
 
 class PkgConfigExtension(Extension):

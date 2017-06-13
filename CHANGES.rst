@@ -1,6 +1,18 @@
 Changelog
 =========
 
+0.13
+----
+Tue Jun 13 2017 Miro Hrončok <mhroncok@redhat.com>
+
+- First release on PyPI
+- Supports both Python 2.7 and 3.5+
+- Dropped support for Python 2.6
+- Upstream URL changed to https://github.com/fedora-python/python-ethtool
+- Introduced a basic README file
+- PEP7 and PEP8 (code style) improvements
+- Fix compilation errors on modern Fedoras
+
 0.12
 ----
 Tue Mar 21 2017 Charalampos Stratakis <cstratak@redhat.com>
