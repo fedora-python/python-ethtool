@@ -63,7 +63,7 @@ def show_config(device):
     ipaddr = ethtool.get_ipaddr(device)
     netmask = ethtool.get_netmask(device)
     flags = ethtool.get_flags(device)
-    print('%-9.9s' % device)
+    print('%s' % device)
     if not (flags & ethtool.IFF_LOOPBACK):
         print('\tHWaddr %s' % ethtool.get_hwaddr(device))
     print('\tinet addr:%s' % ipaddr)
