@@ -3,8 +3,8 @@ Python ethtool module
 
 *Python bindings for the ethtool kernel interface*
 
-The Python ``ethtool`` module allows querying and changing of ethernet card settings,
-such as speed, port, autonegotiation, and PCI locations.
+The Python ``ethtool`` module allows querying and partially controlling network
+interfaces, driver, and hardware settings.
 
 **This is the new upstream for python-ethtool maintained by Fedora's
 Python SIG.**
