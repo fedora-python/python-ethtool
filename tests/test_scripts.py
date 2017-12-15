@@ -77,6 +77,7 @@ class ScriptsTests(unittest.TestCase):
 tcp segmentation offload: on
 udp fragmentation offload: on
 generic segmentation offload: on
+generic receive offload: on
 '''
                          )
 
