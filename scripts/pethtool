@@ -211,10 +211,16 @@ def show_offload(interface, args=None):
     except IOError:
         gso = 'not supported'
 
+    try:
+        gro = ethtool.get_gro(interface) and 'on' or 'off'
+    except IOError:
+        gro = 'not supported'
+
     printtab('scatter-gather: %s' % sg)
     printtab('tcp segmentation offload: %s' % tso)
     printtab('udp fragmentation offload: %s' % ufo)
     printtab('generic segmentation offload: %s' % gso)
+    printtab('generic receive offload: %s' % gro)
 
 
 def set_offload(interface, args):
@@ -224,6 +230,18 @@ def set_offload(interface, args):
         value = value == 'on' and 1 or 0
         try:
             ethtool.set_tso(interface, value)
+        except:
+            pass
+    elif cmd == 'gso':
+        value = value == 'on' and 1 or 0
+        try:
+            ethtool.set_gso(interface, value)
+        except:
+            pass
+    elif cmd == 'gro':
+        value = value == 'on' and 1 or 0
+        try:
+            ethtool.set_gro(interface, value)
         except:
             pass
 

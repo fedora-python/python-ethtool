@@ -121,6 +121,7 @@ class EthtoolTests(unittest.TestCase):
         if not ifconfig.oldFormat:
             self.assertEqual(ethtool.get_flags(devname), scraped.flagsint)
         self.assertIsInt(ethtool.get_gso(devname))
+        self.assertIsInt(ethtool.get_gro(devname))
         self.assertIsString(ethtool.get_hwaddr(devname))
         self.assertEqualHwAddr(ethtool.get_hwaddr(devname),
                                scraped.hwaddr)
@@ -153,6 +154,10 @@ class EthtoolTests(unittest.TestCase):
         # TODO: self.assertIsString(ethtool.set_ringparam(devname))
 
         # TODO: self.assertIsString(ethtool.set_tso(devname))
+
+        # TODO: self.assertIsString(ethtool.set_gso(devname))
+
+        # TODO: self.assertIsString(ethtool.set_gro(devname))
 
     def _verify_etherinfo_object(self, ei):
         self.assertTrue(isinstance(ei, ethtool.etherinfo))
@@ -196,14 +201,15 @@ class EthtoolTests(unittest.TestCase):
         # Verify sane handling of non-existant devices
 
         get_fns = ('get_broadcast', 'get_businfo', 'get_coalesce', 'get_flags',
-                   'get_gso', 'get_hwaddr', 'get_ipaddr', 'get_module',
-                   'get_netmask', 'get_ringparam', 'get_sg', 'get_tso',
-                   'get_ufo')
+                   'get_gso', 'get_gso', 'get_hwaddr', 'get_ipaddr',
+                   'get_module', 'get_netmask', 'get_ringparam', 'get_sg',
+                   'get_tso', 'get_ufo')
         for fnname in get_fns:
             self.assertRaisesNoSuchDevice(getattr(ethtool, fnname),
                                           INVALID_DEVICE_NAME)
 
-        set_fns = ('set_coalesce', 'set_ringparam', 'set_tso')
+        set_fns = ('set_coalesce', 'set_ringparam', 'set_tso', 'set_gso',
+                   'set_gro')
         for fnname in set_fns:
             # Currently this fails, with an IOError from
             #   ethtool.c:__struct_desc_from_dict

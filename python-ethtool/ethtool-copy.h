@@ -290,6 +290,8 @@ struct ethtool_stats {
 #define ETHTOOL_SUFO        0x00000022  /* Set UFO enable (e.v.) */
 #define ETHTOOL_GGSO        0x00000023  /* Get GSO enable (e.v.) */
 #define ETHTOOL_SGSO        0x00000024  /* Set GSO enable (e.v.) */
+#define ETHTOOL_GGRO        0x0000002b  /* Get GRO enable (e.v.) */
+#define ETHTOOL_SGRO        0x0000002c  /* Set GRO enable (e.v.) */
 
 /* compatibility with older code */
 #define SPARC_ETH_GSET ETHTOOL_GSET

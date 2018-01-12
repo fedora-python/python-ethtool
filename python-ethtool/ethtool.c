@@ -616,6 +616,34 @@ static PyObject *get_gso(PyObject *self __unused, PyObject *args)
     return Py_BuildValue("b", value);
 }
 
+static PyObject *set_gso(PyObject *self __unused, PyObject *args)
+{
+    if (dev_set_int_value(ETHTOOL_SGSO, args) < 0)
+        return NULL;
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+static PyObject *get_gro(PyObject *self __unused, PyObject *args)
+{
+    int value = 0;
+
+    if (get_dev_int_value(ETHTOOL_GGRO, args, &value) < 0)
+        return NULL;
+
+    return Py_BuildValue("b", value);
+}
+
+static PyObject *set_gro(PyObject *self __unused, PyObject *args)
+{
+    if (dev_set_int_value(ETHTOOL_SGRO, args) < 0)
+        return NULL;
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
 static PyObject *get_sg(PyObject *self __unused, PyObject *args)
 {
     int value = 0;
@@ -926,6 +954,21 @@ static struct PyMethodDef PyEthModuleMethods[] = {
     {
         .ml_name = "get_gso",
         .ml_meth = (PyCFunction)get_gso,
+        .ml_flags = METH_VARARGS,
+    },
+    {
+        .ml_name = "set_gso",
+        .ml_meth = (PyCFunction)set_gso,
+        .ml_flags = METH_VARARGS,
+    },
+    {
+        .ml_name = "get_gro",
+        .ml_meth = (PyCFunction)get_gro,
+        .ml_flags = METH_VARARGS,
+    },
+    {
+        .ml_name = "set_gro",
+        .ml_meth = (PyCFunction)set_gro,
         .ml_flags = METH_VARARGS,
     },
     {
