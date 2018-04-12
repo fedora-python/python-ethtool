@@ -15,11 +15,13 @@ Installation
 In order to install ``ethtool`` install its dependencies first:
 
 **Fedora**: ``sudo dnf install libnl3-devel gcc redhat-rpm-config python3-devel``
+
 **Ubuntu**: ``sudo apt install python3 python3-setuptools libpython3.6-dev libnl-route-3-dev``
 
 And then install ``ethtool``:
 
 **from PyPI**: ``pip3 install ethtool``
+
 **from source**: ``python3 setup.py install``
 
 
