@@ -12,7 +12,14 @@ Python SIG.**
 Installation
 ------------
 
-In order to install ``ethtool`` install its dependencies first:
+The easiest way to install ``ethtool`` is to use your distribution packages
+repositories. For example:
+
+**Fedora**: ``sudo dnf install python3-ethtool`` or ``sudo dnf install python2-ethtool``
+
+**Ubuntu**: ``sudo apt install python-ethtool``
+
+In order to install ``ethtool`` from source or PyPI install its dependencies first:
 
 **Fedora**: ``sudo dnf install libnl3-devel gcc redhat-rpm-config python3-devel``
 
