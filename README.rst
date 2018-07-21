@@ -6,8 +6,12 @@ Python ethtool module
 The Python ``ethtool`` module allows querying and partially controlling network
 interfaces, driver, and hardware settings.
 
-**This is the new upstream for python-ethtool maintained by Fedora's
-Python SIG.**
+.. warning::
+    This is the new upstream for python-ethtool maintained by Fedora's
+    Python SIG. We ported it to Python 3 and only maintain it for the current
+    tools to keep working. **No new development is happening. This is a
+    deprecated package.** If you are considering to start using this, please
+    don't. We recommend `netifaces <https://pypi.org/project/netifaces/>`_ instead.
 
 Usage
 -----
