@@ -5,6 +5,7 @@ from __future__ import print_function
 
 from setuptools import setup, Extension
 import sys
+from io import open
 
 try:
     import commands
@@ -90,10 +91,10 @@ class PkgConfigExtension(Extension):
         pass
 
 
-with open('README.rst') as f:
+with open('README.rst', encoding='utf-8') as f:
     long_description = f.read()
 
-with open('CHANGES.rst') as f:
+with open('CHANGES.rst', encoding='utf-8') as f:
     long_description += '\n\n'
     long_description += f.read()
 
