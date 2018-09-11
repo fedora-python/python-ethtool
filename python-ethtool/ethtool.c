@@ -666,7 +666,8 @@ static PyObject *get_wireless_protocol (PyObject *self __unused, PyObject *args)
 
     /* Setup our request structure. */
     memset(&iwr, 0, sizeof(iwr));
-    strncpy(iwr.ifr_name, devname, IFNAMSIZ);
+    strncpy(iwr.ifr_name, devname, IFNAMSIZ-1);
+    iwr.ifr_name[IFNAMSIZ-1] = 0;
 
     /* Open control socket. */
     fd = socket(AF_INET, SOCK_DGRAM, 0);
