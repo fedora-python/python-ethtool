@@ -94,6 +94,7 @@ static PyObject *get_devices(PyObject *self __unused, PyObject *args __unused)
     ret = fgets(buffer, 256, fd);
     ret = fgets(buffer, 256, fd);
     if (!ret) {
+        fclose(fd);
         return PyErr_SetFromErrno(PyExc_OSError);
     }
 
