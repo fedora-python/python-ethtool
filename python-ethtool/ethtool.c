@@ -730,7 +730,7 @@ static PyObject *__struct_desc_create_dict(struct struct_desc *table,
     PyObject *dict = PyDict_New();
 
     if (dict == NULL)
-        goto out;
+        return NULL;
 
     for (i = 0; i < nr_entries; ++i) {
         struct struct_desc *d = &table[i];
@@ -743,21 +743,21 @@ static PyObject *__struct_desc_create_dict(struct struct_desc *table,
             break;
         }
 
-        if (objval == NULL)
-            goto free_dict;
+        if (objval == NULL) {
+            Py_DECREF(dict);
+            return NULL;
+        }
 
         if (PyDict_SetItemString(dict, d->name, objval) != 0) {
             Py_DECREF(objval);
-            goto free_dict;
+            Py_DECREF(dict);
+            return NULL;
         }
 
         Py_DECREF(objval);
     }
-out:
+
     return dict;
-free_dict:
-    goto out;
-    dict = NULL;
 }
 
 #define struct_desc_create_dict(table, values) \

@@ -540,8 +540,6 @@ class Device:
 
         return
 
-        raise ValueError('parser could not handle line: %r' % line)
-
 # ifconfig = IfConfig()
 # for dev in ifconfig.devices:
 #    print(dev)
