@@ -113,6 +113,11 @@ class IfConfig:
                 curdev._parse_rest_of_first_line_old(mo.group(2))
                 continue
 
+            # If we don't have current device yet, doesn't make sense to
+            # read the rest of output lines
+            if curdev is None:
+                continue
+
             if self.oldFormat:
                 curdev._parse_line_old(line)
             else:
