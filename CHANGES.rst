@@ -1,6 +1,17 @@
 Changelog
 =========
 
+0.14
+----
+Wed Sep 12 2018 Miro Hrončok <mhroncok@redhat.com>
+
+- Declared project as bugfix only from now on
+- Support Python 3.7
+- Fix important issues reported by static analysis
+- Fix installation on non-UTF-8 locales on Python 3.5 and 3.6
+- Added set_gso(), get_gro() and set_gro() functions
+- Added installation instructions
+
 0.13
 ----
 Tue Jun 13 2017 Miro Hrončok <mhroncok@redhat.com>

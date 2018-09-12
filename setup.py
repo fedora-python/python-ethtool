@@ -12,7 +12,7 @@ try:
 except ImportError:
     import subprocess as commands
 
-version = '0.13'
+version = '0.14'
 
 
 class PkgConfigExtension(Extension):
@@ -114,6 +114,7 @@ setup(name='ethtool',
       keywords='network networking ethernet tool ethtool',
 
       classifiers=[
+          'Development Status :: 7 - Inactive',
           'Intended Audience :: Developers',
           'Intended Audience :: System Administrators',
           'Operating System :: POSIX :: Linux',
