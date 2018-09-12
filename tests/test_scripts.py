@@ -72,13 +72,21 @@ class ScriptsTests(unittest.TestCase):
 
     def test_show_offload_lo(self):
         self.assertIsNone(peth.show_offload(loopback))
+
+        # Check if we have rights to obtain ufo and set proper expected output
+        try:
+            ethtool.get_ufo(loopback)
+            expected_ufo = 'on'
+        except (OSError, IOError):
+            expected_ufo = 'not supported'
+
         self.assertEqual(self._output(),
                          '''scatter-gather: on
 tcp segmentation offload: on
-udp fragmentation offload: on
+udp fragmentation offload: {expected_ufo}
 generic segmentation offload: on
 generic receive offload: on
-'''
+'''.format(expected_ufo=expected_ufo)
                          )
 
     # Tests for another device
