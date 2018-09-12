@@ -94,6 +94,7 @@ static PyObject *get_devices(PyObject *self __unused, PyObject *args __unused)
     ret = fgets(buffer, 256, fd);
     ret = fgets(buffer, 256, fd);
     if (!ret) {
+        fclose(fd);
         return PyErr_SetFromErrno(PyExc_OSError);
     }
 
@@ -665,7 +666,8 @@ static PyObject *get_wireless_protocol (PyObject *self __unused, PyObject *args)
 
     /* Setup our request structure. */
     memset(&iwr, 0, sizeof(iwr));
-    strncpy(iwr.ifr_name, devname, IFNAMSIZ);
+    strncpy(iwr.ifr_name, devname, IFNAMSIZ-1);
+    iwr.ifr_name[IFNAMSIZ-1] = 0;
 
     /* Open control socket. */
     fd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -728,7 +730,7 @@ static PyObject *__struct_desc_create_dict(struct struct_desc *table,
     PyObject *dict = PyDict_New();
 
     if (dict == NULL)
-        goto out;
+        return NULL;
 
     for (i = 0; i < nr_entries; ++i) {
         struct struct_desc *d = &table[i];
@@ -741,21 +743,21 @@ static PyObject *__struct_desc_create_dict(struct struct_desc *table,
             break;
         }
 
-        if (objval == NULL)
-            goto free_dict;
+        if (objval == NULL) {
+            Py_DECREF(dict);
+            return NULL;
+        }
 
         if (PyDict_SetItemString(dict, d->name, objval) != 0) {
             Py_DECREF(objval);
-            goto free_dict;
+            Py_DECREF(dict);
+            return NULL;
         }
 
         Py_DECREF(objval);
     }
-out:
+
     return dict;
-free_dict:
-    goto out;
-    dict = NULL;
 }
 
 #define struct_desc_create_dict(table, values) \
