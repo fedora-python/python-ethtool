@@ -13,6 +13,29 @@ interfaces, driver, and hardware settings.
     deprecated package.** If you are considering to start using this, please
     don't. We recommend `netifaces <https://pypi.org/project/netifaces/>`_ instead.
 
+Installation
+------------
+
+The easiest way to install ``ethtool`` is to use your distribution packages
+repositories. For example:
+
+**Fedora**: ``sudo dnf install python3-ethtool`` or ``sudo dnf install python2-ethtool``
+
+**Ubuntu**: ``sudo apt install python-ethtool``
+
+In order to install ``ethtool`` from source or PyPI install its dependencies first:
+
+**Fedora**: ``sudo dnf install libnl3-devel gcc redhat-rpm-config python3-devel``
+
+**Ubuntu**: ``sudo apt install python3 python3-setuptools libpython3.6-dev libnl-route-3-dev``
+
+And then install ``ethtool``:
+
+**from PyPI**: ``pip3 install ethtool``
+
+**from source**: ``python3 setup.py install``
+
+
 Usage
 -----
 
