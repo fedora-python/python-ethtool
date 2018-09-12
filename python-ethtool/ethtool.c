@@ -593,8 +593,7 @@ static PyObject *set_tso(PyObject *self __unused, PyObject *args)
     if (dev_set_int_value(ETHTOOL_STSO, args) < 0)
         return NULL;
 
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyObject *get_ufo(PyObject *self __unused, PyObject *args)
@@ -622,8 +621,7 @@ static PyObject *set_gso(PyObject *self __unused, PyObject *args)
     if (dev_set_int_value(ETHTOOL_SGSO, args) < 0)
         return NULL;
 
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyObject *get_gro(PyObject *self __unused, PyObject *args)
@@ -641,8 +639,7 @@ static PyObject *set_gro(PyObject *self __unused, PyObject *args)
     if (dev_set_int_value(ETHTOOL_SGRO, args) < 0)
         return NULL;
 
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyObject *get_sg(PyObject *self __unused, PyObject *args)
@@ -826,8 +823,7 @@ static PyObject *set_coalesce(PyObject *self __unused, PyObject *args)
     if (send_command(ETHTOOL_SCOALESCE, devname, &coal))
         return NULL;
 
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 struct struct_desc ethtool_ringparam_desc[] = {
@@ -866,8 +862,7 @@ static PyObject *set_ringparam(PyObject *self __unused, PyObject *args)
     if (send_command(ETHTOOL_SRINGPARAM, devname, &ring))
         return NULL;
 
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static struct PyMethodDef PyEthModuleMethods[] = {
