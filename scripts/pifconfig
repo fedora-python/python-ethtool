@@ -60,16 +60,23 @@ def flags2str(flags):
 
 
 def show_config(device):
-    ipaddr = ethtool.get_ipaddr(device)
-    netmask = ethtool.get_netmask(device)
+    try:
+        ipaddr = ethtool.get_ipaddr(device)
+        netmask = ethtool.get_netmask(device)
+        broadcast = ethtool.get_broadcast(device)
+    except (IOError, OSError):
+        ipaddr, netmask, broadcast = None, None, None
     flags = ethtool.get_flags(device)
     print('%s' % device)
     if not (flags & ethtool.IFF_LOOPBACK):
         print('\tHWaddr %s' % ethtool.get_hwaddr(device))
-    print('\tinet addr:%s' % ipaddr)
-    if not (flags & (ethtool.IFF_LOOPBACK | ethtool.IFF_POINTOPOINT)):
-        print('\tBcast:%s' % ethtool.get_broadcast(device))
-    print('\tMask:%s' % netmask)
+    if ipaddr is not None:
+        print('\tinet addr:%s' % ipaddr)
+    if broadcast is not None and \
+       not (flags & (ethtool.IFF_LOOPBACK | ethtool.IFF_POINTOPOINT)):
+        print('\tBcast:%s' % broadcast)
+    if netmask is not None:
+        print('\tMask:%s' % netmask)
     for info in ethtool.get_interfaces_info(device):
         for addr in info.get_ipv6_addresses():
             print('\tinet6 addr: %s/%s Scope: %s'
