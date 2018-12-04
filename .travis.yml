@@ -19,5 +19,23 @@ cache:
     - $HOME/virtualenv/python$TRAVIS_PYTHON_VERSION/bin
 notifications:
   email: false
-install: pip install --upgrade tox tox-travis
+install:
+- pip install --upgrade tox tox-travis
+- sudo ip link add dummy1 type dummy
+- sudo ip link add dummy4 type dummy
+- sudo ip addr add 203.0.113.1 broadcast 203.0.113.255 dev dummy4
+- sudo ip addr add 198.51.100.1 broadcast 198.51.100.255 dev dummy4
+- sudo ip link set dummy1 up
+- sudo ip link set dummy4 up
+# Be ready for IPv6
+# - sudo ip link add dummy46 type dummy
+# - sudo ip addr add 203.0.113.10 broadcast 203.0.113.255 dev dummy46
+# - sudo ip addr add 198.51.100.10 broadcast 198.51.100.255 dev dummy46
+# - sudo ip addr add 2001:db8::10/64 dev dummy46
+# - sudo ip addr add 2001:db9::10/64 dev dummy46
+# - sudo ip link add dummy6 type dummy
+# - sudo ip addr add 2001:db8::1/64 dev dummy6
+# - sudo ip addr add 2001:db9::1/64 dev dummy6
+# - sudo ip link set dummy6 up
+# - sudo ip link set dummy46 up
 script: tox
