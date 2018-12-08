@@ -175,17 +175,20 @@ class EthtoolTests(unittest.TestCase):
             scraped = None
 
         self.assertIsStringOrNone(ei.ipv4_address)
-        if scraped:
-            self.assertEqual(ei.ipv4_address, scraped.inet)
+        if scraped and scraped.inet:
+            addresses = [ip.address for ip in ei.get_ipv4_addresses()]
+            self.assertTrue(scraped.inet in addresses)
 
         self.assertIsStringOrNone(ei.ipv4_broadcast)
-        if scraped and scraped.broadcast:
+        if scraped and scraped.broadcast not in (None, '0.0.0.0'):
             # Broadcast is optional
-            self.assertEqual(ei.ipv4_broadcast, scraped.broadcast)
+            broadcasts = [ip.broadcast for ip in ei.get_ipv4_addresses()]
+            self.assertTrue(scraped.broadcast in broadcasts)
 
         self.assertIsInt(ei.ipv4_netmask)
-        if scraped:
-            self.assertEqual(ei.ipv4_netmask, scraped.get_netmask_bits())
+        if scraped and scraped.netmask:
+            netmasks = [ip.netmask for ip in ei.get_ipv4_addresses()]
+            self.assertTrue(scraped.get_netmask_bits(), netmasks)
 
         self.assertIsStringOrNone(ei.mac_address)
         if scraped and scraped.hwaddr and scraped.hwtitle.lower() != 'unspec':
