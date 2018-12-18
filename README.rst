@@ -109,7 +109,6 @@ Current maintainers
 * Lumír Balhar <lbalhar@redhat.com>
 * Miro Hrončok <mhroncok@redhat.com>
 * Charalampos Stratakis <cstratak@redhat.com>
-* Sanqui <dlabsky@redhat.com>
 
 Contributing
 ------------
