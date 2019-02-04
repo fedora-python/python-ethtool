@@ -254,8 +254,8 @@ class EthtoolTests(unittest.TestCase):
 
     def test_get_active_devices(self):
         for devname in ethtool.get_active_devices():
-            # Skip these test on tun devices
-            if devname.startswith('tun'):
+            # Skip these test on tun and wg devices
+            if devname.startswith('tun') or devname.startswith('wg'):
                 continue
             self._functions_accepting_devnames(devname)
 
