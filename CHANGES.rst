@@ -1,6 +1,14 @@
 Changelog
 =========
 
+0.15
+----
+Thu Jul 29 2021 Lumír Balhar <lbalhar@redhat.com>
+
+- Tests are now skipped for wireguard devices
+- pifconfig is now able to show more than one IPv4 address per interface
+- pifconfig supports interfaces with no IPv4 address
+
 0.14
 ----
 Wed Sep 12 2018 Miro Hrončok <mhroncok@redhat.com>

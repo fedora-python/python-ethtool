@@ -12,7 +12,7 @@ try:
 except ImportError:
     import subprocess as commands
 
-version = '0.14'
+version = '0.15'
 
 
 class PkgConfigExtension(Extension):
@@ -126,6 +126,9 @@ setup(name='ethtool',
           'Programming Language :: Python :: 3.5',
           'Programming Language :: Python :: 3.6',
           'Programming Language :: Python :: 3.7',
+          'Programming Language :: Python :: 3.8',
+          'Programming Language :: Python :: 3.9',
+          'Programming Language :: Python :: 3.10',
           'Programming Language :: Python :: Implementation :: CPython',
           'Topic :: Software Development :: Libraries',
           'Topic :: System :: Networking',
