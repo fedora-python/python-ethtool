@@ -11,7 +11,7 @@ interfaces, driver, and hardware settings.
     Python SIG. We ported it to Python 3 and only maintain it for the current
     tools to keep working. **No new development is happening. This is a
     deprecated package.** If you are considering to start using this, please
-    don't. We recommend `ethtool parsers <https://insights-core.readthedocs.io/en/latest/shared_parsers_catalog/ethtool.html>`_ from `insights-core <https://pypi.org/project/insights-core/>`_ instead.
+    don't. We recommend `netifaces <https://pypi.org/project/netifaces/>`_ instead. Another alternative is `ethtool parsers <https://insights-core.readthedocs.io/en/latest/shared_parsers_catalog/ethtool.html>`_ from `insights-core <https://pypi.org/project/insights-core/>`_.
 
 Installation
 ------------
