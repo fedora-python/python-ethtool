@@ -3,7 +3,23 @@ import ethtool
 import sys
 import os
 from io import TextIOWrapper, BytesIO
-from imp import load_source
+
+try:
+    from imp import load_source
+except ImportError:
+    import importlib.machinery
+    import importlib.util
+
+    # from https://docs.python.org/3.12/whatsnew/3.12.html#imp
+    def load_source(modname, filename):
+        loader = importlib.machinery.SourceFileLoader(modname, filename)
+        spec = importlib.util.spec_from_file_location(modname, filename, loader=loader)
+        module = importlib.util.module_from_spec(spec)
+        # The module is always executed and not cached in sys.modules.
+        # Uncomment the following line to cache the module.
+        # sys.modules[module.__name__] = module
+        loader.exec_module(module)
+        return module
 
 pifc = load_source('pifc', 'scripts/pifconfig')
 peth = load_source('peth', 'scripts/pethtool')
